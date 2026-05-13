@@ -87,9 +87,12 @@ def _lookup_supports_vision(provider: str, model: str) -> Optional[bool]:
         return None
     try:
         from agent.models_dev import get_model_capabilities
+
         caps = get_model_capabilities(provider, model)
     except Exception as exc:  # pragma: no cover - defensive
-        logger.debug("image_routing: caps lookup failed for %s:%s — %s", provider, model, exc)
+        logger.debug(
+            "image_routing: caps lookup failed for %s:%s — %s", provider, model, exc
+        )
         return None
     if caps is None:
         return None
@@ -172,8 +175,20 @@ def _sniff_mime_from_bytes(raw: bytes) -> Optional[str]:
     if raw.startswith(b"BM"):
         return "image/bmp"
     # HEIC/HEIF: ftypheic / ftypheix / ftypmif1 / ftypmsf1 etc.
-    if len(raw) >= 12 and raw[4:8] == b"ftyp" and raw[8:12] in (
-        b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1", b"heim", b"heis",
+    if (
+        len(raw) >= 12
+        and raw[4:8] == b"ftyp"
+        and raw[8:12]
+        in (
+            b"heic",
+            b"heix",
+            b"hevc",
+            b"hevx",
+            b"mif1",
+            b"msf1",
+            b"heim",
+            b"heis",
+        )
     ):
         return "image/heic"
     return None
@@ -280,9 +295,7 @@ def build_native_content_parts(
     # the user's caption (or a neutral default) with one path hint per image.
     if attached_paths:
         base_text = text or "What do you see in this image?"
-        path_hints = "\n".join(
-            f"[Image attached at: {p}]" for p in attached_paths
-        )
+        path_hints = "\n".join(f"[Image attached at: {p}]" for p in attached_paths)
         combined_text = f"{base_text}\n\n{path_hints}"
         parts: List[Dict[str, Any]] = [{"type": "text", "text": combined_text}]
         parts.extend(image_parts)

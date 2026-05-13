@@ -21,6 +21,7 @@ def isolated_home(tmp_path, monkeypatch):
     # Force a fresh catalog module state for each test.
     import importlib
     from hermes_cli import model_catalog
+
     importlib.reload(model_catalog)
     yield home
     model_catalog.reset_cache()
@@ -54,40 +55,47 @@ def _valid_manifest() -> dict:
 class TestValidation:
     def test_accepts_well_formed_manifest(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         assert _validate_manifest(_valid_manifest()) is True
 
     def test_rejects_non_dict(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         assert _validate_manifest("string") is False
         assert _validate_manifest([]) is False
         assert _validate_manifest(None) is False
 
     def test_rejects_missing_version(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         m = _valid_manifest()
         del m["version"]
         assert _validate_manifest(m) is False
 
     def test_rejects_future_version(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         m = _valid_manifest()
         m["version"] = 999
         assert _validate_manifest(m) is False
 
     def test_rejects_missing_providers(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         m = _valid_manifest()
         del m["providers"]
         assert _validate_manifest(m) is False
 
     def test_rejects_malformed_model_entry(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         m = _valid_manifest()
         m["providers"]["openrouter"]["models"][0] = {"id": ""}  # empty id
         assert _validate_manifest(m) is False
 
     def test_rejects_non_string_model_id(self, isolated_home):
         from hermes_cli.model_catalog import _validate_manifest
+
         m = _valid_manifest()
         m["providers"]["openrouter"]["models"][0] = {"id": 42}
         assert _validate_manifest(m) is False
@@ -96,6 +104,7 @@ class TestValidation:
 class TestFetchSuccess:
     def test_fetch_and_cache_writes_disk(self, isolated_home):
         from hermes_cli import model_catalog
+
         manifest = _valid_manifest()
         with patch.object(
             model_catalog, "_fetch_manifest", return_value=manifest
@@ -112,6 +121,7 @@ class TestFetchSuccess:
 
     def test_second_call_uses_in_process_cache(self, isolated_home):
         from hermes_cli import model_catalog
+
         manifest = _valid_manifest()
         with patch.object(
             model_catalog, "_fetch_manifest", return_value=manifest
@@ -122,6 +132,7 @@ class TestFetchSuccess:
 
     def test_force_refresh_always_refetches(self, isolated_home):
         from hermes_cli import model_catalog
+
         manifest = _valid_manifest()
         with patch.object(
             model_catalog, "_fetch_manifest", return_value=manifest
@@ -134,12 +145,14 @@ class TestFetchSuccess:
 class TestFetchFailure:
     def test_network_failure_returns_empty_when_no_cache(self, isolated_home):
         from hermes_cli import model_catalog
+
         with patch.object(model_catalog, "_fetch_manifest", return_value=None):
             result = model_catalog.get_catalog(force_refresh=True)
         assert result == {}
 
     def test_network_failure_falls_back_to_disk_cache(self, isolated_home):
         from hermes_cli import model_catalog
+
         # Prime disk cache with a fresh copy.
         manifest = _valid_manifest()
         with patch.object(model_catalog, "_fetch_manifest", return_value=manifest):
@@ -154,6 +167,7 @@ class TestFetchFailure:
 
     def test_fetch_failure_falls_back_to_stale_cache(self, isolated_home):
         from hermes_cli import model_catalog
+
         manifest = _valid_manifest()
         # Write stale cache directly (mtime in the past).
         cache = model_catalog._cache_path()
@@ -162,6 +176,7 @@ class TestFetchFailure:
             json.dump(manifest, fh)
         old = time.time() - 30 * 24 * 3600  # 30 days ago
         import os as _os
+
         _os.utime(cache, (old, old))
 
         with patch.object(model_catalog, "_fetch_manifest", return_value=None):
@@ -174,6 +189,7 @@ class TestFetchFailure:
 class TestCuratedAccessors:
     def test_openrouter_returns_tuples(self, isolated_home):
         from hermes_cli import model_catalog
+
         with patch.object(
             model_catalog, "_fetch_manifest", return_value=_valid_manifest()
         ):
@@ -186,6 +202,7 @@ class TestCuratedAccessors:
 
     def test_nous_returns_ids(self, isolated_home):
         from hermes_cli import model_catalog
+
         with patch.object(
             model_catalog, "_fetch_manifest", return_value=_valid_manifest()
         ):
@@ -194,11 +211,13 @@ class TestCuratedAccessors:
 
     def test_openrouter_returns_none_when_catalog_empty(self, isolated_home):
         from hermes_cli import model_catalog
+
         with patch.object(model_catalog, "_fetch_manifest", return_value=None):
             assert model_catalog.get_curated_openrouter_models() is None
 
     def test_nous_returns_none_when_catalog_empty(self, isolated_home):
         from hermes_cli import model_catalog
+
         with patch.object(model_catalog, "_fetch_manifest", return_value=None):
             assert model_catalog.get_curated_nous_models() is None
 
@@ -206,6 +225,7 @@ class TestCuratedAccessors:
 class TestDisabled:
     def test_disabled_config_short_circuits(self, isolated_home):
         from hermes_cli import model_catalog
+
         with patch.object(
             model_catalog,
             "_load_catalog_config",

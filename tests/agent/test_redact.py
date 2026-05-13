@@ -412,7 +412,9 @@ class TestUrlQueryParamRedaction:
         assert "limit=10" in result
 
     def test_presigned_signature(self):
-        text = "https://s3.amazonaws.com/bucket/k?signature=LONG_PRESIGNED_SIG&id=public"
+        text = (
+            "https://s3.amazonaws.com/bucket/k?signature=LONG_PRESIGNED_SIG&id=public"
+        )
         result = redact_sensitive_text(text)
         assert "LONG_PRESIGNED_SIG" not in result
         assert "id=public" in result

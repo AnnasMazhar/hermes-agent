@@ -168,7 +168,9 @@ def test_random_strategy_uses_random_choice(tmp_path, monkeypatch):
     config_path = tmp_path / "hermes" / "config.yaml"
     config_path.write_text("credential_pool_strategies:\n  openrouter: random\n")
 
-    monkeypatch.setattr("agent.credential_pool.random.choice", lambda entries: entries[-1])
+    monkeypatch.setattr(
+        "agent.credential_pool.random.choice", lambda entries: entries[-1]
+    )
 
     from agent.credential_pool import load_pool
 
@@ -176,7 +178,6 @@ def test_random_strategy_uses_random_choice(tmp_path, monkeypatch):
     selected = pool.select()
     assert selected is not None
     assert selected.id == "cred-2"
-
 
 
 def test_exhausted_entry_resets_after_ttl(tmp_path, monkeypatch):
@@ -384,7 +385,6 @@ def test_load_pool_seeds_env_api_key(tmp_path, monkeypatch):
     assert entry.access_token == "sk-or-seeded"
 
 
-
 def test_load_pool_prefers_dotenv_over_stale_os_environ(tmp_path, monkeypatch):
     """Regression for #18254: stale OPENROUTER_API_KEY in os.environ (inherited
     from a parent shell) must NOT shadow the fresh key in ~/.hermes/.env when
@@ -400,13 +400,12 @@ def test_load_pool_prefers_dotenv_over_stale_os_environ(tmp_path, monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-STALE-from-shell")
 
     # User edited ~/.hermes/.env with the fresh key
-    (hermes_home / ".env").write_text(
-        "OPENROUTER_API_KEY=sk-or-FRESH-from-dotenv\n"
-    )
+    (hermes_home / ".env").write_text("OPENROUTER_API_KEY=sk-or-FRESH-from-dotenv\n")
 
     _write_auth_store(tmp_path, {"version": 1, "providers": {}})
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("openrouter")
     entry = pool.select()
 
@@ -435,6 +434,7 @@ def test_load_pool_falls_back_to_os_environ_when_dotenv_empty(tmp_path, monkeypa
     _write_auth_store(tmp_path, {"version": 1, "providers": {}})
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("openrouter")
     entry = pool.select()
 
@@ -606,7 +606,9 @@ def test_singleton_seed_does_not_clobber_manual_oauth_entry(tmp_path, monkeypatc
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_TOKEN", raising=False)
     monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
-    monkeypatch.setattr("hermes_cli.auth.is_provider_explicitly_configured", lambda pid: True)
+    monkeypatch.setattr(
+        "hermes_cli.auth.is_provider_explicitly_configured", lambda pid: True
+    )
     _write_auth_store(
         tmp_path,
         {
@@ -650,7 +652,9 @@ def test_singleton_seed_does_not_clobber_manual_oauth_entry(tmp_path, monkeypatc
     assert {entry.source for entry in entries} == {"manual:hermes_pkce", "hermes_pkce"}
 
 
-def test_load_pool_prefers_anthropic_env_token_over_file_backed_oauth(tmp_path, monkeypatch):
+def test_load_pool_prefers_anthropic_env_token_over_file_backed_oauth(
+    tmp_path, monkeypatch
+):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.setenv("ANTHROPIC_TOKEN", "env-override-token")
@@ -864,15 +868,18 @@ def test_custom_endpoint_pool_seeds_from_config(tmp_path, monkeypatch):
     # Write config.yaml with a custom_providers entry
     config_path = tmp_path / "hermes" / "config.yaml"
     import yaml
-    config_path.write_text(yaml.dump({
-        "custom_providers": [
-            {
-                "name": "Together.ai",
-                "base_url": "https://api.together.ai/v1",
-                "api_key": "sk-config-seeded",
-            }
-        ]
-    }))
+
+    config_path.write_text(
+        yaml.dump({
+            "custom_providers": [
+                {
+                    "name": "Together.ai",
+                    "base_url": "https://api.together.ai/v1",
+                    "api_key": "sk-config-seeded",
+                }
+            ]
+        })
+    )
 
     from agent.credential_pool import load_pool
 
@@ -890,20 +897,23 @@ def test_custom_endpoint_pool_seeds_from_model_config(tmp_path, monkeypatch):
     _write_auth_store(tmp_path, {"version": 1})
 
     import yaml
+
     config_path = tmp_path / "hermes" / "config.yaml"
-    config_path.write_text(yaml.dump({
-        "custom_providers": [
-            {
-                "name": "Together.ai",
+    config_path.write_text(
+        yaml.dump({
+            "custom_providers": [
+                {
+                    "name": "Together.ai",
+                    "base_url": "https://api.together.ai/v1",
+                }
+            ],
+            "model": {
+                "provider": "custom",
                 "base_url": "https://api.together.ai/v1",
-            }
-        ],
-        "model": {
-            "provider": "custom",
-            "base_url": "https://api.together.ai/v1",
-            "api_key": "sk-model-key",
-        },
-    }))
+                "api_key": "sk-model-key",
+            },
+        })
+    )
 
     from agent.credential_pool import load_pool
 
@@ -936,26 +946,38 @@ def test_get_custom_provider_pool_key(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     (tmp_path / "hermes").mkdir(parents=True, exist_ok=True)
     import yaml
+
     config_path = tmp_path / "hermes" / "config.yaml"
-    config_path.write_text(yaml.dump({
-        "custom_providers": [
-            {
-                "name": "Together.ai",
-                "base_url": "https://api.together.ai/v1",
-                "api_key": "sk-xxx",
-            },
-            {
-                "name": "My Local Server",
-                "base_url": "http://localhost:8080/v1",
-            },
-        ]
-    }))
+    config_path.write_text(
+        yaml.dump({
+            "custom_providers": [
+                {
+                    "name": "Together.ai",
+                    "base_url": "https://api.together.ai/v1",
+                    "api_key": "sk-xxx",
+                },
+                {
+                    "name": "My Local Server",
+                    "base_url": "http://localhost:8080/v1",
+                },
+            ]
+        })
+    )
 
     from agent.credential_pool import get_custom_provider_pool_key
 
-    assert get_custom_provider_pool_key("https://api.together.ai/v1") == "custom:together.ai"
-    assert get_custom_provider_pool_key("https://api.together.ai/v1/") == "custom:together.ai"
-    assert get_custom_provider_pool_key("http://localhost:8080/v1") == "custom:my-local-server"
+    assert (
+        get_custom_provider_pool_key("https://api.together.ai/v1")
+        == "custom:together.ai"
+    )
+    assert (
+        get_custom_provider_pool_key("https://api.together.ai/v1/")
+        == "custom:together.ai"
+    )
+    assert (
+        get_custom_provider_pool_key("http://localhost:8080/v1")
+        == "custom:my-local-server"
+    )
     assert get_custom_provider_pool_key("https://unknown.example.com/v1") is None
     assert get_custom_provider_pool_key("") is None
 
@@ -965,21 +987,24 @@ def test_get_custom_provider_pool_key_prefers_name_over_base_url(tmp_path, monke
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     (tmp_path / "hermes").mkdir(parents=True, exist_ok=True)
     import yaml
+
     config_path = tmp_path / "hermes" / "config.yaml"
-    config_path.write_text(yaml.dump({
-        "custom_providers": [
-            {
-                "name": "provider-a",
-                "base_url": "http://gateway:8080/v1",
-                "api_key": "sk-aaa",
-            },
-            {
-                "name": "provider-b",
-                "base_url": "http://gateway:8080/v1",
-                "api_key": "sk-bbb",
-            },
-        ]
-    }))
+    config_path.write_text(
+        yaml.dump({
+            "custom_providers": [
+                {
+                    "name": "provider-a",
+                    "base_url": "http://gateway:8080/v1",
+                    "api_key": "sk-aaa",
+                },
+                {
+                    "name": "provider-b",
+                    "base_url": "http://gateway:8080/v1",
+                    "api_key": "sk-bbb",
+                },
+            ]
+        })
+    )
 
     from agent.credential_pool import get_custom_provider_pool_key
 
@@ -987,14 +1012,32 @@ def test_get_custom_provider_pool_key_prefers_name_over_base_url(tmp_path, monke
     assert get_custom_provider_pool_key("http://gateway:8080/v1") == "custom:provider-a"
 
     # With provider_name, exact name match wins regardless of order
-    assert get_custom_provider_pool_key("http://gateway:8080/v1", provider_name="provider-b") == "custom:provider-b"
-    assert get_custom_provider_pool_key("http://gateway:8080/v1", provider_name="provider-a") == "custom:provider-a"
+    assert (
+        get_custom_provider_pool_key(
+            "http://gateway:8080/v1", provider_name="provider-b"
+        )
+        == "custom:provider-b"
+    )
+    assert (
+        get_custom_provider_pool_key(
+            "http://gateway:8080/v1", provider_name="provider-a"
+        )
+        == "custom:provider-a"
+    )
 
     # Name match with non-matching base_url still works via fallback
-    assert get_custom_provider_pool_key("http://gateway:8080/v1", provider_name="nonexistent") == "custom:provider-a"
+    assert (
+        get_custom_provider_pool_key(
+            "http://gateway:8080/v1", provider_name="nonexistent"
+        )
+        == "custom:provider-a"
+    )
 
     # Empty provider_name is same as None (backward compatible)
-    assert get_custom_provider_pool_key("http://gateway:8080/v1", provider_name="") == "custom:provider-a"
+    assert (
+        get_custom_provider_pool_key("http://gateway:8080/v1", provider_name="")
+        == "custom:provider-a"
+    )
 
 
 def test_list_custom_pool_providers(tmp_path, monkeypatch):
@@ -1047,7 +1090,6 @@ def test_list_custom_pool_providers(tmp_path, monkeypatch):
     # "custom:empty" not included because it's empty
 
 
-
 def test_acquire_lease_prefers_unleased_entry(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     _write_auth_store(
@@ -1089,7 +1131,6 @@ def test_acquire_lease_prefers_unleased_entry(tmp_path, monkeypatch):
     assert pool._active_leases.get("cred-2", 0) == 1
 
 
-
 def test_release_lease_decrements_counter(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     _write_auth_store(
@@ -1122,7 +1163,9 @@ def test_release_lease_decrements_counter(tmp_path, monkeypatch):
     assert pool._active_leases.get("cred-1", 0) == 0
 
 
-def test_load_pool_does_not_seed_claude_code_when_anthropic_not_configured(tmp_path, monkeypatch):
+def test_load_pool_does_not_seed_claude_code_when_anthropic_not_configured(
+    tmp_path, monkeypatch
+):
     """Claude Code credentials must not be auto-seeded when the user never selected anthropic."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
     _write_auth_store(tmp_path, {"version": 1, "credential_pool": {}})
@@ -1130,7 +1173,11 @@ def test_load_pool_does_not_seed_claude_code_when_anthropic_not_configured(tmp_p
     # Claude Code credentials exist on disk
     monkeypatch.setattr(
         "agent.anthropic_adapter.read_claude_code_credentials",
-        lambda: {"accessToken": "sk-ant...oken", "refreshToken": "rt", "expiresAt": 9999999999999},
+        lambda: {
+            "accessToken": "sk-ant...oken",
+            "refreshToken": "rt",
+            "expiresAt": 9999999999999,
+        },
     )
     monkeypatch.setattr(
         "agent.anthropic_adapter.read_hermes_oauth_credentials",
@@ -1143,6 +1190,7 @@ def test_load_pool_does_not_seed_claude_code_when_anthropic_not_configured(tmp_p
     )
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("anthropic")
 
     # Should NOT have seeded the claude_code entry
@@ -1160,6 +1208,7 @@ def test_load_pool_seeds_copilot_via_gh_auth_token(tmp_path, monkeypatch):
     )
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("copilot")
 
     assert pool.has_credentials()
@@ -1181,6 +1230,7 @@ def test_load_pool_does_not_seed_copilot_when_no_token(tmp_path, monkeypatch):
     )
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("copilot")
 
     assert not pool.has_credentials()
@@ -1205,6 +1255,7 @@ def test_load_pool_seeds_qwen_oauth_via_cli_tokens(tmp_path, monkeypatch):
     )
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("qwen-oauth")
 
     assert pool.has_credentials()
@@ -1224,18 +1275,25 @@ def test_load_pool_does_not_seed_qwen_oauth_when_no_token(tmp_path, monkeypatch)
     monkeypatch.setattr(
         "hermes_cli.auth.resolve_qwen_runtime_credentials",
         lambda **kw: (_ for _ in ()).throw(
-            AuthError("Qwen CLI credentials not found.", provider="qwen-oauth", code="qwen_auth_missing")
+            AuthError(
+                "Qwen CLI credentials not found.",
+                provider="qwen-oauth",
+                code="qwen_auth_missing",
+            )
         ),
     )
 
     from agent.credential_pool import load_pool
+
     pool = load_pool("qwen-oauth")
 
     assert not pool.has_credentials()
     assert pool.entries() == []
 
 
-def test_nous_seed_from_singletons_preserves_obtained_at_timestamps(tmp_path, monkeypatch):
+def test_nous_seed_from_singletons_preserves_obtained_at_timestamps(
+    tmp_path, monkeypatch
+):
     """Regression test for #15099 secondary issue.
 
     When ``_seed_from_singletons`` materialises a device_code pool entry from
@@ -1280,7 +1338,9 @@ def test_nous_seed_from_singletons_preserves_obtained_at_timestamps(tmp_path, mo
     entries = pool.entries()
 
     device_entries = [e for e in entries if e.source == "device_code"]
-    assert len(device_entries) == 1, f"expected single device_code entry; got {len(device_entries)}"
+    assert len(device_entries) == 1, (
+        f"expected single device_code entry; got {len(device_entries)}"
+    )
     e = device_entries[0]
 
     # Direct dataclass fields — must survive the singleton → pool copy.
@@ -1309,22 +1369,46 @@ class TestLeastUsedStrategy:
     def test_request_count_increments(self):
         """Each select() call should increment the chosen entry's request_count."""
         from unittest.mock import patch as _patch
-        from agent.credential_pool import CredentialPool, PooledCredential, STRATEGY_LEAST_USED
+        from agent.credential_pool import (
+            CredentialPool,
+            PooledCredential,
+            STRATEGY_LEAST_USED,
+        )
 
         entries = [
-            PooledCredential(provider="test", id="a", label="a", auth_type="api_key",
-                             source="a", access_token="tok-a", priority=0, request_count=0),
-            PooledCredential(provider="test", id="b", label="b", auth_type="api_key",
-                             source="b", access_token="tok-b", priority=1, request_count=0),
+            PooledCredential(
+                provider="test",
+                id="a",
+                label="a",
+                auth_type="api_key",
+                source="a",
+                access_token="tok-a",
+                priority=0,
+                request_count=0,
+            ),
+            PooledCredential(
+                provider="test",
+                id="b",
+                label="b",
+                auth_type="api_key",
+                source="b",
+                access_token="tok-b",
+                priority=1,
+                request_count=0,
+            ),
         ]
-        with _patch("agent.credential_pool.get_pool_strategy", return_value=STRATEGY_LEAST_USED):
+        with _patch(
+            "agent.credential_pool.get_pool_strategy", return_value=STRATEGY_LEAST_USED
+        ):
             pool = CredentialPool("test", entries)
 
         # First select should pick entry with lowest count (both 0 → first)
         e1 = pool.select()
         assert e1 is not None
         count_after_first = e1.request_count
-        assert count_after_first == 1, f"Expected 1 after first select, got {count_after_first}"
+        assert count_after_first == 1, (
+            f"Expected 1 after first select, got {count_after_first}"
+        )
 
         # Second select should pick the OTHER entry (now has lower count)
         e2 = pool.select()
@@ -1335,6 +1419,7 @@ class TestLeastUsedStrategy:
 
 
 # ── PR #10160 salvage: Nous OAuth cross-process sync tests ─────────────────
+
 
 def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypatch):
     """When auth.json has a newer refresh token, the pool entry should adopt it."""
@@ -1398,6 +1483,7 @@ def test_sync_nous_entry_from_auth_store_adopts_newer_tokens(tmp_path, monkeypat
     assert synced.agent_key == "agent-key-NEW"
     assert synced.agent_key_expires_at == "2026-03-24T14:00:00+00:00"
 
+
 def test_sync_nous_entry_noop_when_tokens_match(tmp_path, monkeypatch):
     """When auth.json has the same refresh token, sync should be a no-op."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
@@ -1431,6 +1517,7 @@ def test_sync_nous_entry_noop_when_tokens_match(tmp_path, monkeypatch):
 
     synced = pool._sync_nous_entry_from_auth_store(entry)
     assert synced is entry
+
 
 def test_nous_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch):
     """An exhausted Nous entry should recover when auth.json has newer tokens."""
@@ -1504,6 +1591,7 @@ def test_nous_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatch
 
 
 # ── OpenAI Codex OAuth cross-process sync tests ────────────────────────────
+
 
 def _codex_auth_store(access: str, refresh: str) -> dict:
     return {
@@ -1612,7 +1700,9 @@ def test_codex_exhausted_entry_recovers_via_auth_store_sync(tmp_path, monkeypatc
     assert available[0].last_error_reset_at is None
 
 
-def test_codex_exhausted_entry_stays_stuck_without_auth_store_update(tmp_path, monkeypatch):
+def test_codex_exhausted_entry_stays_stuck_without_auth_store_update(
+    tmp_path, monkeypatch
+):
     """Regression guard: if auth.json tokens haven't changed, the exhausted
     entry must stay stuck behind its reset window — sync must not spuriously
     clear status just because the entry is STATUS_EXHAUSTED."""

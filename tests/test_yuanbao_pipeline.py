@@ -50,6 +50,7 @@ from gateway.config import Platform, PlatformConfig
 # Helpers
 # ============================================================
 
+
 def make_config(**kwargs):
     extra = kwargs.pop("extra", {})
     extra.setdefault("app_id", "test_key")
@@ -110,6 +111,7 @@ def make_json_push(
 # ============================================================
 # 1. InboundPipeline Engine Tests
 # ============================================================
+
 
 class TestInboundPipeline:
     """Test the pipeline engine itself."""
@@ -214,6 +216,7 @@ class TestInboundPipeline:
 
     def test_use_before(self):
         """use_before inserts middleware before the target."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -223,6 +226,7 @@ class TestInboundPipeline:
 
     def test_use_before_nonexistent_appends(self):
         """use_before with nonexistent target appends to end."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -232,6 +236,7 @@ class TestInboundPipeline:
 
     def test_use_after(self):
         """use_after inserts middleware after the target."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -241,6 +246,7 @@ class TestInboundPipeline:
 
     def test_use_after_nonexistent_appends(self):
         """use_after with nonexistent target appends to end."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -250,6 +256,7 @@ class TestInboundPipeline:
 
     def test_remove(self):
         """remove deletes middleware by name."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -259,6 +266,7 @@ class TestInboundPipeline:
 
     def test_remove_nonexistent_is_noop(self):
         """remove with nonexistent name is a no-op."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -269,6 +277,7 @@ class TestInboundPipeline:
     @pytest.mark.asyncio
     async def test_error_propagation(self):
         """Errors in middlewares propagate to the caller."""
+
         async def mw_error(ctx, next_fn):
             raise ValueError("test error")
 
@@ -278,6 +287,7 @@ class TestInboundPipeline:
 
     def test_middleware_names_property(self):
         """middleware_names returns ordered list of names."""
+
         async def noop(ctx, next_fn):
             await next_fn()
 
@@ -312,6 +322,7 @@ class TestInboundPipeline:
 # 2. InboundContext Tests
 # ============================================================
 
+
 class TestInboundContext:
     def test_default_values(self):
         """InboundContext has sensible defaults."""
@@ -344,6 +355,7 @@ class TestInboundContext:
 # ============================================================
 # 3. Individual Middleware Tests
 # ============================================================
+
 
 class TestDecodeMiddleware:
     @pytest.mark.asyncio
@@ -393,15 +405,19 @@ class TestExtractFieldsMiddleware:
     @pytest.mark.asyncio
     async def test_extracts_fields(self):
         """ExtractFieldsMiddleware populates ctx from push dict."""
-        ctx = make_ctx(push={
-            "from_account": "alice",
-            "group_code": "grp-1",
-            "group_name": "Test Group",
-            "sender_nickname": "Alice",
-            "msg_body": [{"msg_type": "TIMTextElem", "msg_content": {"text": "hi"}}],
-            "msg_id": "msg-001",
-            "cloud_custom_data": '{"key": "val"}',
-        })
+        ctx = make_ctx(
+            push={
+                "from_account": "alice",
+                "group_code": "grp-1",
+                "group_name": "Test Group",
+                "sender_nickname": "Alice",
+                "msg_body": [
+                    {"msg_type": "TIMTextElem", "msg_content": {"text": "hi"}}
+                ],
+                "msg_id": "msg-001",
+                "cloud_custom_data": '{"key": "val"}',
+            }
+        )
         next_fn = AsyncMock()
 
         await ExtractFieldsMiddleware()(ctx, next_fn)
@@ -517,7 +533,9 @@ class TestAccessGuardMiddleware:
     async def test_open_policy_passes(self):
         """AccessGuardMiddleware passes with open policy."""
         adapter = make_adapter()
-        adapter._access_policy = AccessPolicy(dm_policy="open", dm_allow_from=[], group_policy="open", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="open", dm_allow_from=[], group_policy="open", group_allow_from=[]
+        )
         ctx = make_ctx(adapter=adapter, chat_type="dm", from_account="alice")
         next_fn = AsyncMock()
 
@@ -528,7 +546,12 @@ class TestAccessGuardMiddleware:
     async def test_disabled_dm_stops(self):
         """AccessGuardMiddleware stops DM when dm_policy=disabled."""
         adapter = make_adapter()
-        adapter._access_policy = AccessPolicy(dm_policy="disabled", dm_allow_from=[], group_policy="open", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="disabled",
+            dm_allow_from=[],
+            group_policy="open",
+            group_allow_from=[],
+        )
         ctx = make_ctx(adapter=adapter, chat_type="dm", from_account="alice")
         next_fn = AsyncMock()
 
@@ -539,7 +562,12 @@ class TestAccessGuardMiddleware:
     async def test_allowlist_dm_allowed(self):
         """AccessGuardMiddleware passes DM when sender is in allowlist."""
         adapter = make_adapter()
-        adapter._access_policy = AccessPolicy(dm_policy="allowlist", dm_allow_from=["alice"], group_policy="open", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="allowlist",
+            dm_allow_from=["alice"],
+            group_policy="open",
+            group_allow_from=[],
+        )
         ctx = make_ctx(adapter=adapter, chat_type="dm", from_account="alice")
         next_fn = AsyncMock()
 
@@ -550,7 +578,12 @@ class TestAccessGuardMiddleware:
     async def test_allowlist_dm_blocked(self):
         """AccessGuardMiddleware blocks DM when sender is not in allowlist."""
         adapter = make_adapter()
-        adapter._access_policy = AccessPolicy(dm_policy="allowlist", dm_allow_from=["bob"], group_policy="open", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="allowlist",
+            dm_allow_from=["bob"],
+            group_policy="open",
+            group_allow_from=[],
+        )
         ctx = make_ctx(adapter=adapter, chat_type="dm", from_account="alice")
         next_fn = AsyncMock()
 
@@ -561,7 +594,12 @@ class TestAccessGuardMiddleware:
     async def test_disabled_group_stops(self):
         """AccessGuardMiddleware stops group when group_policy=disabled."""
         adapter = make_adapter()
-        adapter._access_policy = AccessPolicy(dm_policy="open", dm_allow_from=[], group_policy="disabled", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="open",
+            dm_allow_from=[],
+            group_policy="disabled",
+            group_allow_from=[],
+        )
         ctx = make_ctx(adapter=adapter, chat_type="group", group_code="grp-1")
         next_fn = AsyncMock()
 
@@ -572,7 +610,12 @@ class TestAccessGuardMiddleware:
     async def test_allowlist_group_allowed(self):
         """AccessGuardMiddleware passes group when group_code is in allowlist."""
         adapter = make_adapter()
-        adapter._access_policy = AccessPolicy(dm_policy="open", dm_allow_from=[], group_policy="allowlist", group_allow_from=["grp-1"])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="open",
+            dm_allow_from=[],
+            group_policy="allowlist",
+            group_allow_from=["grp-1"],
+        )
         ctx = make_ctx(adapter=adapter, chat_type="group", group_code="grp-1")
         next_fn = AsyncMock()
 
@@ -587,9 +630,12 @@ class TestExtractContentMiddleware:
         adapter = make_adapter()
         msg_body = [
             {"msg_type": "TIMTextElem", "msg_content": {"text": "Hello!"}},
-            {"msg_type": "TIMImageElem", "msg_content": {
-                "image_info_array": [{"url": "https://img.example.com/1.jpg"}]
-            }},
+            {
+                "msg_type": "TIMImageElem",
+                "msg_content": {
+                    "image_info_array": [{"url": "https://img.example.com/1.jpg"}]
+                },
+            },
         ]
         ctx = make_ctx(adapter=adapter, msg_body=msg_body)
         next_fn = AsyncMock()
@@ -651,9 +697,16 @@ class TestGroupAtGuardMiddleware:
         adapter = make_adapter()
         adapter._bot_id = "bot_123"
         msg_body = [
-            {"msg_type": "TIMCustomElem", "msg_content": {
-                "data": json.dumps({"elem_type": 1002, "text": "@Bot", "user_id": "bot_123"})
-            }},
+            {
+                "msg_type": "TIMCustomElem",
+                "msg_content": {
+                    "data": json.dumps({
+                        "elem_type": 1002,
+                        "text": "@Bot",
+                        "user_id": "bot_123",
+                    })
+                },
+            },
         ]
         ctx = make_ctx(
             adapter=adapter,
@@ -714,6 +767,7 @@ class TestGroupAtGuardMiddleware:
 # 4. Factory Tests
 # ============================================================
 
+
 class TestCreateInboundPipeline:
     def test_default_pipeline_has_all_middlewares(self):
         """InboundPipelineBuilder.build() creates pipeline with all expected middlewares."""
@@ -752,13 +806,16 @@ class TestCreateInboundPipeline:
 # 5. End-to-End Pipeline Integration Tests
 # ============================================================
 
+
 class TestPipelineIntegration:
     @pytest.mark.asyncio
     async def test_full_dm_message_flow(self):
         """Full pipeline processes a DM message end-to-end."""
         adapter = make_adapter()
         adapter._bot_id = "bot_123"
-        adapter._access_policy = AccessPolicy(dm_policy="open", dm_allow_from=[], group_policy="open", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="open", dm_allow_from=[], group_policy="open", group_allow_from=[]
+        )
         adapter.handle_message = AsyncMock()
         adapter._resolve_inbound_media_urls = AsyncMock(return_value=([], []))
 
@@ -829,7 +886,12 @@ class TestPipelineIntegration:
         """Pipeline stops when DM is blocked by policy."""
         adapter = make_adapter()
         adapter._bot_id = "bot_123"
-        adapter._access_policy = AccessPolicy(dm_policy="disabled", dm_allow_from=[], group_policy="open", group_allow_from=[])
+        adapter._access_policy = AccessPolicy(
+            dm_policy="disabled",
+            dm_allow_from=[],
+            group_policy="open",
+            group_allow_from=[],
+        )
 
         push_data = make_json_push(
             from_account="alice",
@@ -852,7 +914,6 @@ class TestPipelineIntegration:
         assert isinstance(adapter._inbound_pipeline, InboundPipeline)
 
 
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 
@@ -860,6 +921,7 @@ if __name__ == "__main__":
 # ============================================================
 # 6. OOP Middleware Tests
 # ============================================================
+
 
 class TestInboundMiddlewareABC:
     """Test the InboundMiddleware abstract base class."""
@@ -872,24 +934,31 @@ class TestInboundMiddlewareABC:
     def test_subclass_must_implement_handle(self):
         """Subclass without handle() raises TypeError."""
         with pytest.raises(TypeError):
+
             class BadMiddleware(InboundMiddleware):
                 name = "bad"
+
             BadMiddleware()
 
     def test_subclass_with_handle_works(self):
         """Subclass with handle() can be instantiated."""
+
         class GoodMiddleware(InboundMiddleware):
             name = "good"
+
             async def handle(self, ctx, next_fn):
                 await next_fn()
+
         mw = GoodMiddleware()
         assert mw.name == "good"
 
     @pytest.mark.asyncio
     async def test_callable_protocol(self):
         """Middleware instances are callable via __call__."""
+
         class TestMW(InboundMiddleware):
             name = "test"
+
             async def handle(self, ctx, next_fn):
                 ctx.raw_text = "called"
                 await next_fn()
@@ -903,10 +972,13 @@ class TestInboundMiddlewareABC:
 
     def test_repr(self):
         """Middleware has a useful repr."""
+
         class MyMW(InboundMiddleware):
             name = "my-mw"
+
             async def handle(self, ctx, next_fn):
                 pass
+
         mw = MyMW()
         assert "MyMW" in repr(mw)
         assert "my-mw" in repr(mw)
@@ -954,8 +1026,10 @@ class TestPipelineOOPRegistration:
     @pytest.mark.asyncio
     async def test_use_with_middleware_instance(self):
         """pipeline.use(SomeMiddleware()) auto-extracts name."""
+
         class TestMW(InboundMiddleware):
             name = "test-mw"
+
             async def handle(self, ctx, next_fn):
                 ctx.raw_text = "oop-works"
                 await next_fn()
@@ -974,6 +1048,7 @@ class TestPipelineOOPRegistration:
 
         class OopMW(InboundMiddleware):
             name = "oop"
+
             async def handle(self, ctx, next_fn):
                 order.append("oop")
                 await next_fn()
@@ -982,11 +1057,7 @@ class TestPipelineOOPRegistration:
             order.append("func")
             await next_fn()
 
-        pipeline = (
-            InboundPipeline()
-            .use(OopMW())
-            .use("func", func_mw)
-        )
+        pipeline = InboundPipeline().use(OopMW()).use("func", func_mw)
         assert pipeline.middleware_names == ["oop", "func"]
 
         await pipeline.execute(make_ctx())
@@ -994,17 +1065,24 @@ class TestPipelineOOPRegistration:
 
     def test_use_before_with_middleware_instance(self):
         """use_before works with OOP middleware instances."""
+
         class MwA(InboundMiddleware):
             name = "a"
-            async def handle(self, ctx, next_fn): await next_fn()
+
+            async def handle(self, ctx, next_fn):
+                await next_fn()
 
         class MwB(InboundMiddleware):
             name = "b"
-            async def handle(self, ctx, next_fn): await next_fn()
+
+            async def handle(self, ctx, next_fn):
+                await next_fn()
 
         class MwC(InboundMiddleware):
             name = "c"
-            async def handle(self, ctx, next_fn): await next_fn()
+
+            async def handle(self, ctx, next_fn):
+                await next_fn()
 
         pipeline = InboundPipeline().use(MwA()).use(MwC())
         pipeline.use_before("c", MwB())
@@ -1012,17 +1090,24 @@ class TestPipelineOOPRegistration:
 
     def test_use_after_with_middleware_instance(self):
         """use_after works with OOP middleware instances."""
+
         class MwA(InboundMiddleware):
             name = "a"
-            async def handle(self, ctx, next_fn): await next_fn()
+
+            async def handle(self, ctx, next_fn):
+                await next_fn()
 
         class MwB(InboundMiddleware):
             name = "b"
-            async def handle(self, ctx, next_fn): await next_fn()
+
+            async def handle(self, ctx, next_fn):
+                await next_fn()
 
         class MwC(InboundMiddleware):
             name = "c"
-            async def handle(self, ctx, next_fn): await next_fn()
+
+            async def handle(self, ctx, next_fn):
+                await next_fn()
 
         pipeline = InboundPipeline().use(MwA()).use(MwC())
         pipeline.use_after("a", MwB())

@@ -80,12 +80,16 @@ class TestPlatformEnumDynamic:
 class TestPlatformRegistry:
     """Test the PlatformRegistry itself."""
 
-    def _make_entry(self, name="test", check_ok=True, validate_ok=True, factory_ok=True):
+    def _make_entry(
+        self, name="test", check_ok=True, validate_ok=True, factory_ok=True
+    ):
         adapter_mock = MagicMock()
         return PlatformEntry(
             name=name,
             label=name.title(),
-            adapter_factory=lambda cfg, _m=adapter_mock: _m if factory_ok else (_ for _ in ()).throw(RuntimeError("factory error")),
+            adapter_factory=lambda cfg, _m=adapter_mock: _m
+            if factory_ok
+            else (_ for _ in ()).throw(RuntimeError("factory error")),
             check_fn=lambda: check_ok,
             validate_config=lambda cfg: validate_ok,
             required_env=[],
@@ -354,6 +358,7 @@ class TestPlatformsMerge:
 
     def test_get_all_platforms_includes_builtins(self):
         from hermes_cli.platforms import get_all_platforms, PLATFORMS
+
         merged = get_all_platforms()
         for key in PLATFORMS:
             assert key in merged
@@ -362,14 +367,16 @@ class TestPlatformsMerge:
         from hermes_cli.platforms import get_all_platforms
         from gateway.platform_registry import platform_registry as _reg
 
-        _reg.register(PlatformEntry(
-            name="testmerge",
-            label="TestMerge",
-            adapter_factory=lambda cfg: None,
-            check_fn=lambda: True,
-            source="plugin",
-            emoji="🧪",
-        ))
+        _reg.register(
+            PlatformEntry(
+                name="testmerge",
+                label="TestMerge",
+                adapter_factory=lambda cfg: None,
+                check_fn=lambda: True,
+                source="plugin",
+                emoji="🧪",
+            )
+        )
         try:
             merged = get_all_platforms()
             assert "testmerge" in merged
@@ -381,14 +388,16 @@ class TestPlatformsMerge:
         from hermes_cli.platforms import platform_label
         from gateway.platform_registry import platform_registry as _reg
 
-        _reg.register(PlatformEntry(
-            name="labeltest",
-            label="LabelTest",
-            adapter_factory=lambda cfg: None,
-            check_fn=lambda: True,
-            source="plugin",
-            emoji="🏷️",
-        ))
+        _reg.register(
+            PlatformEntry(
+                name="labeltest",
+                label="LabelTest",
+                adapter_factory=lambda cfg: None,
+                check_fn=lambda: True,
+                source="plugin",
+                emoji="🏷️",
+            )
+        )
         try:
             label = platform_label("labeltest")
             assert "LabelTest" in label

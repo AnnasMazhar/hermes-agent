@@ -134,7 +134,9 @@ async def resolve(
     except Exception as exc:
         logger.error(
             "Slash-confirm handler for /%s raised: %s",
-            command, exc, exc_info=True,
+            command,
+            exc,
+            exc_info=True,
         )
         return f"❌ Error handling confirmation: {exc}"
     return result if isinstance(result, str) else None
@@ -154,7 +156,8 @@ def resolve_sync_compat(
     """
     try:
         fut = asyncio.run_coroutine_threadsafe(
-            resolve(session_key, confirm_id, choice), loop,
+            resolve(session_key, confirm_id, choice),
+            loop,
         )
         return fut.result(timeout=30)
     except Exception as exc:

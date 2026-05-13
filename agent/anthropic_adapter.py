@@ -37,10 +37,12 @@ def _get_anthropic_sdk():
     if _anthropic_sdk is ...:
         try:
             import anthropic as _sdk
+
             _anthropic_sdk = _sdk
         except ImportError:
             _anthropic_sdk = None
     return _anthropic_sdk
+
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +56,11 @@ THINKING_BUDGET = {"xhigh": 32000, "high": 16000, "medium": 8000, "low": 4000}
 # maps to low on every model.  See:
 # https://platform.claude.com/docs/en/about-claude/models/migration-guide
 ADAPTIVE_EFFORT_MAP = {
-    "max":     "max",
-    "xhigh":   "xhigh",
-    "high":    "high",
-    "medium":  "medium",
-    "low":     "low",
+    "max": "max",
+    "xhigh": "xhigh",
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
     "minimal": "low",
 }
 
@@ -84,31 +86,31 @@ _FAST_MODE_SUPPORTED_SUBSTRINGS = ("opus-4-6", "opus-4.6")
 # starves thinking-enabled models (thinking tokens count toward the limit).
 _ANTHROPIC_OUTPUT_LIMITS = {
     # Claude 4.7
-    "claude-opus-4-7":   128_000,
+    "claude-opus-4-7": 128_000,
     # Claude 4.6
-    "claude-opus-4-6":   128_000,
-    "claude-sonnet-4-6":  64_000,
+    "claude-opus-4-6": 128_000,
+    "claude-sonnet-4-6": 64_000,
     # Claude 4.5
-    "claude-opus-4-5":    64_000,
-    "claude-sonnet-4-5":  64_000,
-    "claude-haiku-4-5":   64_000,
+    "claude-opus-4-5": 64_000,
+    "claude-sonnet-4-5": 64_000,
+    "claude-haiku-4-5": 64_000,
     # Claude 4
-    "claude-opus-4":      32_000,
-    "claude-sonnet-4":    64_000,
+    "claude-opus-4": 32_000,
+    "claude-sonnet-4": 64_000,
     # Claude 3.7
     "claude-3-7-sonnet": 128_000,
     # Claude 3.5
-    "claude-3-5-sonnet":   8_192,
-    "claude-3-5-haiku":    8_192,
+    "claude-3-5-sonnet": 8_192,
+    "claude-3-5-haiku": 8_192,
     # Claude 3
-    "claude-3-opus":       4_096,
-    "claude-3-sonnet":     4_096,
-    "claude-3-haiku":      4_096,
+    "claude-3-opus": 4_096,
+    "claude-3-sonnet": 4_096,
+    "claude-3-haiku": 4_096,
     # Third-party Anthropic-compatible providers
-    "minimax":            131_072,
+    "minimax": 131_072,
     # Qwen models via DashScope Anthropic-compatible endpoint
     # DashScope enforces max_tokens ∈ [1, 65536]
-    "qwen3":               65_536,
+    "qwen3": 65_536,
 }
 
 # For any model not in the table, assume the highest current limit.
@@ -155,6 +157,7 @@ def _resolve_positive_anthropic_max_tokens(value) -> Optional[int]:
         return None
     try:
         import math
+
         if not math.isfinite(value):
             return None
     except Exception:
@@ -290,7 +293,9 @@ def _detect_claude_code_version() -> str:
         try:
             result = _sp.run(
                 [cmd, "--version"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0 and result.stdout.strip():
                 # Output is like "2.1.74 (Claude Code)" or just "2.1.74"
@@ -384,11 +389,16 @@ def _is_kimi_coding_endpoint(base_url: str | None) -> bool:
 # so a caller's ``provider/vendor/model`` slug is handled the same as a
 # bare name.
 _KIMI_FAMILY_MODEL_PREFIXES = (
-    "kimi-", "kimi_",
-    "moonshot-", "moonshot_",
-    "k1.", "k1-",
-    "k2.", "k2-",
-    "k25", "k2.5",
+    "kimi-",
+    "kimi_",
+    "moonshot-",
+    "moonshot_",
+    "k1.",
+    "k1-",
+    "k2.",
+    "k2-",
+    "k25",
+    "k2.5",
 )
 
 
@@ -470,7 +480,10 @@ def _requires_bearer_auth(base_url: str | None) -> bool:
     if not normalized:
         return False
     normalized = normalized.rstrip("/").lower()
-    return normalized.startswith(("https://api.minimax.io/anthropic", "https://api.minimaxi.com/anthropic"))
+    return normalized.startswith((
+        "https://api.minimax.io/anthropic",
+        "https://api.minimaxi.com/anthropic",
+    ))
 
 
 def _base_url_needs_context_1m_beta(base_url: str | None) -> bool:
@@ -546,7 +559,9 @@ def build_anthropic_client(
     from httpx import Timeout
 
     normalized_base_url = _normalize_base_url_text(base_url)
-    _read_timeout = timeout if (isinstance(timeout, (int, float)) and timeout > 0) else 900.0
+    _read_timeout = (
+        timeout if (isinstance(timeout, (int, float)) and timeout > 0) else 900.0
+    )
     kwargs = {
         "timeout": Timeout(timeout=float(_read_timeout), connect=10.0),
     }
@@ -573,7 +588,7 @@ def build_anthropic_client(
         kwargs["api_key"] = api_key
         kwargs["default_headers"] = {
             "User-Agent": "claude-code/0.1.0",
-            **( {"anthropic-beta": ",".join(common_betas)} if common_betas else {} )
+            **({"anthropic-beta": ",".join(common_betas)} if common_betas else {}),
         }
     elif _requires_bearer_auth(normalized_base_url):
         # Some Anthropic-compatible providers (e.g. MiniMax) expect the API key in
@@ -645,7 +660,9 @@ def build_anthropic_bedrock_client(region: str):
     return _anthropic_sdk.AnthropicBedrock(
         aws_region=region,
         timeout=Timeout(timeout=900.0, connect=10.0),
-        default_headers={"anthropic-beta": ",".join([*_COMMON_BETAS, _CONTEXT_1M_BETA])},
+        default_headers={
+            "anthropic-beta": ",".join([*_COMMON_BETAS, _CONTEXT_1M_BETA])
+        },
     )
 
 
@@ -667,9 +684,13 @@ def _read_claude_code_credentials_from_keychain() -> Optional[Dict[str, Any]]:
     try:
         # Read the "Claude Code-credentials" generic password entry
         result = subprocess.run(
-            ["security", "find-generic-password",
-             "-s", "Claude Code-credentials",
-             "-w"],
+            [
+                "security",
+                "find-generic-password",
+                "-s",
+                "Claude Code-credentials",
+                "-w",
+            ],
             capture_output=True,
             text=True,
             timeout=5,
@@ -775,7 +796,9 @@ def is_claude_code_token_valid(creds: Dict[str, Any]) -> bool:
     return now_ms < (expires_at - 60_000)
 
 
-def refresh_anthropic_oauth_pure(refresh_token: str, *, use_json: bool = False) -> Dict[str, Any]:
+def refresh_anthropic_oauth_pure(
+    refresh_token: str, *, use_json: bool = False
+) -> Dict[str, Any]:
     """Refresh an Anthropic OAuth token without mutating local credential files."""
     import time
     import urllib.parse
@@ -905,7 +928,9 @@ def _write_claude_code_credentials(
         logger.debug("Failed to write refreshed credentials: %s", e)
 
 
-def _resolve_claude_code_token_from_credentials(creds: Optional[Dict[str, Any]] = None) -> Optional[str]:
+def _resolve_claude_code_token_from_credentials(
+    creds: Optional[Dict[str, Any]] = None,
+) -> Optional[str]:
     """Resolve a token from Claude Code credential files, refreshing if needed."""
     creds = creds or read_claude_code_credentials()
     if creds and is_claude_code_token_valid(creds):
@@ -916,11 +941,15 @@ def _resolve_claude_code_token_from_credentials(creds: Optional[Dict[str, Any]] 
         refreshed = _refresh_oauth_token(creds)
         if refreshed:
             return refreshed
-        logger.debug("Token refresh failed — re-run 'claude setup-token' to reauthenticate")
+        logger.debug(
+            "Token refresh failed — re-run 'claude setup-token' to reauthenticate"
+        )
     return None
 
 
-def _prefer_refreshable_claude_code_token(env_token: str, creds: Optional[Dict[str, Any]]) -> Optional[str]:
+def _prefer_refreshable_claude_code_token(
+    env_token: str, creds: Optional[Dict[str, Any]]
+) -> Optional[str]:
     """Prefer Claude Code creds when a persisted env OAuth token would shadow refresh.
 
     Hermes historically persisted setup tokens into ANTHROPIC_TOKEN. That makes
@@ -1044,9 +1073,11 @@ def _generate_pkce() -> tuple:
     import secrets
 
     verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode()
-    challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(verifier.encode()).digest()
-    ).rstrip(b"=").decode()
+    challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+        .rstrip(b"=")
+        .decode()
+    )
     return verifier, challenge
 
 
@@ -1198,7 +1229,7 @@ def normalize_model_name(model: str, preserve_dots: bool = False) -> str:
     """
     lower = model.lower()
     if lower.startswith("anthropic/"):
-        model = model[len("anthropic/"):]
+        model = model[len("anthropic/") :]
     if not preserve_dots:
         # Bedrock model IDs use dots as namespace separators
         # (e.g. "anthropic.claude-opus-4-7", "us.anthropic.claude-*").
@@ -1221,6 +1252,7 @@ def _sanitize_tool_id(tool_id: str) -> str:
     characters with underscores and ensure non-empty.
     """
     import re
+
     if not tool_id:
         return "tool_0"
     sanitized = re.sub(r"[^a-zA-Z0-9_-]", "_", tool_id)
@@ -1263,7 +1295,9 @@ def _normalize_tool_input_schema(schema: Any) -> Dict[str, Any]:
         normalized = {k: v for k, v in normalized.items() if k not in banned}
         if "type" not in normalized:
             normalized["type"] = "object"
-    if normalized.get("type") == "object" and not isinstance(normalized.get("properties"), dict):
+    if normalized.get("type") == "object" and not isinstance(
+        normalized.get("properties"), dict
+    ):
         normalized = {**normalized, "properties": {}}
     return normalized
 
@@ -1309,7 +1343,7 @@ def _image_source_from_openai_url(url: str) -> Dict[str, str]:
         header, _, data = url.partition(",")
         media_type = "image/jpeg"
         if header.startswith("data:"):
-            mime_part = header[len("data:"):].split(";", 1)[0].strip()
+            mime_part = header[len("data:") :].split(";", 1)[0].strip()
             if mime_part.startswith("image/"):
                 media_type = mime_part
         return {
@@ -1336,7 +1370,11 @@ def _convert_content_part_to_anthropic(part: Any) -> Optional[Dict[str, Any]]:
         block: Dict[str, Any] = {"type": "text", "text": part.get("text", "")}
     elif ptype in {"image_url", "input_image"}:
         image_value = part.get("image_url", {})
-        url = image_value.get("url", "") if isinstance(image_value, dict) else str(image_value or "")
+        url = (
+            image_value.get("url", "")
+            if isinstance(image_value, dict)
+            else str(image_value or "")
+        )
         block = {"type": "image", "source": _image_source_from_openai_url(url)}
     else:
         block = dict(part)
@@ -1372,7 +1410,10 @@ def _to_plain_data(value: Any, *, _depth: int = 0, _path: Optional[set] = None) 
         return result
     if isinstance(value, dict):
         _path.add(obj_id)
-        result = {k: _to_plain_data(v, _depth=_depth + 1, _path=_path) for k, v in value.items()}
+        result = {
+            k: _to_plain_data(v, _depth=_depth + 1, _path=_path)
+            for k, v in value.items()
+        }
         _path.discard(obj_id)
         return result
     if isinstance(value, (list, tuple)):
@@ -1537,7 +1578,8 @@ def convert_messages_to_anthropic(
             # downgraded to a spurious text block on the last assistant message.
             reasoning_content = m.get("reasoning_content")
             _already_has_thinking = any(
-                isinstance(b, dict) and b.get("type") in ("thinking", "redacted_thinking")
+                isinstance(b, dict)
+                and b.get("type") in ("thinking", "redacted_thinking")
                 for b in blocks
             )
             if isinstance(reasoning_content, str) and not _already_has_thinking:
@@ -1573,10 +1615,15 @@ def convert_messages_to_anthropic(
             if multimodal_blocks is None:
                 stashed = m.get("_anthropic_content_blocks")
                 if isinstance(stashed, list) and stashed:
-                    text_content = content if isinstance(content, str) and content.strip() else None
+                    text_content = (
+                        content
+                        if isinstance(content, str) and content.strip()
+                        else None
+                    )
                     multimodal_blocks = (
                         [{"type": "text", "text": text_content}] + stashed
-                        if text_content else list(stashed)
+                        if text_content
+                        else list(stashed)
                     )
 
             if multimodal_blocks:
@@ -1656,7 +1703,8 @@ def convert_messages_to_anthropic(
             m["content"] = [
                 b
                 for b in m["content"]
-                if b.get("type") != "tool_result" or b.get("tool_use_id") in tool_use_ids
+                if b.get("type") != "tool_result"
+                or b.get("tool_use_id") in tool_use_ids
             ]
             if not m["content"]:
                 m["content"] = [{"type": "text", "text": "(tool result removed)"}]
@@ -1687,8 +1735,12 @@ def convert_messages_to_anthropic(
                 # and becomes invalid once merged.
                 if isinstance(m["content"], list):
                     m["content"] = [
-                        b for b in m["content"]
-                        if not (isinstance(b, dict) and b.get("type") in ("thinking", "redacted_thinking"))
+                        b
+                        for b in m["content"]
+                        if not (
+                            isinstance(b, dict)
+                            and b.get("type") in ("thinking", "redacted_thinking")
+                        )
                     ]
                 prev_blocks = fixed[-1]["content"]
                 curr_blocks = m["content"]
@@ -1736,10 +1788,9 @@ def convert_messages_to_anthropic(
     # thinking is enabled.  Signed Anthropic blocks still have to be stripped
     # (neither endpoint can validate Anthropic's signatures); unsigned blocks
     # are preserved.  See hermes-agent#13848 (Kimi) and #16748 (DeepSeek).
-    _preserve_unsigned_thinking = (
-        _is_kimi_family_endpoint(base_url, model)
-        or _is_deepseek_anthropic_endpoint(base_url)
-    )
+    _preserve_unsigned_thinking = _is_kimi_family_endpoint(
+        base_url, model
+    ) or _is_deepseek_anthropic_endpoint(base_url)
 
     last_assistant_idx = None
     for i in range(len(result) - 1, -1, -1):
@@ -1774,7 +1825,8 @@ def convert_messages_to_anthropic(
             # assistant message — signatures are Anthropic-proprietary.
             # Direct Anthropic: strip from non-latest assistant messages only.
             stripped = [
-                b for b in m["content"]
+                b
+                for b in m["content"]
                 if not (isinstance(b, dict) and b.get("type") in _THINKING_TYPES)
             ]
             m["content"] = stripped or [{"type": "text", "text": "(thinking elided)"}]
@@ -1827,16 +1879,19 @@ def convert_messages_to_anthropic(
             if not isinstance(inner, list):
                 continue
             has_image = any(
-                isinstance(b, dict) and b.get("type") == "image"
-                for b in inner
+                isinstance(b, dict) and b.get("type") == "image" for b in inner
             )
             if not has_image:
                 continue
             _image_count += 1
             if _image_count > _MAX_KEEP_IMAGES:
                 block["content"] = [
-                    b if b.get("type") != "image"
-                    else {"type": "text", "text": "[screenshot removed to save context]"}
+                    b
+                    if b.get("type") != "image"
+                    else {
+                        "type": "text",
+                        "text": "[screenshot removed to save context]",
+                    }
                     for b in inner
                 ]
 
@@ -1954,7 +2009,10 @@ def build_anthropic_kwargs(
                         if block.get("type") == "tool_use" and "name" in block:
                             if not block["name"].startswith(_MCP_TOOL_PREFIX):
                                 block["name"] = _MCP_TOOL_PREFIX + block["name"]
-                        elif block.get("type") == "tool_result" and "tool_use_id" in block:
+                        elif (
+                            block.get("type") == "tool_result"
+                            and "tool_use_id" in block
+                        ):
                             pass  # tool_result uses ID, not name
 
     kwargs: Dict[str, Any] = {
@@ -2005,7 +2063,10 @@ def build_anthropic_kwargs(
     # 4.6 behavior and preserving the activity-feed UX during long tool runs.
     _is_kimi_coding = _is_kimi_family_endpoint(base_url, model)
     if reasoning_config and isinstance(reasoning_config, dict) and not _is_kimi_coding:
-        if reasoning_config.get("enabled") is not False and "haiku" not in model.lower():
+        if (
+            reasoning_config.get("enabled") is not False
+            and "haiku" not in model.lower()
+        ):
             effort = str(reasoning_config.get("effort", "medium")).lower()
             budget = THINKING_BUDGET.get(effort, 8000)
             if _supports_adaptive_thinking(model):
@@ -2050,15 +2111,15 @@ def build_anthropic_kwargs(
         kwargs.setdefault("extra_body", {})["speed"] = "fast"
         # Build extra_headers with ALL applicable betas (the per-request
         # extra_headers override the client-level anthropic-beta header).
-        betas = list(_common_betas_for_base_url(
-            base_url,
-            drop_context_1m_beta=drop_context_1m_beta,
-        ))
+        betas = list(
+            _common_betas_for_base_url(
+                base_url,
+                drop_context_1m_beta=drop_context_1m_beta,
+            )
+        )
         if is_oauth:
             betas.extend(_OAUTH_ONLY_BETAS)
         betas.append(_FAST_MODE_BETA)
         kwargs["extra_headers"] = {"anthropic-beta": ",".join(betas)}
 
     return kwargs
-
-

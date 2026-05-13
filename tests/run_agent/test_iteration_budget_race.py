@@ -3,6 +3,7 @@
 The `used` property must acquire the lock before reading `_used` to prevent
 data races with concurrent `consume()` / `refund()` calls.
 """
+
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor

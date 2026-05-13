@@ -21,7 +21,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_default_hermes_root, get_hermes_home, display_hermes_home
+from hermes_constants import (
+    get_default_hermes_root,
+    get_hermes_home,
+    display_hermes_home,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +36,13 @@ logger = logging.getLogger(__name__)
 
 # Directory names to skip entirely (matched against each path component)
 _EXCLUDED_DIRS = {
-    "hermes-agent",     # the codebase repo — re-clone instead
-    "__pycache__",      # bytecode caches — regenerated on import
-    ".git",             # nested git dirs (profiles shouldn't have these, but safety)
-    "node_modules",     # js deps if website/ somehow leaks in
-    "backups",          # prior auto-backups — don't nest backups exponentially
-    "checkpoints",      # session-local trajectory caches — regenerated per-session,
-                        # session-hash-keyed so they don't port to another machine anyway
+    "hermes-agent",  # the codebase repo — re-clone instead
+    "__pycache__",  # bytecode caches — regenerated on import
+    ".git",  # nested git dirs (profiles shouldn't have these, but safety)
+    "node_modules",  # js deps if website/ somehow leaks in
+    "backups",  # prior auto-backups — don't nest backups exponentially
+    "checkpoints",  # session-local trajectory caches — regenerated per-session,
+    # session-hash-keyed so they don't port to another machine anyway
 }
 
 # File-name suffixes to skip
@@ -89,6 +93,7 @@ def _should_exclude(rel_path: Path) -> bool:
 # SQLite safe copy
 # ---------------------------------------------------------------------------
 
+
 def _safe_copy_db(src: Path, dst: Path) -> bool:
     """Copy a SQLite database safely using the backup() API.
 
@@ -115,6 +120,7 @@ def _safe_copy_db(src: Path, dst: Path) -> bool:
 # ---------------------------------------------------------------------------
 # Backup
 # ---------------------------------------------------------------------------
+
 
 def _format_size(nbytes: int) -> str:
     """Human-readable file size."""
@@ -162,10 +168,7 @@ def run_backup(args) -> None:
 
         # Prune excluded directories in-place so os.walk doesn't descend
         orig_dirnames = dirnames[:]
-        dirnames[:] = [
-            d for d in dirnames
-            if d not in _EXCLUDED_DIRS
-        ]
+        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
         for removed in set(orig_dirnames) - set(dirnames):
             skipped_dirs.add(str(rel_dir / removed))
 
@@ -252,6 +255,7 @@ def run_backup(args) -> None:
 # ---------------------------------------------------------------------------
 # Import
 # ---------------------------------------------------------------------------
+
 
 def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
     """Check that a zip looks like a Hermes backup.
@@ -364,7 +368,7 @@ def run_import(args) -> None:
         for member in members:
             # Strip prefix if detected
             if prefix and member.startswith(prefix):
-                rel = member[len(prefix):]
+                rel = member[len(prefix) :]
             else:
                 rel = member
 
@@ -413,15 +417,21 @@ def run_import(args) -> None:
         if profiles_dir.is_dir():
             try:
                 from hermes_cli.profiles import (
-                    create_wrapper_script, check_alias_collision,
-                    _is_wrapper_dir_in_path, _get_wrapper_dir,
+                    create_wrapper_script,
+                    check_alias_collision,
+                    _is_wrapper_dir_in_path,
+                    _get_wrapper_dir,
                 )
+
                 for entry in sorted(profiles_dir.iterdir()):
                     if not entry.is_dir():
                         continue
                     profile_name = entry.name
                     # Only create wrappers for directories with config
-                    if not (entry / "config.yaml").exists() and not (entry / ".env").exists():
+                    if (
+                        not (entry / "config.yaml").exists()
+                        and not (entry / ".env").exists()
+                    ):
                         continue
                     collision = check_alias_collision(profile_name)
                     if collision:
@@ -440,7 +450,7 @@ def run_import(args) -> None:
                         print(f"  Profile aliases skipped:  {', '.join(skipped)}")
                     if not _is_wrapper_dir_in_path():
                         print(f"\n  Note: {_get_wrapper_dir()} is not in your PATH.")
-                        print('  Add to your shell config (~/.bashrc or ~/.zshrc):')
+                        print("  Add to your shell config (~/.bashrc or ~/.zshrc):")
                         print('    export PATH="$HOME/.local/bin:$PATH"')
             except ImportError:
                 # hermes_cli.profiles might not be available (fresh install)
@@ -486,9 +496,9 @@ _QUICK_STATE_FILES = (
     "channel_directory.json",
     "processes.json",
     # Pairing stores (generic + per-platform JSONs outside state.db)
-    "pairing",                          # legacy location (gateway/pairing.py)
-    "platforms/pairing",                # new location (gateway/pairing.py)
-    "feishu_comment_pairing.json",      # Feishu comment subscription pairings
+    "pairing",  # legacy location (gateway/pairing.py)
+    "platforms/pairing",  # new location (gateway/pairing.py)
+    "feishu_comment_pairing.json",  # Feishu comment subscription pairings
 )
 
 _QUICK_SNAPSHOTS_DIR = "state-snapshots"
@@ -695,7 +705,9 @@ def run_quick_backup(args) -> None:
     if snap_id:
         print(f"State snapshot created: {snap_id}")
         snaps = list_quick_snapshots()
-        print(f"  {len(snaps)} snapshot(s) stored in {display_hermes_home()}/state-snapshots/")
+        print(
+            f"  {len(snaps)} snapshot(s) stored in {display_hermes_home()}/state-snapshots/"
+        )
         print(f"  Restore with: /snapshot restore {snap_id}")
     else:
         print("No state files found to snapshot.")
@@ -704,6 +716,7 @@ def run_quick_backup(args) -> None:
 # ---------------------------------------------------------------------------
 # Shared full-zip backup helper
 # ---------------------------------------------------------------------------
+
 
 def _write_full_zip_backup(out_path: Path, hermes_root: Path) -> Optional[Path]:
     """Write a full zip snapshot of ``hermes_root`` to ``out_path``.
@@ -745,11 +758,15 @@ def _write_full_zip_backup(out_path: Path, hermes_root: Path) -> Optional[Path]:
         return None
 
     try:
-        with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        with zipfile.ZipFile(
+            out_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
+        ) as zf:
             for abs_path, rel_path in files_to_add:
                 try:
                     if abs_path.suffix == ".db":
-                        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+                        with tempfile.NamedTemporaryFile(
+                            suffix=".db", delete=False
+                        ) as tmp:
                             tmp_db = Path(tmp.name)
                         try:
                             if _safe_copy_db(abs_path, tmp_db):
@@ -808,8 +825,13 @@ def _prune_pre_update_backups(backup_dir: Path, keep: int) -> int:
         return 0
 
     backups = sorted(
-        (p for p in backup_dir.iterdir()
-         if p.is_file() and p.name.startswith(_PRE_UPDATE_PREFIX) and p.suffix.lower() == ".zip"),
+        (
+            p
+            for p in backup_dir.iterdir()
+            if p.is_file()
+            and p.name.startswith(_PRE_UPDATE_PREFIX)
+            and p.suffix.lower() == ".zip"
+        ),
         key=lambda p: p.name,
         reverse=True,
     )
@@ -881,8 +903,13 @@ def _prune_pre_migration_backups(backup_dir: Path, keep: int) -> int:
         return 0
 
     backups = sorted(
-        (p for p in backup_dir.iterdir()
-         if p.is_file() and p.name.startswith(_PRE_MIGRATION_PREFIX) and p.suffix.lower() == ".zip"),
+        (
+            p
+            for p in backup_dir.iterdir()
+            if p.is_file()
+            and p.name.startswith(_PRE_MIGRATION_PREFIX)
+            and p.suffix.lower() == ".zip"
+        ),
         key=lambda p: p.name,
         reverse=True,
     )
@@ -925,7 +952,9 @@ def create_pre_migration_backup(
     try:
         backup_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
-        logger.warning("Could not create pre-migration backup dir %s: %s", backup_dir, exc)
+        logger.warning(
+            "Could not create pre-migration backup dir %s: %s", backup_dir, exc
+        )
         return None
 
     stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")

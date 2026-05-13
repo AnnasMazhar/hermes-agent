@@ -128,15 +128,13 @@ def test_cmd_chat_tui_passes_model_and_provider(monkeypatch, main_mod):
         toolsets=None,
         **kwargs,
     ):
-        captured.update(
-            {
-                "model": model,
-                "provider": provider,
-                "resume": resume_session_id,
-                "toolsets": toolsets,
-                "tui_dev": tui_dev,
-            }
-        )
+        captured.update({
+            "model": model,
+            "provider": provider,
+            "resume": resume_session_id,
+            "toolsets": toolsets,
+            "tui_dev": tui_dev,
+        })
         raise SystemExit(0)
 
     monkeypatch.setattr(main_mod, "_launch_tui", fake_launch)
@@ -282,9 +280,10 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
         sys.modules,
         "hermes_cli.oneshot",
         types.SimpleNamespace(
-            run_oneshot=lambda prompt, **kwargs: captured.update(
-                {"prompt": prompt, **kwargs}
-            )
+            run_oneshot=lambda prompt, **kwargs: captured.update({
+                "prompt": prompt,
+                **kwargs,
+            })
             or 0
         ),
     )

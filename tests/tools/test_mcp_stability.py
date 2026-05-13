@@ -13,11 +13,13 @@ import pytest
 # Fix 1: MCP event loop exception handler
 # ---------------------------------------------------------------------------
 
+
 class TestMCPLoopExceptionHandler:
     """_mcp_loop_exception_handler suppresses benign 'Event loop is closed'."""
 
     def test_suppresses_event_loop_closed(self):
         from tools.mcp_tool import _mcp_loop_exception_handler
+
         loop = MagicMock()
         context = {"exception": RuntimeError("Event loop is closed")}
         # Should NOT call default handler
@@ -26,6 +28,7 @@ class TestMCPLoopExceptionHandler:
 
     def test_forwards_other_runtime_errors(self):
         from tools.mcp_tool import _mcp_loop_exception_handler
+
         loop = MagicMock()
         context = {"exception": RuntimeError("some other error")}
         _mcp_loop_exception_handler(loop, context)
@@ -33,6 +36,7 @@ class TestMCPLoopExceptionHandler:
 
     def test_forwards_non_runtime_errors(self):
         from tools.mcp_tool import _mcp_loop_exception_handler
+
         loop = MagicMock()
         context = {"exception": ValueError("bad value")}
         _mcp_loop_exception_handler(loop, context)
@@ -40,6 +44,7 @@ class TestMCPLoopExceptionHandler:
 
     def test_forwards_contexts_without_exception(self):
         from tools.mcp_tool import _mcp_loop_exception_handler
+
         loop = MagicMock()
         context = {"message": "just a message"}
         _mcp_loop_exception_handler(loop, context)
@@ -48,6 +53,7 @@ class TestMCPLoopExceptionHandler:
     def test_handler_installed_on_mcp_loop(self):
         """_ensure_mcp_loop installs the exception handler on the new loop."""
         import tools.mcp_tool as mcp_mod
+
         try:
             mcp_mod._ensure_mcp_loop()
             with mcp_mod._lock:
@@ -62,11 +68,13 @@ class TestMCPLoopExceptionHandler:
 # Fix 2: stdio PID tracking
 # ---------------------------------------------------------------------------
 
+
 class TestStdioPidTracking:
     """_snapshot_child_pids and _stdio_pids track subprocess PIDs."""
 
     def test_snapshot_returns_set(self):
         from tools.mcp_tool import _snapshot_child_pids
+
         result = _snapshot_child_pids()
         assert isinstance(result, set)
         # All elements should be ints
@@ -75,6 +83,7 @@ class TestStdioPidTracking:
 
     def test_stdio_pids_starts_empty(self):
         from tools.mcp_tool import _stdio_pids, _lock
+
         with _lock:
             # Might have residual state from other tests, just check type
             assert isinstance(_stdio_pids, dict)
@@ -133,9 +142,11 @@ class TestStdioPidTracking:
         # Post-#21561 the alive check routes through
         # ``gateway.status._pid_exists`` (so it's safe on Windows — see
         # bpo-14484). Return True so the SIGKILL escalation fires.
-        with patch("tools.mcp_tool.os.kill") as mock_kill, \
-             patch("gateway.status._pid_exists", return_value=True), \
-             patch("time.sleep") as mock_sleep:
+        with (
+            patch("tools.mcp_tool.os.kill") as mock_kill,
+            patch("gateway.status._pid_exists", return_value=True),
+            patch("time.sleep") as mock_sleep,
+        ):
             _kill_orphaned_mcp_children()
 
         # SIGTERM then SIGKILL; the alive check no longer touches os.kill.
@@ -162,8 +173,10 @@ class TestStdioPidTracking:
 
         monkeypatch.delattr(signal, "SIGKILL", raising=False)
 
-        with patch("tools.mcp_tool.os.kill") as mock_kill, \
-             patch("time.sleep") as mock_sleep:
+        with (
+            patch("tools.mcp_tool.os.kill") as mock_kill,
+            patch("time.sleep") as mock_sleep,
+        ):
             _kill_orphaned_mcp_children()
 
         # SIGTERM phase, alive check raises (process gone), no escalation
@@ -177,6 +190,7 @@ class TestStdioPidTracking:
 # ---------------------------------------------------------------------------
 # Fix 3: MCP reload timeout (cli.py)
 # ---------------------------------------------------------------------------
+
 
 class TestMCPReloadTimeout:
     """_check_config_mcp_changes uses a timeout on _reload_mcp."""
@@ -206,10 +220,12 @@ class TestMCPReloadTimeout:
         # _reload_mcp directly (it uses a thread now)
         import inspect
         from cli import HermesCLI
+
         source = inspect.getsource(HermesCLI._check_config_mcp_changes)
         # The fix adds threading.Thread for _reload_mcp
-        assert "Thread" in source or "thread" in source.lower(), \
+        assert "Thread" in source or "thread" in source.lower(), (
             "_check_config_mcp_changes should use a thread for _reload_mcp"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -217,12 +233,14 @@ class TestMCPReloadTimeout:
 # (Ported from Kilo Code's MCP resilience fix)
 # ---------------------------------------------------------------------------
 
+
 class TestMCPInitialConnectionRetry:
     """MCPServerTask.run() retries initial connection failures instead of giving up."""
 
     def test_initial_connect_retries_constant_exists(self):
         """_MAX_INITIAL_CONNECT_RETRIES should be defined."""
         from tools.mcp_tool import _MAX_INITIAL_CONNECT_RETRIES
+
         assert _MAX_INITIAL_CONNECT_RETRIES >= 1
 
     def test_initial_connect_retry_succeeds_on_second_attempt(self):
@@ -247,7 +265,7 @@ class TestMCPInitialConnectionRetry:
                 self_inner._ready.set()
                 await self_inner._shutdown_event.wait()
 
-            with patch.object(MCPServerTask, '_run_stdio', fake_run_stdio):
+            with patch.object(MCPServerTask, "_run_stdio", fake_run_stdio):
                 task = asyncio.ensure_future(server.run({"command": "fake"}))
                 await server._ready.wait()
 
@@ -276,7 +294,7 @@ class TestMCPInitialConnectionRetry:
                 call_count += 1
                 raise ConnectionError("DNS resolution failed")
 
-            with patch.object(MCPServerTask, '_run_stdio', fake_run_stdio):
+            with patch.object(MCPServerTask, "_run_stdio", fake_run_stdio):
                 task = asyncio.ensure_future(server.run({"command": "fake"}))
                 await server._ready.wait()
 
@@ -306,7 +324,7 @@ class TestMCPInitialConnectionRetry:
                 # Should not reach here because shutdown fires during sleep
                 raise AssertionError("Should not attempt after shutdown")
 
-            with patch.object(MCPServerTask, '_run_stdio', fake_run_stdio):
+            with patch.object(MCPServerTask, "_run_stdio", fake_run_stdio):
                 task = asyncio.ensure_future(server.run({"command": "fake"}))
 
                 # Give the first attempt time to fail, then set shutdown

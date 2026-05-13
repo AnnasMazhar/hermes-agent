@@ -40,6 +40,7 @@ def _fresh_import():
     """
     sys.modules.pop("hermes_bootstrap", None)
     import hermes_bootstrap  # noqa: WPS433
+
     return hermes_bootstrap
 
 
@@ -184,9 +185,7 @@ class TestIdempotence:
         hb = _fresh_import()
         # First call already happened at import time.
         result = hb.apply_windows_utf8_bootstrap()
-        assert result is False, (
-            "Second call should return False (idempotent no-op)"
-        )
+        assert result is False, "Second call should return False (idempotent no-op)"
 
     def test_no_exceptions_on_repeated_calls(self):
         hb = _fresh_import()
@@ -223,6 +222,7 @@ class TestStdioReconfigureErrorHandling:
 
         class _BrokenStream:
             encoding = "utf-8"
+
             def reconfigure(self, **kwargs):
                 raise OSError("simulated: stream already closed")
 
@@ -241,12 +241,12 @@ class TestEntryPointsImportBootstrap:
     # Entry points that invoke Hermes as a process.  Each one must
     # import hermes_bootstrap before doing any file I/O or stdout writes.
     ENTRY_POINTS = [
-        "hermes_cli/main.py",   # hermes CLI (console_script)
-        "run_agent.py",          # hermes-agent (console_script)
+        "hermes_cli/main.py",  # hermes CLI (console_script)
+        "run_agent.py",  # hermes-agent (console_script)
         "acp_adapter/entry.py",  # hermes-acp (console_script)
-        "gateway/run.py",        # gateway
-        "batch_runner.py",       # batch mode
-        "cli.py",                # legacy direct-launch CLI
+        "gateway/run.py",  # gateway
+        "batch_runner.py",  # batch mode
+        "cli.py",  # legacy direct-launch CLI
     ]
 
     @pytest.mark.parametrize("path", ENTRY_POINTS)
@@ -270,6 +270,7 @@ class TestEntryPointsImportBootstrap:
         # Resolve relative to the hermes-agent repo root.  Tests live
         # at tests/test_hermes_bootstrap.py, so go up one dir.
         import pathlib
+
         here = pathlib.Path(__file__).resolve()
         repo_root = here.parent.parent  # tests/ -> repo root
         full_path = repo_root / path
@@ -280,6 +281,7 @@ class TestEntryPointsImportBootstrap:
         # Find the first non-comment, non-blank line that starts with
         # 'import ' or 'from ', or a Try block whose body is the import.
         import ast
+
         tree = ast.parse(source)
 
         first_import_node = None
@@ -291,8 +293,10 @@ class TestEntryPointsImportBootstrap:
             # Import node — this is the recovery-friendly form that lets
             # hermes start even when hermes_bootstrap hasn't been
             # re-registered in the venv yet.
-            if isinstance(node, ast.Try) and len(node.body) == 1 and isinstance(
-                node.body[0], (ast.Import, ast.ImportFrom)
+            if (
+                isinstance(node, ast.Try)
+                and len(node.body) == 1
+                and isinstance(node.body[0], (ast.Import, ast.ImportFrom))
             ):
                 first_import_node = node.body[0]
                 break

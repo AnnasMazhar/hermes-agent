@@ -41,6 +41,7 @@ from typing import Optional, Sequence
 
 try:
     import ptyprocess  # type: ignore
+
     _PTY_AVAILABLE = not sys.platform.startswith("win")
 except ImportError:  # pragma: no cover - dev env without ptyprocess
     ptyprocess = None  # type: ignore
@@ -116,7 +117,7 @@ class PtyBridge:
         # simple terminal probes like `tput cols` fail before winsize reads.
         # Preserve explicit caller overrides, but backfill a sensible default
         # when TERM is missing or blank.
-        spawn_env = (os.environ.copy() if env is None else env.copy())
+        spawn_env = os.environ.copy() if env is None else env.copy()
         if not spawn_env.get("TERM"):
             spawn_env["TERM"] = "xterm-256color"
         proc = ptyprocess.PtyProcess.spawn(  # type: ignore[union-attr]
@@ -213,7 +214,11 @@ class PtyBridge:
 
         # SIGHUP is the conventional "your terminal went away" signal.
         # We escalate if the child ignores it.
-        for sig in (signal.SIGHUP, signal.SIGTERM, signal.SIGKILL):  # windows-footgun: ok — POSIX-only module (imports fcntl/termios/ptyprocess at top)
+        for sig in (
+            signal.SIGHUP,
+            signal.SIGTERM,
+            signal.SIGKILL,
+        ):  # windows-footgun: ok — POSIX-only module (imports fcntl/termios/ptyprocess at top)
             if not self._proc.isalive():
                 break
             try:

@@ -45,12 +45,17 @@ def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
         "prompt_toolkit.formatted_text": MagicMock(),
         "prompt_toolkit.auto_suggest": MagicMock(),
     }
-    with patch.dict(sys.modules, prompt_toolkit_stubs), \
-         patch.dict("os.environ", clean_env, clear=False):
+    with (
+        patch.dict(sys.modules, prompt_toolkit_stubs),
+        patch.dict("os.environ", clean_env, clear=False),
+    ):
         import cli as _cli_mod
+
         _cli_mod = importlib.reload(_cli_mod)
-        with patch.object(_cli_mod, "get_tool_definitions", return_value=[]), \
-             patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}):
+        with (
+            patch.object(_cli_mod, "get_tool_definitions", return_value=[]),
+            patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
+        ):
             return _cli_mod.HermesCLI(**kwargs)
 
 
@@ -185,7 +190,10 @@ class TestPromptToolkitTerminalCompatibility:
         with _patch.object(_sys, "platform", "linux"):
             kb = KeyBindings()
             _bind_prompt_submit_keys(kb, submit_handler)
-            bindings = {tuple(key.value for key in binding.keys): binding.handler for binding in kb.bindings}
+            bindings = {
+                tuple(key.value for key in binding.keys): binding.handler
+                for binding in kb.bindings
+            }
             assert bindings[("c-m",)] is submit_handler
             assert bindings[("c-j",)] is submit_handler
 
@@ -194,7 +202,10 @@ class TestPromptToolkitTerminalCompatibility:
         with _patch.object(_sys, "platform", "win32"):
             kb = KeyBindings()
             _bind_prompt_submit_keys(kb, submit_handler)
-            bindings = {tuple(key.value for key in binding.keys): binding.handler for binding in kb.bindings}
+            bindings = {
+                tuple(key.value for key in binding.keys): binding.handler
+                for binding in kb.bindings
+            }
             assert bindings[("c-m",)] is submit_handler
             assert ("c-j",) not in bindings
 
@@ -318,21 +329,26 @@ class TestRootLevelProviderOverride:
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
         config_path = hermes_home / "config.yaml"
-        config_path.write_text(yaml.safe_dump({
-            "provider": "opencode-go",  # stale root-level key
-            "model": {
-                "default": "google/gemini-3-flash-preview",
-                "provider": "openrouter",  # correct canonical key
-            },
-        }))
+        config_path.write_text(
+            yaml.safe_dump({
+                "provider": "opencode-go",  # stale root-level key
+                "model": {
+                    "default": "google/gemini-3-flash-preview",
+                    "provider": "openrouter",  # correct canonical key
+                },
+            })
+        )
 
         import cli
+
         monkeypatch.setattr(cli, "_hermes_home", hermes_home)
         cfg = cli.load_cli_config()
 
         assert cfg["model"]["provider"] == "openrouter"
 
-    def test_root_provider_ignored_when_default_model_provider_exists(self, tmp_path, monkeypatch):
+    def test_root_provider_ignored_when_default_model_provider_exists(
+        self, tmp_path, monkeypatch
+    ):
         """Even when model.provider is the default 'auto', root-level provider is ignored."""
         import yaml
 
@@ -341,15 +357,18 @@ class TestRootLevelProviderOverride:
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
         config_path = hermes_home / "config.yaml"
-        config_path.write_text(yaml.safe_dump({
-            "provider": "opencode-go",  # stale root key
-            "model": {
-                "default": "google/gemini-3-flash-preview",
-                # no explicit model.provider — defaults provide "auto"
-            },
-        }))
+        config_path.write_text(
+            yaml.safe_dump({
+                "provider": "opencode-go",  # stale root key
+                "model": {
+                    "default": "google/gemini-3-flash-preview",
+                    # no explicit model.provider — defaults provide "auto"
+                },
+            })
+        )
 
         import cli
+
         monkeypatch.setattr(cli, "_hermes_home", hermes_home)
         cfg = cli.load_cli_config()
 
@@ -366,14 +385,17 @@ class TestRootLevelProviderOverride:
         monkeypatch.delenv("TERMINAL_VERCEL_RUNTIME", raising=False)
 
         config_path = hermes_home / "config.yaml"
-        config_path.write_text(yaml.safe_dump({
-            "terminal": {
-                "backend": "vercel_sandbox",
-                "vercel_runtime": "python3.13",
-            },
-        }))
+        config_path.write_text(
+            yaml.safe_dump({
+                "terminal": {
+                    "backend": "vercel_sandbox",
+                    "vercel_runtime": "python3.13",
+                },
+            })
+        )
 
         import cli
+
         monkeypatch.setattr(cli, "_hermes_home", hermes_home)
         cfg = cli.load_cli_config()
 
@@ -471,4 +493,4 @@ class TestProviderResolution:
     def test_model_is_string(self):
         cli = _make_cli()
         assert isinstance(cli.model, str)
-        assert isinstance(cli.model, str) and '/' in cli.model
+        assert isinstance(cli.model, str) and "/" in cli.model

@@ -47,6 +47,7 @@ class TestConfigureWindowsStdio:
         # Fresh import now; tests import from hermes_cli.stdio themselves,
         # but this guarantees the module they get is a brand-new copy.
         import hermes_cli.stdio as _s
+
         _s._CONFIGURED = False
         yield
         sys.modules.pop("hermes_cli.stdio", None)
@@ -380,8 +381,17 @@ class TestPidExistsOSErrorWidening:
 
         # Force the psutil-first branch to miss so we exercise the fallback.
         monkeypatch.setitem(
-            __import__("sys").modules, "psutil",
-            type("P", (), {"pid_exists": staticmethod(lambda pid: (_ for _ in ()).throw(ImportError()))})()
+            __import__("sys").modules,
+            "psutil",
+            type(
+                "P",
+                (),
+                {
+                    "pid_exists": staticmethod(
+                        lambda pid: (_ for _ in ()).throw(ImportError())
+                    )
+                },
+            )(),
         )
         monkeypatch.setattr(status, "_IS_WINDOWS", False)
 
@@ -396,8 +406,17 @@ class TestPidExistsOSErrorWidening:
         from gateway import status
 
         monkeypatch.setitem(
-            __import__("sys").modules, "psutil",
-            type("P", (), {"pid_exists": staticmethod(lambda pid: (_ for _ in ()).throw(ImportError()))})()
+            __import__("sys").modules,
+            "psutil",
+            type(
+                "P",
+                (),
+                {
+                    "pid_exists": staticmethod(
+                        lambda pid: (_ for _ in ()).throw(ImportError())
+                    )
+                },
+            )(),
         )
         monkeypatch.setattr(status, "_IS_WINDOWS", False)
 
@@ -422,7 +441,7 @@ class TestTzdataDependencyDeclared:
         # The dependency line should be conditional on sys_platform == 'win32'
         # and should NOT be in the core dependencies for Linux/macOS.
         assert (
-            'tzdata>=2023.3; sys_platform == \'win32\'' in source
+            "tzdata>=2023.3; sys_platform == 'win32'" in source
             or "tzdata>=2023.3; sys_platform == 'win32'" in source
             or 'tzdata>=2023.3; sys_platform == "win32"' in source
         ), "tzdata must be a Windows-only dep in pyproject.toml dependencies"
@@ -509,11 +528,13 @@ class TestSubprocessCompatHelpers:
 
     def test_is_windows_matches_sys_platform(self):
         from hermes_cli import _subprocess_compat as sc
+
         assert sc.IS_WINDOWS == (sys.platform == "win32")
 
     def test_resolve_node_command_returns_absolute_on_posix(self):
         """On Linux, resolve_node_command('sh', ['-c','echo hi']) picks up /bin/sh."""
         from hermes_cli._subprocess_compat import resolve_node_command
+
         # We can't assert "npm is on PATH" portably; use `sh` which is
         # guaranteed on POSIX.  On Windows the test only confirms the
         # no-crash fallback path.
@@ -524,9 +545,8 @@ class TestSubprocessCompatHelpers:
 
     def test_resolve_node_command_fallback_when_absent(self):
         from hermes_cli._subprocess_compat import resolve_node_command
-        argv = resolve_node_command(
-            "zzz-definitely-not-on-path-xyzzy", ["--help"]
-        )
+
+        argv = resolve_node_command("zzz-definitely-not-on-path-xyzzy", ["--help"])
         # Must fall back to the bare name — NOT return None, NOT crash.
         assert argv[0] == "zzz-definitely-not-on-path-xyzzy"
         assert argv[1:] == ["--help"]
@@ -536,12 +556,14 @@ class TestSubprocessCompatHelpers:
             windows_detach_flags,
             windows_hide_flags,
         )
+
         if sys.platform != "win32":
             assert windows_detach_flags() == 0
             assert windows_hide_flags() == 0
 
     def test_windows_detach_popen_kwargs_is_posix_equivalent_on_posix(self):
         from hermes_cli._subprocess_compat import windows_detach_popen_kwargs
+
         kwargs = windows_detach_popen_kwargs()
         if sys.platform != "win32":
             # POSIX path MUST produce start_new_session=True, which maps to
@@ -558,6 +580,7 @@ class TestSubprocessCompatHelpers:
     def test_windows_detach_flags_has_expected_win32_bits(self, monkeypatch):
         """Simulate Windows to verify flag bundle."""
         from hermes_cli import _subprocess_compat as sc
+
         monkeypatch.setattr(sc, "IS_WINDOWS", True)
         flags = sc.windows_detach_flags()
         # CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS | CREATE_NO_WINDOW
@@ -617,7 +640,7 @@ class TestKanbanWaitpidWindowsGuard:
         idx = source.find("os.waitpid(-1, os.WNOHANG)")
         assert idx > 0, "waitpid call must exist"
         # Look backwards up to 400 chars for the gate.
-        preamble = source[max(0, idx - 400):idx]
+        preamble = source[max(0, idx - 400) : idx]
         assert 'os.name != "nt"' in preamble or "os.name != 'nt'" in preamble, (
             "os.waitpid(-1, os.WNOHANG) must sit behind an os.name != 'nt' guard"
         )
@@ -730,7 +753,7 @@ class TestNpmBareSpawnsResolved:
                     break
                 # Look at the preceding 120 chars — if "shutil.which" appears
                 # there, or the pattern is inside a comment/string, it's fine.
-                context = source[max(0, idx - 120):idx]
+                context = source[max(0, idx - 120) : idx]
                 if "#" in context.split("\n")[-1]:
                     idx += len(pat)
                     continue
@@ -765,7 +788,9 @@ class TestLocalEnvironmentWindowsTempDir:
 
     def test_source_has_windows_branch_using_hermes_home(self):
         root = Path(__file__).resolve().parents[2]
-        source = (root / "tools" / "environments" / "local.py").read_text(encoding="utf-8")
+        source = (root / "tools" / "environments" / "local.py").read_text(
+            encoding="utf-8"
+        )
         assert "if _IS_WINDOWS:" in source
         assert "get_hermes_home" in source
         assert 'cache_dir = get_hermes_home() / "cache" / "terminal"' in source
@@ -776,9 +801,13 @@ class TestLocalEnvironmentPathInjectionGated:
 
     def test_source_gates_path_injection(self):
         root = Path(__file__).resolve().parents[2]
-        source = (root / "tools" / "environments" / "local.py").read_text(encoding="utf-8")
+        source = (root / "tools" / "environments" / "local.py").read_text(
+            encoding="utf-8"
+        )
         # The fix wraps the injection in `if not _IS_WINDOWS`.
-        assert 'not _IS_WINDOWS and "/usr/bin" not in existing_path.split(":")' in source
+        assert (
+            'not _IS_WINDOWS and "/usr/bin" not in existing_path.split(":")' in source
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -793,6 +822,7 @@ class TestGitBashPathNormalization:
     def test_posix_noop(self):
         """Must NOT mutate paths on Linux/macOS."""
         from cli import _normalize_git_bash_path
+
         if sys.platform != "win32":
             assert _normalize_git_bash_path("/home/teknium/foo") == "/home/teknium/foo"
             assert _normalize_git_bash_path("/c/Users/foo") == "/c/Users/foo"
@@ -801,11 +831,13 @@ class TestGitBashPathNormalization:
 
     def test_empty_string_preserved(self):
         from cli import _normalize_git_bash_path
+
         assert _normalize_git_bash_path("") == ""
 
     def test_windows_translation(self, monkeypatch):
         """Simulate Windows and verify /c/Users/... becomes C:\\Users\\..."""
         import cli as cli_mod
+
         monkeypatch.setattr(cli_mod.sys, "platform", "win32")
         assert cli_mod._normalize_git_bash_path("/c/Users/foo") == r"C:\Users\foo"
         assert cli_mod._normalize_git_bash_path("/C/Users/foo") == r"C:\Users\foo"

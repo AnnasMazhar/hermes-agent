@@ -43,6 +43,7 @@ Auth:
 Output:
   JSON to stdout. Errors to stderr with non-zero exit code.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -109,6 +110,7 @@ def emit(obj: Any) -> None:
 
 
 # ---------- Commands ----------
+
 
 def cmd_whoami(_args: argparse.Namespace) -> None:
     q = "query { viewer { id name email displayName } }"
@@ -214,7 +216,11 @@ def cmd_search_issues(args: argparse.Namespace) -> None:
         nodes { id identifier title state { name } url }
       }
     }"""
-    emit(gql(q, {"term": args.query, "first": args.limit}).get("searchIssues", {}).get("nodes", []))
+    emit(
+        gql(q, {"term": args.query, "first": args.limit})
+        .get("searchIssues", {})
+        .get("nodes", [])
+    )
 
 
 def cmd_create_issue(args: argparse.Namespace) -> None:
@@ -268,7 +274,9 @@ def cmd_update_status(args: argparse.Namespace) -> None:
         sys.stderr.write(f"Issue not found: {args.identifier}\n")
         sys.exit(1)
     sl = args.state.lower()
-    match = next((s for s in issue["team"]["states"]["nodes"] if s["name"].lower() == sl), None)
+    match = next(
+        (s for s in issue["team"]["states"]["nodes"] if s["name"].lower() == sl), None
+    )
     if not match:
         sys.stderr.write(
             f"State '{args.state}' not found. Available: "
@@ -290,10 +298,15 @@ def cmd_add_comment(args: argparse.Namespace) -> None:
         success comment { id body createdAt }
       }
     }"""
-    emit(gql(q, {"input": {"issueId": args.identifier, "body": args.body}}).get("commentCreate"))
+    emit(
+        gql(q, {"input": {"issueId": args.identifier, "body": args.body}}).get(
+            "commentCreate"
+        )
+    )
 
 
 # ---- Documents ----
+
 
 def cmd_list_documents(args: argparse.Namespace) -> None:
     q = """query($first: Int!) {
@@ -345,7 +358,11 @@ def cmd_search_documents(args: argparse.Namespace) -> None:
         nodes { id title slugId url updatedAt }
       }
     }"""
-    emit(gql(q, {"term": args.query, "first": args.limit}).get("documents", {}).get("nodes", []))
+    emit(
+        gql(q, {"term": args.query, "first": args.limit})
+        .get("documents", {})
+        .get("nodes", [])
+    )
 
 
 def cmd_raw(args: argparse.Namespace) -> None:
@@ -354,6 +371,7 @@ def cmd_raw(args: argparse.Namespace) -> None:
 
 
 # ---------- Arg parsing ----------
+
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="linear_api.py", description="Linear GraphQL CLI")

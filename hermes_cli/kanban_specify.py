@@ -125,11 +125,7 @@ def _extract_json_blob(raw: str) -> Optional[dict]:
 def _profile_author() -> str:
     """Mirror of ``hermes_cli.kanban._profile_author``. Kept local to
     avoid a circular import when kanban.py imports this module."""
-    return (
-        os.environ.get("HERMES_PROFILE")
-        or os.environ.get("USER")
-        or "specifier"
-    )
+    return os.environ.get("HERMES_PROFILE") or os.environ.get("USER") or "specifier"
 
 
 def specify_task(
@@ -167,9 +163,7 @@ def specify_task(
         return SpecifyOutcome(task_id, False, "auxiliary client unavailable")
 
     if client is None or not model:
-        return SpecifyOutcome(
-            task_id, False, "no auxiliary client configured"
-        )
+        return SpecifyOutcome(task_id, False, "no auxiliary client configured")
 
     user_msg = _USER_TEMPLATE.format(
         task_id=task.id,
@@ -191,11 +185,10 @@ def specify_task(
     except Exception as exc:
         logger.info(
             "specify: API call failed for %s (%s) — skipping",
-            task_id, exc,
+            task_id,
+            exc,
         )
-        return SpecifyOutcome(
-            task_id, False, f"LLM error: {type(exc).__name__}"
-        )
+        return SpecifyOutcome(task_id, False, f"LLM error: {type(exc).__name__}")
 
     try:
         raw = resp.choices[0].message.content or ""
@@ -212,9 +205,7 @@ def specify_task(
         # the task in triage on a malformed LLM reply.
         stripped_raw = raw.strip()
         if not stripped_raw:
-            return SpecifyOutcome(
-                task_id, False, "LLM returned an empty response"
-            )
+            return SpecifyOutcome(task_id, False, "LLM returned an empty response")
         new_title = None
         new_body = stripped_raw
     else:
@@ -225,13 +216,9 @@ def specify_task(
             if isinstance(title_val, str) and title_val.strip()
             else None
         )
-        new_body = (
-            body_val if isinstance(body_val, str) and body_val.strip() else None
-        )
+        new_body = body_val if isinstance(body_val, str) and body_val.strip() else None
         if new_body is None and new_title is None:
-            return SpecifyOutcome(
-                task_id, False, "LLM response missing title and body"
-            )
+            return SpecifyOutcome(task_id, False, "LLM response missing title and body")
 
     with kb.connect() as conn:
         ok = kb.specify_triage_task(

@@ -14,6 +14,7 @@ from cli import _detect_file_drop
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def tmp_image(tmp_path):
     """Create a temporary .png file and return its path."""
@@ -41,6 +42,7 @@ def tmp_image_with_spaces(tmp_path):
 # ---------------------------------------------------------------------------
 # Tests: returns None for non-file inputs
 # ---------------------------------------------------------------------------
+
 
 class TestNonFileInputs:
     def test_regular_slash_command(self):
@@ -85,9 +87,13 @@ class TestNonFileInputs:
         # 430-char `/goal` payload — well above NAME_MAX (255 bytes) on
         # all common filesystems.
         long_goal = (
-            "/goal " + ("Drive the board: triage triage-status items, "
-                        "unblock spillover tasks where work is shipped, "
-                        "advance P1 items by decomposing where needed. ") * 4
+            "/goal "
+            + (
+                "Drive the board: triage triage-status items, "
+                "unblock spillover tasks where work is shipped, "
+                "advance P1 items by decomposing where needed. "
+            )
+            * 4
         )
         assert len(long_goal) > 255  # confirms it would have triggered ENAMETOOLONG
         assert _detect_file_drop(long_goal) is None
@@ -103,6 +109,7 @@ class TestNonFileInputs:
 # ---------------------------------------------------------------------------
 # Tests: image file detection
 # ---------------------------------------------------------------------------
+
 
 class TestImageFileDrop:
     def test_simple_image_path(self, tmp_image):
@@ -120,8 +127,21 @@ class TestImageFileDrop:
         assert result["is_image"] is True
         assert result["remainder"] == "analyze this please"
 
-    @pytest.mark.parametrize("ext", [".png", ".jpg", ".jpeg", ".gif", ".webp",
-                                      ".bmp", ".tiff", ".tif", ".svg", ".ico"])
+    @pytest.mark.parametrize(
+        "ext",
+        [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".webp",
+            ".bmp",
+            ".tiff",
+            ".tif",
+            ".svg",
+            ".ico",
+        ],
+    )
     def test_all_image_extensions(self, tmp_path, ext):
         img = tmp_path / f"test{ext}"
         img.write_bytes(b"fake")
@@ -140,6 +160,7 @@ class TestImageFileDrop:
 # ---------------------------------------------------------------------------
 # Tests: non-image file detection
 # ---------------------------------------------------------------------------
+
 
 class TestNonImageFileDrop:
     def test_python_file(self, tmp_text):
@@ -161,17 +182,18 @@ class TestNonImageFileDrop:
 # Tests: backslash-escaped spaces (macOS drag-and-drop)
 # ---------------------------------------------------------------------------
 
+
 class TestEscapedSpaces:
     def test_escaped_spaces_in_path(self, tmp_image_with_spaces):
         r"""macOS drags produce paths like /path/to/my\ file.png"""
-        escaped = str(tmp_image_with_spaces).replace(' ', '\\ ')
+        escaped = str(tmp_image_with_spaces).replace(" ", "\\ ")
         result = _detect_file_drop(escaped)
         assert result is not None
         assert result["path"] == tmp_image_with_spaces
         assert result["is_image"] is True
 
     def test_escaped_spaces_with_trailing_text(self, tmp_image_with_spaces):
-        escaped = str(tmp_image_with_spaces).replace(' ', '\\ ')
+        escaped = str(tmp_image_with_spaces).replace(" ", "\\ ")
         user_input = f"{escaped} what is this?"
         result = _detect_file_drop(user_input)
         assert result is not None
@@ -195,7 +217,12 @@ class TestEscapedSpaces:
     def test_mixed_escaped_and_literal_spaces_in_path(self, tmp_path):
         img = tmp_path / "Screenshot 2026-04-21 at 1.04.43 PM.png"
         img.write_bytes(b"\x89PNG\r\n\x1a\n")
-        mixed = str(img).replace("Screenshot ", "Screenshot\\ ").replace("2026-04-21 ", "2026-04-21\\ ").replace("at ", "at\\ ")
+        mixed = (
+            str(img)
+            .replace("Screenshot ", "Screenshot\\ ")
+            .replace("2026-04-21 ", "2026-04-21\\ ")
+            .replace("at ", "at\\ ")
+        )
         result = _detect_file_drop(mixed)
         assert result is not None
         assert result["path"] == img
@@ -227,6 +254,7 @@ class TestEscapedSpaces:
 # ---------------------------------------------------------------------------
 # Tests: edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     def test_path_with_no_extension(self, tmp_path):

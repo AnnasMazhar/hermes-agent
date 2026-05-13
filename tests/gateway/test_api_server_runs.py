@@ -43,7 +43,9 @@ def _make_adapter(api_key: str = "") -> APIServerAdapter:
 
 def _create_runs_app(adapter: APIServerAdapter) -> web.Application:
     """Create an aiohttp app with /v1/runs routes registered."""
-    mws = [mw for mw in (cors_middleware, security_headers_middleware) if mw is not None]
+    mws = [
+        mw for mw in (cors_middleware, security_headers_middleware) if mw is not None
+    ]
     app = web.Application(middlewares=mws)
     app["api_server_adapter"] = adapter
     app.router.add_post("/v1/runs", adapter._handle_runs)
@@ -254,7 +256,10 @@ class TestRunStatus:
                     await asyncio.sleep(0.05)
 
                 mock_agent.run_conversation.assert_called_once()
-                assert mock_agent.run_conversation.call_args.kwargs["task_id"] == "space-session"
+                assert (
+                    mock_agent.run_conversation.call_args.kwargs["task_id"]
+                    == "space-session"
+                )
                 assert status["session_id"] == "space-session"
 
     @pytest.mark.asyncio
@@ -305,8 +310,6 @@ class TestRunEvents:
                 # Should contain run.completed
                 assert "run.completed" in body
                 assert "Hello!" in body
-
-
 
     @pytest.mark.asyncio
     async def test_approval_response_without_pending_returns_409(self, adapter):
@@ -448,7 +451,9 @@ class TestStopRun:
             with patch.object(adapter, "_create_agent") as mock_create:
                 mock_agent, agent_ready, _ = _make_slow_agent()
                 # Override the interrupt side_effect to raise
-                mock_agent.interrupt = MagicMock(side_effect=RuntimeError("interrupt failed"))
+                mock_agent.interrupt = MagicMock(
+                    side_effect=RuntimeError("interrupt failed")
+                )
                 mock_create.return_value = mock_agent
 
                 resp = await cli.post("/v1/runs", json={"input": "hello"})

@@ -102,46 +102,58 @@ class TestSessionSourceRoundtrip:
 class TestSessionSourceDescription:
     def test_local_cli(self):
         source = SessionSource(
-            platform=Platform.LOCAL, chat_id="cli",
-            chat_name="CLI terminal", chat_type="dm",
+            platform=Platform.LOCAL,
+            chat_id="cli",
+            chat_name="CLI terminal",
+            chat_type="dm",
         )
         assert source.description == "CLI terminal"
 
     def test_dm_with_username(self):
         source = SessionSource(
-            platform=Platform.TELEGRAM, chat_id="123",
-            chat_type="dm", user_name="bob",
+            platform=Platform.TELEGRAM,
+            chat_id="123",
+            chat_type="dm",
+            user_name="bob",
         )
         assert "DM" in source.description
         assert "bob" in source.description
 
     def test_dm_without_username_falls_back_to_user_id(self):
         source = SessionSource(
-            platform=Platform.TELEGRAM, chat_id="123",
-            chat_type="dm", user_id="456",
+            platform=Platform.TELEGRAM,
+            chat_id="123",
+            chat_type="dm",
+            user_id="456",
         )
         assert "456" in source.description
 
     def test_group_shows_chat_name(self):
         source = SessionSource(
-            platform=Platform.DISCORD, chat_id="789",
-            chat_type="group", chat_name="Dev Chat",
+            platform=Platform.DISCORD,
+            chat_id="789",
+            chat_type="group",
+            chat_name="Dev Chat",
         )
         assert "group" in source.description
         assert "Dev Chat" in source.description
 
     def test_channel_type(self):
         source = SessionSource(
-            platform=Platform.TELEGRAM, chat_id="100",
-            chat_type="channel", chat_name="Announcements",
+            platform=Platform.TELEGRAM,
+            chat_id="100",
+            chat_type="channel",
+            chat_name="Announcements",
         )
         assert "channel" in source.description
         assert "Announcements" in source.description
 
     def test_thread_id_appended(self):
         source = SessionSource(
-            platform=Platform.DISCORD, chat_id="789",
-            chat_type="group", chat_name="General",
+            platform=Platform.DISCORD,
+            chat_id="789",
+            chat_type="group",
+            chat_name="General",
             thread_id="thread-42",
         )
         assert "thread" in source.description
@@ -149,8 +161,10 @@ class TestSessionSourceDescription:
 
     def test_unknown_chat_type_uses_name(self):
         source = SessionSource(
-            platform=Platform.SLACK, chat_id="C01",
-            chat_type="forum", chat_name="Questions",
+            platform=Platform.SLACK,
+            chat_id="C01",
+            chat_type="forum",
+            chat_name="Questions",
         )
         assert "Questions" in source.description
 
@@ -158,8 +172,10 @@ class TestSessionSourceDescription:
 class TestLocalCliFactory:
     def test_local_cli_defaults(self):
         source = SessionSource(
-            platform=Platform.LOCAL, chat_id="cli",
-            chat_name="CLI terminal", chat_type="dm",
+            platform=Platform.LOCAL,
+            chat_id="cli",
+            chat_name="CLI terminal",
+            chat_type="dm",
         )
         assert source.platform == Platform.LOCAL
         assert source.chat_id == "cli"
@@ -197,7 +213,10 @@ class TestBuildSessionContextPrompt:
     def test_bluebubbles_prompt_mentions_short_conversational_i_message_format(self):
         config = GatewayConfig(
             platforms={
-                Platform.BLUEBUBBLES: PlatformConfig(enabled=True, extra={"server_url": "http://localhost:1234", "password": "secret"}),
+                Platform.BLUEBUBBLES: PlatformConfig(
+                    enabled=True,
+                    extra={"server_url": "http://localhost:1234", "password": "secret"},
+                ),
             },
         )
         source = SessionSource(
@@ -233,7 +252,9 @@ class TestBuildSessionContextPrompt:
         prompt = build_session_context_prompt(ctx)
 
         assert "Discord" in prompt
-        assert "cannot search" in prompt.lower() or "do not have access" in prompt.lower()
+        assert (
+            "cannot search" in prompt.lower() or "do not have access" in prompt.lower()
+        )
 
     def test_slack_prompt_includes_platform_notes(self):
         config = GatewayConfig(
@@ -305,8 +326,10 @@ class TestBuildSessionContextPrompt:
     def test_local_prompt_mentions_machine(self):
         config = GatewayConfig()
         source = SessionSource(
-            platform=Platform.LOCAL, chat_id="cli",
-            chat_name="CLI terminal", chat_type="dm",
+            platform=Platform.LOCAL,
+            chat_id="cli",
+            chat_name="CLI terminal",
+            chat_type="dm",
         )
         ctx = build_session_context(source, config)
         prompt = build_session_context_prompt(ctx)
@@ -317,12 +340,17 @@ class TestBuildSessionContextPrompt:
     def test_local_delivery_path_uses_display_hermes_home(self):
         config = GatewayConfig()
         source = SessionSource(
-            platform=Platform.LOCAL, chat_id="cli",
-            chat_name="CLI terminal", chat_type="dm",
+            platform=Platform.LOCAL,
+            chat_id="cli",
+            chat_name="CLI terminal",
+            chat_type="dm",
         )
         ctx = build_session_context(source, config)
 
-        with patch("hermes_constants.display_hermes_home", return_value="~/.hermes/profiles/coder"):
+        with patch(
+            "hermes_constants.display_hermes_home",
+            return_value="~/.hermes/profiles/coder",
+        ):
             prompt = build_session_context_prompt(ctx)
 
         assert "~/.hermes/profiles/coder/cron/output/" in prompt
@@ -454,10 +482,13 @@ class TestSessionStoreRewriteTranscript:
             store.append_to_transcript(session_id, msg)
 
         # Rewrite with truncated history
-        store.rewrite_transcript(session_id, [
-            {"role": "user", "content": "hello"},
-            {"role": "assistant", "content": "hi"},
-        ])
+        store.rewrite_transcript(
+            session_id,
+            [
+                {"role": "user", "content": "hello"},
+                {"role": "assistant", "content": "hi"},
+            ],
+        )
 
         reloaded = store.load_transcript(session_id)
         assert len(reloaded) == 2
@@ -548,11 +579,15 @@ class TestLoadTranscriptPreferLongerSource:
         for i in range(10):
             role = "user" if i % 2 == 0 else "assistant"
             store_with_db.append_to_transcript(
-                sid, {"role": role, "content": f"msg-{i}"}, skip_db=True,
+                sid,
+                {"role": role, "content": f"msg-{i}"},
+                skip_db=True,
             )
         # SQLite has only 2 messages (recent turn after migration)
         store_with_db._db.append_message(session_id=sid, role="user", content="new-q")
-        store_with_db._db.append_message(session_id=sid, role="assistant", content="new-a")
+        store_with_db._db.append_message(
+            session_id=sid, role="assistant", content="new-a"
+        )
 
         result = store_with_db.load_transcript(sid)
         assert len(result) == 10
@@ -564,15 +599,21 @@ class TestLoadTranscriptPreferLongerSource:
         store_with_db._db.create_session(session_id=sid, source="gateway", model="m")
         # JSONL has 2 old messages
         store_with_db.append_to_transcript(
-            sid, {"role": "user", "content": "old-q"}, skip_db=True,
+            sid,
+            {"role": "user", "content": "old-q"},
+            skip_db=True,
         )
         store_with_db.append_to_transcript(
-            sid, {"role": "assistant", "content": "old-a"}, skip_db=True,
+            sid,
+            {"role": "assistant", "content": "old-a"},
+            skip_db=True,
         )
         # SQLite has 4 messages (superset after migration)
         for i in range(4):
             role = "user" if i % 2 == 0 else "assistant"
-            store_with_db._db.append_message(session_id=sid, role=role, content=f"db-{i}")
+            store_with_db._db.append_message(
+                session_id=sid, role=role, content=f"db-{i}"
+            )
 
         result = store_with_db.load_transcript(sid)
         assert len(result) == 4
@@ -582,10 +623,14 @@ class TestLoadTranscriptPreferLongerSource:
         """No SQLite rows — falls back to JSONL (original behavior preserved)."""
         sid = "no_db_rows"
         store_with_db.append_to_transcript(
-            sid, {"role": "user", "content": "hello"}, skip_db=True,
+            sid,
+            {"role": "user", "content": "hello"},
+            skip_db=True,
         )
         store_with_db.append_to_transcript(
-            sid, {"role": "assistant", "content": "hi"}, skip_db=True,
+            sid,
+            {"role": "assistant", "content": "hi"},
+            skip_db=True,
         )
 
         result = store_with_db.load_transcript(sid)
@@ -603,14 +648,20 @@ class TestLoadTranscriptPreferLongerSource:
         store_with_db._db.create_session(session_id=sid, source="gateway", model="m")
         # Write 2 messages to JSONL only
         store_with_db.append_to_transcript(
-            sid, {"role": "user", "content": "jsonl-q"}, skip_db=True,
+            sid,
+            {"role": "user", "content": "jsonl-q"},
+            skip_db=True,
         )
         store_with_db.append_to_transcript(
-            sid, {"role": "assistant", "content": "jsonl-a"}, skip_db=True,
+            sid,
+            {"role": "assistant", "content": "jsonl-a"},
+            skip_db=True,
         )
         # Write 2 different messages to SQLite only
         store_with_db._db.append_message(session_id=sid, role="user", content="db-q")
-        store_with_db._db.append_message(session_id=sid, role="assistant", content="db-a")
+        store_with_db._db.append_message(
+            session_id=sid, role="assistant", content="db-a"
+        )
 
         result = store_with_db.load_transcript(sid)
         assert len(result) == 2
@@ -706,7 +757,9 @@ class TestWhatsAppSessionKeyConsistency:
         assert build_session_key(lid_source) == "agent:main:whatsapp:dm:15551234567"
         assert build_session_key(phone_source) == "agent:main:whatsapp:dm:15551234567"
 
-    def test_whatsapp_group_participant_aliases_share_session_key(self, tmp_path, monkeypatch):
+    def test_whatsapp_group_participant_aliases_share_session_key(
+        self, tmp_path, monkeypatch
+    ):
         """With group_sessions_per_user, the same human flipping between
         phone-JID and LID inside a group must not produce two isolated
         per-user sessions."""
@@ -824,7 +877,9 @@ class TestWhatsAppSessionKeyConsistency:
     def test_distinct_dm_chat_ids_get_distinct_session_keys(self):
         """Different DM chats must not collapse into one shared session."""
         first = SessionSource(platform=Platform.TELEGRAM, chat_id="99", chat_type="dm")
-        second = SessionSource(platform=Platform.TELEGRAM, chat_id="100", chat_type="dm")
+        second = SessionSource(
+            platform=Platform.TELEGRAM, chat_id="100", chat_type="dm"
+        )
 
         assert build_session_key(first) == "agent:main:telegram:dm:99"
         assert build_session_key(second) == "agent:main:telegram:dm:100"
@@ -872,8 +927,14 @@ class TestWhatsAppSessionKeyConsistency:
             user_id="bob",
         )
 
-        assert build_session_key(first, group_sessions_per_user=False) == "agent:main:discord:group:guild-123"
-        assert build_session_key(second, group_sessions_per_user=False) == "agent:main:discord:group:guild-123"
+        assert (
+            build_session_key(first, group_sessions_per_user=False)
+            == "agent:main:discord:group:guild-123"
+        )
+        assert (
+            build_session_key(second, group_sessions_per_user=False)
+            == "agent:main:discord:group:guild-123"
+        )
 
     def test_group_thread_includes_thread_id(self):
         """Forum-style threads need a distinct session key within one group."""
@@ -902,8 +963,12 @@ class TestWhatsAppSessionKeyConsistency:
             thread_id="17585",
             user_id="bob",
         )
-        assert build_session_key(alice) == "agent:main:telegram:group:-1002285219667:17585"
-        assert build_session_key(bob) == "agent:main:telegram:group:-1002285219667:17585"
+        assert (
+            build_session_key(alice) == "agent:main:telegram:group:-1002285219667:17585"
+        )
+        assert (
+            build_session_key(bob) == "agent:main:telegram:group:-1002285219667:17585"
+        )
         assert build_session_key(alice) == build_session_key(bob)
 
     def test_group_thread_sessions_can_be_isolated_per_user(self):
@@ -932,7 +997,9 @@ class TestWhatsAppSessionKeyConsistency:
             chat_type="group",
             user_id="bob",
         )
-        assert build_session_key(alice) == "agent:main:telegram:group:-1002285219667:alice"
+        assert (
+            build_session_key(alice) == "agent:main:telegram:group:-1002285219667:alice"
+        )
         assert build_session_key(bob) == "agent:main:telegram:group:-1002285219667:bob"
         assert build_session_key(alice) != build_session_key(bob)
 
@@ -979,13 +1046,18 @@ class TestWhatsAppIdentifierPublicHelpers:
     """
 
     def test_normalize_strips_jid_suffix(self):
-        assert normalize_whatsapp_identifier("60123456789@s.whatsapp.net") == "60123456789"
+        assert (
+            normalize_whatsapp_identifier("60123456789@s.whatsapp.net") == "60123456789"
+        )
 
     def test_normalize_strips_lid_suffix(self):
         assert normalize_whatsapp_identifier("999999999999999@lid") == "999999999999999"
 
     def test_normalize_strips_device_suffix(self):
-        assert normalize_whatsapp_identifier("60123456789:47@s.whatsapp.net") == "60123456789"
+        assert (
+            normalize_whatsapp_identifier("60123456789:47@s.whatsapp.net")
+            == "60123456789"
+        )
 
     def test_normalize_strips_leading_plus(self):
         assert normalize_whatsapp_identifier("+60123456789") == "60123456789"
@@ -1014,7 +1086,9 @@ class TestWhatsAppIdentifierPublicHelpers:
 
         canonical = canonical_whatsapp_identifier("999999999999999@lid")
         assert canonical == "15551234567"
-        assert canonical_whatsapp_identifier("15551234567@s.whatsapp.net") == "15551234567"
+        assert (
+            canonical_whatsapp_identifier("15551234567@s.whatsapp.net") == "15551234567"
+        )
 
     def test_canonical_empty_input(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -1090,6 +1164,7 @@ class TestLastPromptTokens:
         """New sessions should have last_prompt_tokens=0."""
         from gateway.session import SessionEntry
         from datetime import datetime
+
         entry = SessionEntry(
             session_key="test",
             session_id="s1",
@@ -1102,6 +1177,7 @@ class TestLastPromptTokens:
         """last_prompt_tokens should survive serialization/deserialization."""
         from gateway.session import SessionEntry
         from datetime import datetime
+
         entry = SessionEntry(
             session_key="test",
             session_id="s1",
@@ -1117,6 +1193,7 @@ class TestLastPromptTokens:
     def test_session_entry_from_old_data(self):
         """Old session data without last_prompt_tokens should default to 0."""
         from gateway.session import SessionEntry
+
         data = {
             "session_key": "test",
             "session_id": "s1",
@@ -1141,6 +1218,7 @@ class TestLastPromptTokens:
 
         from gateway.session import SessionEntry
         from datetime import datetime
+
         entry = SessionEntry(
             session_key="k1",
             session_id="s1",
@@ -1163,6 +1241,7 @@ class TestLastPromptTokens:
 
         from gateway.session import SessionEntry
         from datetime import datetime
+
         entry = SessionEntry(
             session_key="k1",
             session_id="s1",
@@ -1186,6 +1265,7 @@ class TestLastPromptTokens:
 
         from gateway.session import SessionEntry
         from datetime import datetime
+
         entry = SessionEntry(
             session_key="k1",
             session_id="s1",
@@ -1197,6 +1277,7 @@ class TestLastPromptTokens:
 
         store.update_session("k1", last_prompt_tokens=0)
         assert entry.last_prompt_tokens == 0
+
 
 class TestRewriteTranscriptPreservesReasoning:
     """rewrite_transcript must not drop reasoning fields from SQLite."""
@@ -1223,8 +1304,12 @@ class TestRewriteTranscriptPreservesReasoning:
         before = db.get_messages_as_conversation(session_id)
         assert before[0].get("reasoning") == "I need to think step by step."
         assert before[0].get("reasoning_content") == "provider scratchpad"
-        assert before[0].get("reasoning_details") == [{"type": "summary", "text": "step by step"}]
-        assert before[0].get("codex_reasoning_items") == [{"id": "r1", "type": "reasoning"}]
+        assert before[0].get("reasoning_details") == [
+            {"type": "summary", "text": "step by step"}
+        ]
+        assert before[0].get("codex_reasoning_items") == [
+            {"id": "r1", "type": "reasoning"}
+        ]
 
         # Now simulate /retry: build the SessionStore and call rewrite_transcript
         config = GatewayConfig()
@@ -1240,8 +1325,12 @@ class TestRewriteTranscriptPreservesReasoning:
         after = db.get_messages_as_conversation(session_id)
         assert after[0].get("reasoning") == "I need to think step by step."
         assert after[0].get("reasoning_content") == "provider scratchpad"
-        assert after[0].get("reasoning_details") == [{"type": "summary", "text": "step by step"}]
-        assert after[0].get("codex_reasoning_items") == [{"id": "r1", "type": "reasoning"}]
+        assert after[0].get("reasoning_details") == [
+            {"type": "summary", "text": "step by step"}
+        ]
+        assert after[0].get("codex_reasoning_items") == [
+            {"id": "r1", "type": "reasoning"}
+        ]
 
     def test_db_rewrite_is_atomic_on_insert_failure(self, tmp_path, monkeypatch):
         from hermes_state import SessionDB
@@ -1250,7 +1339,9 @@ class TestRewriteTranscriptPreservesReasoning:
         session_id = "atomic-rewrite-test"
         db.create_session(session_id=session_id, source="cli")
         db.append_message(session_id=session_id, role="user", content="before user")
-        db.append_message(session_id=session_id, role="assistant", content="before assistant")
+        db.append_message(
+            session_id=session_id, role="assistant", content="before assistant"
+        )
 
         config = GatewayConfig()
         with patch("gateway.session.SessionStore._ensure_loaded"):

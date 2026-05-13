@@ -75,6 +75,7 @@ pytestmark = pytest.mark.skipif(
 # Server setup
 # =========================================================================
 
+
 def _make_server_manager():
     """Create a ServerManager pointing to the local vLLM server."""
     from atroposlib.envs.server_handling.server_manager import (
@@ -96,6 +97,7 @@ def _make_server_manager():
 def _get_tokenizer():
     """Load the tokenizer for the model."""
     from transformers import AutoTokenizer
+
     return AutoTokenizer.from_pretrained(VLLM_MODEL)
 
 
@@ -164,6 +166,7 @@ def _fake_tool_handler(tool_name: str, args: Dict[str, Any], **kwargs) -> str:
 # Tests
 # =========================================================================
 
+
 @pytest.mark.asyncio
 async def test_vllm_single_tool_call():
     """vLLM model calls a tool, gets result, responds — full Phase 2 flow."""
@@ -181,10 +184,16 @@ async def test_vllm_single_tool_call():
         )
 
         messages = [
-            {"role": "user", "content": "What's the weather in Tokyo? Use the get_weather tool."},
+            {
+                "role": "user",
+                "content": "What's the weather in Tokyo? Use the get_weather tool.",
+            },
         ]
 
-        with patch("environments.agent_loop.handle_function_call", side_effect=_fake_tool_handler):
+        with patch(
+            "environments.agent_loop.handle_function_call",
+            side_effect=_fake_tool_handler,
+        ):
             result = await agent.run(messages)
 
     assert isinstance(result, AgentResult)
@@ -223,14 +232,20 @@ async def test_vllm_multi_tool_calls():
         )
 
         messages = [
-            {"role": "user", "content": (
-                "I need two things: "
-                "1) What's the weather in Paris? Use get_weather. "
-                "2) What is 15 * 7? Use calculate."
-            )},
+            {
+                "role": "user",
+                "content": (
+                    "I need two things: "
+                    "1) What's the weather in Paris? Use get_weather. "
+                    "2) What is 15 * 7? Use calculate."
+                ),
+            },
         ]
 
-        with patch("environments.agent_loop.handle_function_call", side_effect=_fake_tool_handler):
+        with patch(
+            "environments.agent_loop.handle_function_call",
+            side_effect=_fake_tool_handler,
+        ):
             result = await agent.run(messages)
 
     # Both tools should be called
@@ -240,7 +255,9 @@ async def test_vllm_multi_tool_calls():
             for tc in msg["tool_calls"]:
                 tools_called.add(tc["function"]["name"])
 
-    assert "get_weather" in tools_called, f"get_weather not called. Called: {tools_called}"
+    assert "get_weather" in tools_called, (
+        f"get_weather not called. Called: {tools_called}"
+    )
     assert "calculate" in tools_called, f"calculate not called. Called: {tools_called}"
 
 
@@ -261,10 +278,16 @@ async def test_vllm_managed_server_produces_nodes():
         )
 
         messages = [
-            {"role": "user", "content": "What's the weather in Berlin? Use get_weather."},
+            {
+                "role": "user",
+                "content": "What's the weather in Berlin? Use get_weather.",
+            },
         ]
 
-        with patch("environments.agent_loop.handle_function_call", side_effect=_fake_tool_handler):
+        with patch(
+            "environments.agent_loop.handle_function_call",
+            side_effect=_fake_tool_handler,
+        ):
             result = await agent.run(messages)
 
         # Get the managed state — should have SequenceNodes
@@ -304,7 +327,10 @@ async def test_vllm_no_tools_direct_response():
             {"role": "user", "content": "What is 2 + 2? Answer directly, no tools."},
         ]
 
-        with patch("environments.agent_loop.handle_function_call", side_effect=_fake_tool_handler):
+        with patch(
+            "environments.agent_loop.handle_function_call",
+            side_effect=_fake_tool_handler,
+        ):
             result = await agent.run(messages)
 
     assert result.finished_naturally, "Should finish naturally"
@@ -338,7 +364,10 @@ async def test_vllm_thinking_content_extracted():
             {"role": "user", "content": "What is 123 * 456? Use the calculate tool."},
         ]
 
-        with patch("environments.agent_loop.handle_function_call", side_effect=_fake_tool_handler):
+        with patch(
+            "environments.agent_loop.handle_function_call",
+            side_effect=_fake_tool_handler,
+        ):
             result = await agent.run(messages)
 
     # Qwen3-Thinking should generate <think> blocks

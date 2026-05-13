@@ -16,6 +16,7 @@ from hermes_cli.completion import _walk, generate_bash, generate_zsh, generate_f
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_parser() -> argparse.ArgumentParser:
     """Build a minimal parser that mirrors the real hermes structure."""
     p = argparse.ArgumentParser(prog="hermes")
@@ -60,10 +61,17 @@ def _make_parser() -> argparse.ArgumentParser:
 # 1. Parser extraction
 # ---------------------------------------------------------------------------
 
+
 class TestWalk:
     def test_top_level_subcommands_extracted(self):
         tree = _walk(_make_parser())
-        assert set(tree["subcommands"].keys()) == {"chat", "gateway", "sessions", "profile", "version"}
+        assert set(tree["subcommands"].keys()) == {
+            "chat",
+            "gateway",
+            "sessions",
+            "profile",
+            "version",
+        }
 
     def test_nested_subcommands_extracted(self):
         tree = _walk(_make_parser())
@@ -90,6 +98,7 @@ class TestWalk:
 # ---------------------------------------------------------------------------
 # 2. Bash output
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateBash:
     def test_contains_completion_function_and_register(self):
@@ -124,6 +133,7 @@ class TestGenerateBash:
 # 3. Zsh output
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateZsh:
     def test_contains_compdef_header(self):
         out = generate_zsh(_make_parser())
@@ -144,6 +154,7 @@ class TestGenerateZsh:
 # ---------------------------------------------------------------------------
 # 4. Fish output
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateFish:
     def test_disables_file_completion(self):
@@ -178,6 +189,7 @@ class TestGenerateFish:
 # 5. Subcommand drift prevention
 # ---------------------------------------------------------------------------
 
+
 class TestSubcommandDrift:
     def test_SUBCOMMANDS_covers_required_commands(self):
         """_SUBCOMMANDS must include all known top-level commands so that
@@ -187,15 +199,35 @@ class TestSubcommandDrift:
         from hermes_cli.main import _coalesce_session_name_args
 
         source = inspect.getsource(_coalesce_session_name_args)
-        match = re.search(r'_SUBCOMMANDS\s*=\s*\{([^}]+)\}', source, re.DOTALL)
+        match = re.search(r"_SUBCOMMANDS\s*=\s*\{([^}]+)\}", source, re.DOTALL)
         assert match, "_SUBCOMMANDS block not found in _coalesce_session_name_args()"
         defined = set(re.findall(r'"(\w+)"', match.group(1)))
 
         required = {
-            "chat", "model", "gateway", "setup", "login", "logout", "auth",
-            "status", "cron", "config", "sessions", "version", "update",
-            "uninstall", "profile", "skills", "tools", "mcp", "plugins",
-            "acp", "claw", "honcho", "completion", "logs",
+            "chat",
+            "model",
+            "gateway",
+            "setup",
+            "login",
+            "logout",
+            "auth",
+            "status",
+            "cron",
+            "config",
+            "sessions",
+            "version",
+            "update",
+            "uninstall",
+            "profile",
+            "skills",
+            "tools",
+            "mcp",
+            "plugins",
+            "acp",
+            "claw",
+            "honcho",
+            "completion",
+            "logs",
         }
         missing = required - defined
         assert not missing, f"Missing from _SUBCOMMANDS: {missing}"
@@ -204,6 +236,7 @@ class TestSubcommandDrift:
 # ---------------------------------------------------------------------------
 # 6. Profile completion (regression prevention)
 # ---------------------------------------------------------------------------
+
 
 class TestProfileCompletion:
     """Ensure profile name completion is present in all shell outputs."""
@@ -215,7 +248,7 @@ class TestProfileCompletion:
 
     def test_bash_completes_profiles_after_p_flag(self):
         out = generate_bash(_make_parser())
-        assert '"-p"' in out or "== \"-p\"" in out
+        assert '"-p"' in out or '== "-p"' in out
         assert '"--profile"' in out or '== "--profile"' in out
         assert "_hermes_profiles" in out
 
@@ -236,7 +269,9 @@ class TestProfileCompletion:
             if in_profile_case and "_hermes_profiles" in line:
                 has_profiles_in_action = True
                 break
-        assert has_profiles_in_action, "profile actions should complete with _hermes_profiles"
+        assert has_profiles_in_action, (
+            "profile actions should complete with _hermes_profiles"
+        )
 
     def test_zsh_has_profiles_helper(self):
         out = generate_zsh(_make_parser())

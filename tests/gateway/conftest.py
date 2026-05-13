@@ -119,6 +119,7 @@ def _ensure_discord_mock() -> None:
             self.title = title
             self.description = description
             self.color = color
+
     discord_mod.Embed = _FakeEmbed
 
     # ui.View / ui.Select / ui.Button: real classes (not MagicMock) so
@@ -128,8 +129,10 @@ def _ensure_discord_mock() -> None:
         def __init__(self, timeout=None):
             self.timeout = timeout
             self.children = []
+
         def add_item(self, item):
             self.children.append(item)
+
         def clear_items(self):
             self.children.clear()
 
@@ -142,8 +145,19 @@ def _ensure_discord_mock() -> None:
             self.disabled = False
 
     class _FakeButton:
-        def __init__(self, *, label=None, style=None, custom_id=None, emoji=None,
-                     url=None, disabled=False, row=None, sku_id=None, **_):
+        def __init__(
+            self,
+            *,
+            label=None,
+            style=None,
+            custom_id=None,
+            emoji=None,
+            url=None,
+            disabled=False,
+            row=None,
+            sku_id=None,
+            **_,
+        ):
             self.label = label
             self.style = style
             self.custom_id = custom_id
@@ -159,6 +173,7 @@ def _ensure_discord_mock() -> None:
             self.label = label
             self.value = value
             self.description = description
+
     discord_mod.SelectOption = _FakeSelectOption
 
     discord_mod.ui = SimpleNamespace(
@@ -168,12 +183,22 @@ def _ensure_discord_mock() -> None:
         button=lambda *a, **k: (lambda fn: fn),
     )
     discord_mod.ButtonStyle = SimpleNamespace(
-        success=1, primary=2, secondary=2, danger=3,
-        green=1, grey=2, blurple=2, red=3,
+        success=1,
+        primary=2,
+        secondary=2,
+        danger=3,
+        green=1,
+        grey=2,
+        blurple=2,
+        red=3,
     )
     discord_mod.Color = SimpleNamespace(
-        orange=lambda: 1, green=lambda: 2, blue=lambda: 3,
-        red=lambda: 4, purple=lambda: 5, greyple=lambda: 6,
+        orange=lambda: 1,
+        green=lambda: 2,
+        blue=lambda: 3,
+        red=lambda: 4,
+        purple=lambda: 5,
+        greyple=lambda: 6,
     )
 
     # app_commands — needed by _register_slash_commands auto-registration
@@ -342,4 +367,3 @@ def pytest_configure(config):
             + "\n\n"
             + _GUARD_HINT
         )
-

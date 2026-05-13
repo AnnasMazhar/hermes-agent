@@ -32,7 +32,8 @@ def _load_plugin_router():
     assert plugin_file.exists(), f"plugin file missing: {plugin_file}"
 
     spec = importlib.util.spec_from_file_location(
-        "hermes_dashboard_plugin_kanban_test", plugin_file,
+        "hermes_dashboard_plugin_kanban_test",
+        plugin_file,
     )
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
@@ -171,7 +172,8 @@ def test_dashboard_client_side_filtering_includes_tenant_filter():
 
 def test_task_detail_includes_links_and_events(client):
     parent = client.post(
-        "/api/plugins/kanban/tasks", json={"title": "parent"},
+        "/api/plugins/kanban/tasks",
+        json={"title": "parent"},
     ).json()["task"]
     child = client.post(
         "/api/plugins/kanban/tasks",
@@ -215,7 +217,8 @@ def test_patch_status_complete(client):
 
     # Board reflects the move.
     done = next(
-        c for c in client.get("/api/plugins/kanban/board").json()["columns"]
+        c
+        for c in client.get("/api/plugins/kanban/board").json()["columns"]
         if c["name"] == "done"
     )
     assert any(x["id"] == t["id"] for x in done["tasks"])
@@ -244,7 +247,9 @@ def test_patch_drag_drop_move_todo_to_ready(client):
 
     Promoting a child whose parent is not done is rejected (409).
     Promoting a child whose parent IS done is accepted (200)."""
-    parent = client.post("/api/plugins/kanban/tasks", json={"title": "p"}).json()["task"]
+    parent = client.post("/api/plugins/kanban/tasks", json={"title": "p"}).json()[
+        "task"
+    ]
     child = client.post(
         "/api/plugins/kanban/tasks",
         json={"title": "c", "parents": [parent["id"]]},
@@ -324,9 +329,7 @@ def test_patch_status_running_rejected(client):
     # was rejected before any mutation.
     board = client.get("/api/plugins/kanban/board").json()
     statuses = {
-        tt["id"]: col["name"]
-        for col in board["columns"]
-        for tt in col["tasks"]
+        tt["id"]: col["name"] for col in board["columns"] for tt in col["tasks"]
     }
     assert statuses.get(t["id"]) != "running"
 
@@ -450,18 +453,21 @@ def test_triage_task_not_promoted_to_ready(client):
 def test_patch_status_triage_works(client):
     """A user (or specifier) can push a task back into triage, and out of it."""
     t = client.post(
-        "/api/plugins/kanban/tasks", json={"title": "x"},
+        "/api/plugins/kanban/tasks",
+        json={"title": "x"},
     ).json()["task"]
     # Normal creation is 'ready'; push to triage.
     r = client.patch(
-        f"/api/plugins/kanban/tasks/{t['id']}", json={"status": "triage"},
+        f"/api/plugins/kanban/tasks/{t['id']}",
+        json={"status": "triage"},
     )
     assert r.status_code == 200
     assert r.json()["task"]["status"] == "triage"
 
     # Now promote to todo.
     r = client.patch(
-        f"/api/plugins/kanban/tasks/{t['id']}", json={"status": "todo"},
+        f"/api/plugins/kanban/tasks/{t['id']}",
+        json={"status": "todo"},
     )
     assert r.status_code == 200
     assert r.json()["task"]["status"] == "todo"
@@ -474,7 +480,8 @@ def test_patch_status_triage_works(client):
 
 def test_board_progress_rollup(client):
     parent = client.post(
-        "/api/plugins/kanban/tasks", json={"title": "parent"},
+        "/api/plugins/kanban/tasks",
+        json={"title": "parent"},
     ).json()["task"]
     child_a = client.post(
         "/api/plugins/kanban/tasks",
@@ -499,7 +506,9 @@ def test_board_progress_rollup(client):
     # 0/2 done.
     r = client.get("/api/plugins/kanban/board")
     parent_row = next(
-        t for col in r.json()["columns"] for t in col["tasks"]
+        t
+        for col in r.json()["columns"]
+        for t in col["tasks"]
         if t["id"] == parent["id"]
     )
     assert parent_row["progress"] == {"done": 0, "total": 2}
@@ -512,16 +521,23 @@ def test_board_progress_rollup(client):
     assert r.status_code == 200
     r = client.get("/api/plugins/kanban/board")
     parent_row = next(
-        t for col in r.json()["columns"] for t in col["tasks"]
+        t
+        for col in r.json()["columns"]
+        for t in col["tasks"]
         if t["id"] == parent["id"]
     )
     assert parent_row["progress"] == {"done": 1, "total": 2}
 
     # Childless tasks report progress=None, not {0/0}.
-    assert next(
-        t for col in r.json()["columns"] for t in col["tasks"]
-        if t["id"] == child_b["id"]
-    )["progress"] is None
+    assert (
+        next(
+            t
+            for col in r.json()["columns"]
+            for t in col["tasks"]
+            if t["id"] == child_b["id"]
+        )["progress"]
+        is None
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -562,6 +578,7 @@ def test_ws_events_rejects_when_token_required(tmp_path, monkeypatch):
     # Stub web_server so _check_ws_token has a token to compare against.
     import hermes_cli
     import types
+
     stub = types.SimpleNamespace(_SESSION_TOKEN="secret-xyz")
     monkeypatch.setitem(sys.modules, "hermes_cli.web_server", stub)
     monkeypatch.setattr(hermes_cli, "web_server", stub, raising=False)
@@ -572,6 +589,7 @@ def test_ws_events_rejects_when_token_required(tmp_path, monkeypatch):
 
     # No token → policy violation close.
     from starlette.websockets import WebSocketDisconnect
+
     with pytest.raises(WebSocketDisconnect) as exc:
         with c.websocket_connect("/api/plugins/kanban/events"):
             pass
@@ -584,9 +602,7 @@ def test_ws_events_rejects_when_token_required(tmp_path, monkeypatch):
     assert exc.value.code == 1008
 
     # Correct token → accepted (connect then close cleanly from our side).
-    with c.websocket_connect(
-        "/api/plugins/kanban/events?token=secret-xyz"
-    ) as ws:
+    with c.websocket_connect("/api/plugins/kanban/events?token=secret-xyz") as ws:
         assert ws is not None  # handshake succeeded
 
 
@@ -613,6 +629,7 @@ def test_ws_events_swallows_cancellation_on_shutdown(tmp_path, monkeypatch):
     # Short-circuit the token check — this test is about the cancellation
     # path, not auth.
     import plugins.kanban.dashboard.plugin_api as pa
+
     monkeypatch.setattr(pa, "_check_ws_token", lambda t: True)
 
     class _FakeWS:
@@ -662,11 +679,15 @@ def test_bulk_status_ready(client):
     c2 = client.post("/api/plugins/kanban/tasks", json={"title": "c"}).json()["task"]
     # Parent-less tasks land in "ready" already; push them to blocked first.
     for tid in (a["id"], b["id"], c2["id"]):
-        client.patch(f"/api/plugins/kanban/tasks/{tid}",
-                     json={"status": "blocked", "block_reason": "wait"})
+        client.patch(
+            f"/api/plugins/kanban/tasks/{tid}",
+            json={"status": "blocked", "block_reason": "wait"},
+        )
 
-    r = client.post("/api/plugins/kanban/tasks/bulk",
-                    json={"ids": [a["id"], b["id"], c2["id"]], "status": "ready"})
+    r = client.post(
+        "/api/plugins/kanban/tasks/bulk",
+        json={"ids": [a["id"], b["id"], c2["id"]], "status": "ready"},
+    )
     assert r.status_code == 200
     results = r.json()["results"]
     assert all(r["ok"] for r in results)
@@ -732,14 +753,14 @@ def test_dashboard_dependency_selects_use_value_change_handler():
     ).read_text()
 
     parent_select = (
-        'value: newParent,\n'
+        "value: newParent,\n"
         '          className: "h-7 text-xs flex-1",\n'
-        '        }, selectChangeHandler(setNewParent))'
+        "        }, selectChangeHandler(setNewParent))"
     )
     child_select = (
-        'value: newChild,\n'
+        "value: newChild,\n"
         '          className: "h-7 text-xs flex-1",\n'
-        '        }, selectChangeHandler(setNewChild))'
+        "        }, selectChangeHandler(setNewChild))"
     )
 
     assert parent_select in bundle
@@ -749,8 +770,10 @@ def test_dashboard_dependency_selects_use_value_change_handler():
 def test_bulk_archive(client):
     a = client.post("/api/plugins/kanban/tasks", json={"title": "a"}).json()["task"]
     b = client.post("/api/plugins/kanban/tasks", json={"title": "b"}).json()["task"]
-    r = client.post("/api/plugins/kanban/tasks/bulk",
-                    json={"ids": [a["id"], b["id"]], "archive": True})
+    r = client.post(
+        "/api/plugins/kanban/tasks/bulk",
+        json={"ids": [a["id"], b["id"]], "archive": True},
+    )
     assert r.status_code == 200
     assert all(r["ok"] for r in r.json()["results"])
     # Default board (archived hidden) — both gone.
@@ -761,12 +784,16 @@ def test_bulk_archive(client):
 
 
 def test_bulk_reassign(client):
-    a = client.post("/api/plugins/kanban/tasks",
-                    json={"title": "a", "assignee": "old"}).json()["task"]
-    b = client.post("/api/plugins/kanban/tasks",
-                    json={"title": "b", "assignee": "old"}).json()["task"]
-    r = client.post("/api/plugins/kanban/tasks/bulk",
-                    json={"ids": [a["id"], b["id"]], "assignee": "new"})
+    a = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "a", "assignee": "old"}
+    ).json()["task"]
+    b = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "b", "assignee": "old"}
+    ).json()["task"]
+    r = client.post(
+        "/api/plugins/kanban/tasks/bulk",
+        json={"ids": [a["id"], b["id"]], "assignee": "new"},
+    )
     assert r.status_code == 200
     for tid in (a["id"], b["id"]):
         t = client.get(f"/api/plugins/kanban/tasks/{tid}").json()["task"]
@@ -774,10 +801,12 @@ def test_bulk_reassign(client):
 
 
 def test_bulk_unassign_via_empty_string(client):
-    a = client.post("/api/plugins/kanban/tasks",
-                    json={"title": "a", "assignee": "x"}).json()["task"]
-    r = client.post("/api/plugins/kanban/tasks/bulk",
-                    json={"ids": [a["id"]], "assignee": ""})
+    a = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "a", "assignee": "x"}
+    ).json()["task"]
+    r = client.post(
+        "/api/plugins/kanban/tasks/bulk", json={"ids": [a["id"]], "assignee": ""}
+    )
     assert r.status_code == 200
     t = client.get(f"/api/plugins/kanban/tasks/{a['id']}").json()["task"]
     assert t["assignee"] is None
@@ -788,8 +817,10 @@ def test_bulk_partial_failure_doesnt_abort_siblings(client):
     applying."""
     a = client.post("/api/plugins/kanban/tasks", json={"title": "a"}).json()["task"]
     c2 = client.post("/api/plugins/kanban/tasks", json={"title": "c"}).json()["task"]
-    r = client.post("/api/plugins/kanban/tasks/bulk",
-                    json={"ids": [a["id"], "bogus-id", c2["id"]], "priority": 7})
+    r = client.post(
+        "/api/plugins/kanban/tasks/bulk",
+        json={"ids": [a["id"], "bogus-id", c2["id"]], "priority": 7},
+    )
     assert r.status_code == 200
     results = r.json()["results"]
     assert len(results) == 3
@@ -847,21 +878,25 @@ def test_config_reads_dashboard_kanban_section(tmp_path, monkeypatch, client):
 # Runs surfacing (vulcan-artivus RFC feedback)
 # ---------------------------------------------------------------------------
 
+
 def test_task_detail_includes_runs(client):
     """GET /tasks/:id carries a runs[] array with the attempt history."""
-    r = client.post("/api/plugins/kanban/tasks",
-                    json={"title": "port x", "assignee": "worker"}).json()
+    r = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "port x", "assignee": "worker"}
+    ).json()
     tid = r["task"]["id"]
 
     # Drive status running to force a run creation: PATCH to running
     # doesn't call claim_task (the PATCH path uses _set_status_direct),
     # so use the bulk/claim indirection via the kernel.
     import hermes_cli.kanban_db as _kb
+
     conn = _kb.connect()
     try:
         _kb.claim_task(conn, tid)
         _kb.complete_task(
-            conn, tid,
+            conn,
+            tid,
             result="done",
             summary="tested on rate limiter",
             metadata={"changed_files": ["limiter.py"]},
@@ -892,9 +927,12 @@ def test_patch_status_done_with_summary_and_metadata(client):
     """PATCH /tasks/:id with status=done + summary + metadata must
     reach complete_task, so the dashboard has CLI parity."""
     # Create + claim.
-    r = client.post("/api/plugins/kanban/tasks", json={"title": "x", "assignee": "worker"})
+    r = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "x", "assignee": "worker"}
+    )
     tid = r.json()["task"]["id"]
     from hermes_cli import kanban_db as kb
+
     conn = kb.connect()
     try:
         kb.claim_task(conn, tid)
@@ -924,9 +962,12 @@ def test_patch_status_done_with_summary_and_metadata(client):
 
 def test_patch_status_done_without_summary_still_works(client):
     """Back-compat: PATCH without the new fields still completes."""
-    r = client.post("/api/plugins/kanban/tasks", json={"title": "y", "assignee": "worker"})
+    r = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "y", "assignee": "worker"}
+    )
     tid = r.json()["task"]["id"]
     from hermes_cli import kanban_db as kb
+
     conn = kb.connect()
     try:
         kb.claim_task(conn, tid)
@@ -948,9 +989,12 @@ def test_patch_status_done_without_summary_still_works(client):
 
 def test_patch_status_archive_closes_running_run(client):
     """PATCH to archived while running must close the in-flight run."""
-    r = client.post("/api/plugins/kanban/tasks", json={"title": "z", "assignee": "worker"})
+    r = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "z", "assignee": "worker"}
+    )
     tid = r.json()["task"]["id"]
     from hermes_cli import kanban_db as kb
+
     conn = kb.connect()
     try:
         kb.claim_task(conn, tid)
@@ -975,9 +1019,12 @@ def test_patch_status_archive_closes_running_run(client):
 
 def test_event_dict_includes_run_id(client):
     """GET /tasks/:id returns events with run_id populated."""
-    r = client.post("/api/plugins/kanban/tasks", json={"title": "e", "assignee": "worker"})
+    r = client.post(
+        "/api/plugins/kanban/tasks", json={"title": "e", "assignee": "worker"}
+    )
     tid = r.json()["task"]["id"]
     from hermes_cli import kanban_db as kb
+
     conn = kb.connect()
     try:
         kb.claim_task(conn, tid)
@@ -997,10 +1044,10 @@ def test_event_dict_includes_run_id(client):
     assert comp[0]["run_id"] == run_id
 
 
-
 # ---------------------------------------------------------------------------
 # Per-task force-loaded skills via REST
 # ---------------------------------------------------------------------------
+
 
 def test_create_task_with_skills_roundtrips(client):
     """POST /tasks accepts `skills: [...]`, GET /tasks/:id returns it."""
@@ -1036,10 +1083,10 @@ def test_create_task_without_skills_defaults_to_empty_list(client):
     assert task.get("skills") in (None, [])
 
 
-
 # ---------------------------------------------------------------------------
 # Dispatcher-presence warning in POST /tasks response
 # ---------------------------------------------------------------------------
+
 
 def test_create_task_includes_warning_when_no_dispatcher(client, monkeypatch):
     """ready+assigned task + no gateway -> response has `warning` field
@@ -1090,10 +1137,13 @@ def test_create_task_no_warning_on_triage(client, monkeypatch):
 
 def test_create_task_probe_error_does_not_break_create(client, monkeypatch):
     """Probe failure must never break task creation."""
+
     def _raise():
         raise RuntimeError("probe crashed")
+
     monkeypatch.setattr(
-        "hermes_cli.kanban._check_dispatcher_presence", _raise,
+        "hermes_cli.kanban._check_dispatcher_presence",
+        _raise,
     )
     r = client.post(
         "/api/plugins/kanban/tasks",
@@ -1101,7 +1151,6 @@ def test_create_task_probe_error_does_not_break_create(client, monkeypatch):
     )
     assert r.status_code == 200
     assert r.json()["task"]["title"] == "resilient"
-
 
 
 # ---------------------------------------------------------------------------
@@ -1152,6 +1201,7 @@ def test_home_subscribe_creates_notify_sub_row(client, with_home_channels):
     """POST .../home-subscribe/telegram writes a kanban_notify_subs row
     keyed to the telegram home's (chat_id, thread_id)."""
     from hermes_cli import kanban_db as kb
+
     t = client.post("/api/plugins/kanban/tasks", json={"title": "x"}).json()["task"]
 
     r = client.post(f"/api/plugins/kanban/tasks/{t['id']}/home-subscribe/telegram")
@@ -1169,7 +1219,9 @@ def test_home_subscribe_creates_notify_sub_row(client, with_home_channels):
     assert subs[0]["thread_id"] == "42"
 
 
-def test_home_subscribe_flips_subscribed_flag_in_subsequent_get(client, with_home_channels):
+def test_home_subscribe_flips_subscribed_flag_in_subsequent_get(
+    client, with_home_channels
+):
     """After subscribe, the GET endpoint reports subscribed=true for that
     platform and false for the others."""
     t = client.post("/api/plugins/kanban/tasks", json={"title": "x"}).json()["task"]
@@ -1183,6 +1235,7 @@ def test_home_subscribe_flips_subscribed_flag_in_subsequent_get(client, with_hom
 def test_home_subscribe_is_idempotent(client, with_home_channels):
     """Re-subscribing keeps a single row at the DB layer."""
     from hermes_cli import kanban_db as kb
+
     t = client.post("/api/plugins/kanban/tasks", json={"title": "x"}).json()["task"]
     client.post(f"/api/plugins/kanban/tasks/{t['id']}/home-subscribe/telegram")
     client.post(f"/api/plugins/kanban/tasks/{t['id']}/home-subscribe/telegram")
@@ -1210,6 +1263,7 @@ def test_home_subscribe_unknown_task_returns_404(client, with_home_channels):
 def test_home_unsubscribe_removes_notify_sub_row(client, with_home_channels):
     """DELETE .../home-subscribe/telegram removes the matching row."""
     from hermes_cli import kanban_db as kb
+
     t = client.post("/api/plugins/kanban/tasks", json={"title": "x"}).json()["task"]
     client.post(f"/api/plugins/kanban/tasks/{t['id']}/home-subscribe/telegram")
     r = client.delete(f"/api/plugins/kanban/tasks/{t['id']}/home-subscribe/telegram")
@@ -1225,6 +1279,7 @@ def test_home_unsubscribe_removes_notify_sub_row(client, with_home_channels):
 def test_home_subscribe_multiple_platforms_independent(client, with_home_channels):
     """Subscribing on telegram does not affect discord and vice versa."""
     from hermes_cli import kanban_db as kb
+
     t = client.post("/api/plugins/kanban/tasks", json={"title": "x"}).json()["task"]
 
     client.post(f"/api/plugins/kanban/tasks/{t['id']}/home-subscribe/telegram")
@@ -1251,8 +1306,10 @@ def test_home_channels_empty_when_no_homes_configured(client, monkeypatch):
     """Zero platforms with a home -> empty list (UI hides the section)."""
     # No BOT_TOKEN env vars set → load_gateway_config().platforms is empty.
     for var in [
-        "TELEGRAM_BOT_TOKEN", "TELEGRAM_HOME_CHANNEL",
-        "DISCORD_BOT_TOKEN", "DISCORD_HOME_CHANNEL",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_HOME_CHANNEL",
+        "DISCORD_BOT_TOKEN",
+        "DISCORD_HOME_CHANNEL",
         "SLACK_BOT_TOKEN",
     ]:
         monkeypatch.delenv(var, raising=False)
@@ -1264,6 +1321,7 @@ def test_home_channels_empty_when_no_homes_configured(client, monkeypatch):
 # ---------------------------------------------------------------------------
 # Recovery endpoints (reclaim + reassign) and warnings field
 # ---------------------------------------------------------------------------
+
 
 def test_board_surfaces_warnings_field_for_hallucinated_completions(client):
     """Tasks with a pending completion_blocked_hallucination event surface
@@ -1279,9 +1337,11 @@ def test_board_surfaces_warnings_field_for_hallucinated_completions(client):
         real = kb.create_task(conn, title="real", assignee="x", created_by="alice")
 
         import pytest as _pytest
+
         with _pytest.raises(kb.HallucinatedCardsError):
             kb.complete_task(
-                conn, parent,
+                conn,
+                parent,
                 summary="claimed phantom",
                 created_cards=[real, "t_deadbeefcafe"],
             )
@@ -1313,16 +1373,19 @@ def test_board_warnings_cleared_after_clean_completion(client):
         real = kb.create_task(conn, title="real", assignee="x", created_by="alice")
 
         import pytest as _pytest
+
         with _pytest.raises(kb.HallucinatedCardsError):
             kb.complete_task(
-                conn, parent,
+                conn,
+                parent,
                 summary="first attempt phantom",
                 created_cards=[real, "t_phantom11"],
             )
 
         # Second attempt drops the bad id — succeeds.
         ok = kb.complete_task(
-            conn, parent,
+            conn,
+            parent,
             summary="retry without phantom",
             created_cards=[real],
         )
@@ -1343,6 +1406,7 @@ def test_reclaim_endpoint_releases_running_claim(client):
     """POST /tasks/<id>/reclaim drops the claim, returns ok, and emits
     a manual reclaimed event."""
     import secrets
+
     conn = kb.connect()
     try:
         t = kb.create_task(conn, title="running", assignee="x")
@@ -1377,7 +1441,8 @@ def test_reclaim_endpoint_releases_running_claim(client):
     conn2 = kb.connect()
     try:
         row = conn2.execute(
-            "SELECT status, claim_lock FROM tasks WHERE id=?", (t,),
+            "SELECT status, claim_lock FROM tasks WHERE id=?",
+            (t,),
         ).fetchone()
         assert row["status"] == "ready"
         assert row["claim_lock"] is None
@@ -1418,7 +1483,8 @@ def test_reassign_endpoint_switches_profile(client):
     conn2 = kb.connect()
     try:
         row = conn2.execute(
-            "SELECT assignee FROM tasks WHERE id=?", (t,),
+            "SELECT assignee FROM tasks WHERE id=?",
+            (t,),
         ).fetchone()
         assert row["assignee"] == "newbie"
     finally:
@@ -1428,6 +1494,7 @@ def test_reassign_endpoint_switches_profile(client):
 def test_reassign_endpoint_409_on_running_without_reclaim(client):
     """Reassigning a running task without reclaim_first returns 409."""
     import secrets
+
     conn = kb.connect()
     try:
         t = kb.create_task(conn, title="running", assignee="orig")
@@ -1450,6 +1517,7 @@ def test_reassign_endpoint_with_reclaim_first_succeeds_on_running(client):
     """With reclaim_first=true, a running task is reclaimed+reassigned in
     one call."""
     import secrets
+
     conn = kb.connect()
     try:
         t = kb.create_task(conn, title="running", assignee="orig")
@@ -1480,7 +1548,8 @@ def test_reassign_endpoint_with_reclaim_first_succeeds_on_running(client):
     conn2 = kb.connect()
     try:
         row = conn2.execute(
-            "SELECT status, assignee FROM tasks WHERE id=?", (t,),
+            "SELECT status, assignee FROM tasks WHERE id=?",
+            (t,),
         ).fetchone()
         assert row["status"] == "ready"
         assert row["assignee"] == "new"
@@ -1491,6 +1560,7 @@ def test_reassign_endpoint_with_reclaim_first_succeeds_on_running(client):
 # ---------------------------------------------------------------------------
 # Diagnostics endpoint (/api/plugins/kanban/diagnostics)
 # ---------------------------------------------------------------------------
+
 
 def test_diagnostics_endpoint_empty_for_clean_board(client):
     r = client.get("/api/plugins/kanban/diagnostics")
@@ -1506,9 +1576,12 @@ def test_diagnostics_endpoint_surfaces_blocked_hallucination(client):
         parent = kb.create_task(conn, title="parent", assignee="alice")
         real = kb.create_task(conn, title="real", assignee="x", created_by="alice")
         import pytest as _pytest
+
         with _pytest.raises(kb.HallucinatedCardsError):
             kb.complete_task(
-                conn, parent, summary="phantom",
+                conn,
+                parent,
+                summary="phantom",
                 created_cards=[real, "t_ffff00001234"],
             )
     finally:
@@ -1618,9 +1691,7 @@ def test_specify_happy_path(client, monkeypatch):
 
     _patch_specifier_response(
         monkeypatch,
-        content=jsonlib.dumps(
-            {"title": "Polished", "body": "**Goal**\nDo the thing."}
-        ),
+        content=jsonlib.dumps({"title": "Polished", "body": "**Goal**\nDo the thing."}),
     )
 
     r = client.post(

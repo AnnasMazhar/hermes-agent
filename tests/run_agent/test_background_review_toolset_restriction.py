@@ -52,8 +52,10 @@ def test_background_review_agent_uses_restricted_toolsets():
         captured["enabled_toolsets"] = kwargs.get("enabled_toolsets")
         raise RuntimeError("stop after capturing init args")
 
-    with patch.object(run_agent.AIAgent, "__init__", _capture_init), \
-         patch("threading.Thread", _SyncThread):
+    with (
+        patch.object(run_agent.AIAgent, "__init__", _capture_init),
+        patch("threading.Thread", _SyncThread),
+    ):
         agent._spawn_background_review(
             messages_snapshot=[],
             review_memory=True,

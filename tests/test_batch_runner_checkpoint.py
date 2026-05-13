@@ -10,6 +10,7 @@ import pytest
 
 # batch_runner uses relative imports, ensure project root is on path
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from batch_runner import BatchRunner, _process_batch_worker
@@ -83,8 +84,9 @@ class TestSaveCheckpoint:
     def test_no_temp_files_left(self, runner):
         runner._save_checkpoint({"run_name": "test", "completed_prompts": []})
 
-        tmp_files = [f for f in runner.checkpoint_file.parent.iterdir()
-                     if ".tmp" in f.name]
+        tmp_files = [
+            f for f in runner.checkpoint_file.parent.iterdir() if ".tmp" in f.name
+        ]
         assert len(tmp_files) == 0
 
 
@@ -96,8 +98,11 @@ class TestLoadCheckpoint:
         assert result.get("completed_prompts", []) == []
 
     def test_loads_existing_checkpoint(self, runner):
-        data = {"run_name": "test_run", "completed_prompts": [5, 10, 15],
-                "batch_stats": {"0": {"processed": 3}}}
+        data = {
+            "run_name": "test_run",
+            "completed_prompts": [5, 10, 15],
+            "batch_stats": {"0": {"processed": 3}},
+        }
         runner.checkpoint_file.write_text(json.dumps(data))
 
         result = runner._load_checkpoint()
@@ -160,7 +165,9 @@ class TestResumePreservesProgress:
 
 
 class TestBatchWorkerResumeBehavior:
-    def test_discarded_no_reasoning_prompts_are_marked_completed(self, tmp_path, monkeypatch):
+    def test_discarded_no_reasoning_prompts_are_marked_completed(
+        self, tmp_path, monkeypatch
+    ):
         batch_file = tmp_path / "batch_1.jsonl"
         prompt_result = {
             "success": True,
@@ -173,7 +180,9 @@ class TestBatchWorkerResumeBehavior:
             "toolsets_used": [],
         }
 
-        monkeypatch.setattr("batch_runner._process_single_prompt", lambda *args, **kwargs: prompt_result)
+        monkeypatch.setattr(
+            "batch_runner._process_single_prompt", lambda *args, **kwargs: prompt_result
+        )
 
         result = _process_batch_worker((
             1,
@@ -240,8 +249,7 @@ class TestFinalCheckpointNoDuplicates:
         re-introduces the pattern is immediately visible."""
         completed_prompts_set = set()
         results = []
-        for batch in ({"completed_prompts": [0, 1, 2]},
-                      {"completed_prompts": [3, 4]}):
+        for batch in ({"completed_prompts": [0, 1, 2]}, {"completed_prompts": [3, 4]}):
             completed_prompts_set.update(batch["completed_prompts"])
             results.append(batch)
         # Buggy aggregation (pre-fix):

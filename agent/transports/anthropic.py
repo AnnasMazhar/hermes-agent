@@ -106,7 +106,7 @@ class AnthropicTransport(ProviderTransport):
             elif block.type == "tool_use":
                 name = block.name
                 if strip_tool_prefix and name.startswith(_MCP_PREFIX):
-                    name = name[len(_MCP_PREFIX):]
+                    name = name[len(_MCP_PREFIX) :]
                 tool_calls.append(
                     ToolCall(
                         id=block.id,

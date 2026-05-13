@@ -84,26 +84,32 @@ class TestCheckSensitivePathMacOSBypass:
 
     def test_etc_hosts_blocked(self):
         from tools.file_tools import _check_sensitive_path
+
         assert _check_sensitive_path("/etc/hosts") is not None
 
     def test_private_etc_hosts_blocked(self):
         from tools.file_tools import _check_sensitive_path
+
         assert _check_sensitive_path("/private/etc/hosts") is not None
 
     def test_private_etc_ssh_config_blocked(self):
         from tools.file_tools import _check_sensitive_path
+
         assert _check_sensitive_path("/private/etc/ssh/sshd_config") is not None
 
     def test_private_var_blocked(self):
         from tools.file_tools import _check_sensitive_path
+
         assert _check_sensitive_path("/private/var/db/something") is not None
 
     def test_boot_still_blocked(self):
         from tools.file_tools import _check_sensitive_path
+
         assert _check_sensitive_path("/boot/grub/grub.cfg") is not None
 
     def test_safe_path_allowed(self):
         from tools.file_tools import _check_sensitive_path
+
         assert _check_sensitive_path("/tmp/safe_file.txt") is None
 
 

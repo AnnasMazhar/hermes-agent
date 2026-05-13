@@ -81,7 +81,9 @@ def _normalize_env_dict(env: dict | None) -> dict[str, str]:
             if isinstance(value, (int, float, bool)):
                 value = str(value)
             else:
-                logger.warning("Ignoring non-string docker_env value for %r: %r", key, value)
+                logger.warning(
+                    "Ignoring non-string docker_env value for %r: %r", key, value
+                )
                 continue
         normalized[key] = value
 
@@ -157,23 +159,34 @@ def find_docker() -> Optional[str]:
 # Block privilege escalation and limit PIDs.
 # /tmp is size-limited and nosuid but allows exec (needed by pip/npm builds).
 _BASE_SECURITY_ARGS = [
-    "--cap-drop", "ALL",
-    "--cap-add", "DAC_OVERRIDE",
-    "--cap-add", "CHOWN",
-    "--cap-add", "FOWNER",
-    "--security-opt", "no-new-privileges",
-    "--pids-limit", "256",
-    "--tmpfs", "/tmp:rw,nosuid,size=512m",
-    "--tmpfs", "/var/tmp:rw,noexec,nosuid,size=256m",
-    "--tmpfs", "/run:rw,noexec,nosuid,size=64m",
+    "--cap-drop",
+    "ALL",
+    "--cap-add",
+    "DAC_OVERRIDE",
+    "--cap-add",
+    "CHOWN",
+    "--cap-add",
+    "FOWNER",
+    "--security-opt",
+    "no-new-privileges",
+    "--pids-limit",
+    "256",
+    "--tmpfs",
+    "/tmp:rw,nosuid,size=512m",
+    "--tmpfs",
+    "/var/tmp:rw,noexec,nosuid,size=256m",
+    "--tmpfs",
+    "/run:rw,noexec,nosuid,size=64m",
 ]
 
 # Extra caps needed when the container starts as root and an entrypoint
 # must drop privileges via gosu/su. Skipped when --user is passed because
 # the container already starts unprivileged and never needs to switch.
 _GOSU_CAP_ARGS = [
-    "--cap-add", "SETUID",
-    "--cap-add", "SETGID",
+    "--cap-add",
+    "SETUID",
+    "--cap-add",
+    "SETGID",
 ]
 
 
@@ -343,7 +356,7 @@ class DockerEnvironment(BaseEnvironment):
         # User-configured volume mounts (from config.yaml docker_volumes)
         volume_args = []
         workspace_explicitly_mounted = False
-        for vol in (volumes or []):
+        for vol in volumes or []:
             if not isinstance(vol, str):
                 logger.warning(f"Docker volume entry is not a string: {vol!r}")
                 continue
@@ -365,7 +378,9 @@ class DockerEnvironment(BaseEnvironment):
             and not workspace_explicitly_mounted
         )
         if auto_mount_cwd and host_cwd and not os.path.isdir(host_cwd_abs):
-            logger.debug(f"Skipping docker cwd mount: host_cwd is not a valid directory: {host_cwd}")
+            logger.debug(
+                f"Skipping docker cwd mount: host_cwd is not a valid directory: {host_cwd}"
+            )
 
         self._workspace_dir: Optional[str] = None
         self._home_dir: Optional[str] = None
@@ -375,29 +390,36 @@ class DockerEnvironment(BaseEnvironment):
             self._home_dir = str(sandbox / "home")
             os.makedirs(self._home_dir, exist_ok=True)
             writable_args.extend([
-                "-v", f"{self._home_dir}:/root",
+                "-v",
+                f"{self._home_dir}:/root",
             ])
             if not bind_host_cwd and not workspace_explicitly_mounted:
                 self._workspace_dir = str(sandbox / "workspace")
                 os.makedirs(self._workspace_dir, exist_ok=True)
                 writable_args.extend([
-                    "-v", f"{self._workspace_dir}:/workspace",
+                    "-v",
+                    f"{self._workspace_dir}:/workspace",
                 ])
         else:
             if not bind_host_cwd and not workspace_explicitly_mounted:
                 writable_args.extend([
-                    "--tmpfs", "/workspace:rw,exec,size=10g",
+                    "--tmpfs",
+                    "/workspace:rw,exec,size=10g",
                 ])
             writable_args.extend([
-                "--tmpfs", "/home:rw,exec,size=1g",
-                "--tmpfs", "/root:rw,exec,size=1g",
+                "--tmpfs",
+                "/home:rw,exec,size=1g",
+                "--tmpfs",
+                "/root:rw,exec,size=1g",
             ])
 
         if bind_host_cwd:
             logger.info(f"Mounting configured host cwd to /workspace: {host_cwd_abs}")
             volume_args = ["-v", f"{host_cwd_abs}:/workspace", *volume_args]
         elif workspace_explicitly_mounted:
-            logger.debug("Skipping docker cwd mount: /workspace already mounted by user config")
+            logger.debug(
+                "Skipping docker cwd mount: /workspace already mounted by user config"
+            )
 
         # Mount credential files (OAuth tokens, etc.) declared by skills.
         # Read-only so the container can authenticate but not modify host creds.
@@ -493,13 +515,18 @@ class DockerEnvironment(BaseEnvironment):
         # Start the container directly via `docker run -d`.
         container_name = f"hermes-{uuid.uuid4().hex[:8]}"
         run_cmd = [
-            self._docker_exe, "run", "-d",
-            "--init",           # tini/catatonit as PID 1 — reaps zombie children
-            "--name", container_name,
-            "-w", cwd,
+            self._docker_exe,
+            "run",
+            "-d",
+            "--init",  # tini/catatonit as PID 1 — reaps zombie children
+            "--name",
+            container_name,
+            "-w",
+            cwd,
             *all_run_args,
             image,
-            "sleep", "infinity",  # no fixed lifetime — idle reaper handles cleanup
+            "sleep",
+            "infinity",  # no fixed lifetime — idle reaper handles cleanup
         ]
         logger.debug(f"Starting container: {' '.join(run_cmd)}")
         result = subprocess.run(
@@ -532,13 +559,16 @@ class DockerEnvironment(BaseEnvironment):
         passthrough_keys: set[str] = set()
         try:
             from tools.env_passthrough import get_all_passthrough
+
             passthrough_keys = set(get_all_passthrough())
         except Exception:
             pass
         # Explicit docker_forward_env entries are an intentional opt-in and must
         # win over the generic Hermes secret blocklist. Only implicit passthrough
         # keys are filtered.
-        forward_keys = explicit_forward_keys | (passthrough_keys - _HERMES_PROVIDER_ENV_BLOCKLIST)
+        forward_keys = explicit_forward_keys | (
+            passthrough_keys - _HERMES_PROVIDER_ENV_BLOCKLIST
+        )
         hermes_env = _load_hermes_env_vars() if forward_keys else {}
         for key in sorted(forward_keys):
             value = os.getenv(key)
@@ -552,9 +582,14 @@ class DockerEnvironment(BaseEnvironment):
             args.extend(["-e", f"{key}={exec_env[key]}"])
         return args
 
-    def _run_bash(self, cmd_string: str, *, login: bool = False,
-                  timeout: int = 120,
-                  stdin_data: str | None = None) -> subprocess.Popen:
+    def _run_bash(
+        self,
+        cmd_string: str,
+        *,
+        login: bool = False,
+        timeout: int = 120,
+        stdin_data: str | None = None,
+    ) -> subprocess.Popen:
         """Spawn a bash process inside the Docker container."""
         assert self._container_id, "Container not started"
         cmd = [self._docker_exe, "exec"]
@@ -578,7 +613,7 @@ class DockerEnvironment(BaseEnvironment):
     @staticmethod
     def _storage_opt_supported() -> bool:
         """Check if Docker's storage driver supports --storage-opt size=.
-        
+
         Only overlay2 on XFS with pquota supports per-container disk quotas.
         Ubuntu (and most distros) default to ext4, where this flag errors out.
         """
@@ -589,7 +624,9 @@ class DockerEnvironment(BaseEnvironment):
             docker = find_docker() or "docker"
             result = subprocess.run(
                 [docker, "info", "--format", "{{.Driver}}"],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             driver = result.stdout.strip().lower()
             if driver != "overlay2":
@@ -599,14 +636,17 @@ class DockerEnvironment(BaseEnvironment):
             # Probe by attempting a dry-ish run — the fastest reliable check.
             probe = subprocess.run(
                 [docker, "create", "--storage-opt", "size=1m", "hello-world"],
-                capture_output=True, text=True, timeout=15,
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
             if probe.returncode == 0:
                 # Clean up the created container
                 container_id = probe.stdout.strip()
                 if container_id:
-                    subprocess.run([docker, "rm", container_id],
-                                   capture_output=True, timeout=5)
+                    subprocess.run(
+                        [docker, "rm", container_id], capture_output=True, timeout=5
+                    )
                 _storage_opt_ok = True
             else:
                 _storage_opt_ok = False

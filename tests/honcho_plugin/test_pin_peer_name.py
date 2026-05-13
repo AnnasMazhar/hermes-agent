@@ -41,11 +41,13 @@ class TestPinPeerNameConfigParsing:
 
     def test_root_level_true(self, tmp_path, monkeypatch):
         config_file = tmp_path / "honcho.json"
-        config_file.write_text(json.dumps({
-            "apiKey": "k",
-            "peerName": "Igor",
-            "pinPeerName": True,
-        }))
+        config_file.write_text(
+            json.dumps({
+                "apiKey": "k",
+                "peerName": "Igor",
+                "pinPeerName": True,
+            })
+        )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
@@ -55,13 +57,15 @@ class TestPinPeerNameConfigParsing:
     def test_host_block_true(self, tmp_path, monkeypatch):
         """Host-level flag works the same as root-level."""
         config_file = tmp_path / "honcho.json"
-        config_file.write_text(json.dumps({
-            "apiKey": "k",
-            "peerName": "Igor",
-            "hosts": {
-                "hermes": {"pinPeerName": True},
-            },
-        }))
+        config_file.write_text(
+            json.dumps({
+                "apiKey": "k",
+                "peerName": "Igor",
+                "hosts": {
+                    "hermes": {"pinPeerName": True},
+                },
+            })
+        )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
@@ -70,14 +74,16 @@ class TestPinPeerNameConfigParsing:
     def test_host_block_overrides_root(self, tmp_path, monkeypatch):
         """Host block wins over root — matches how every other flag behaves."""
         config_file = tmp_path / "honcho.json"
-        config_file.write_text(json.dumps({
-            "apiKey": "k",
-            "peerName": "Igor",
-            "pinPeerName": True,
-            "hosts": {
-                "hermes": {"pinPeerName": False},
-            },
-        }))
+        config_file.write_text(
+            json.dumps({
+                "apiKey": "k",
+                "peerName": "Igor",
+                "pinPeerName": True,
+                "hosts": {
+                    "hermes": {"pinPeerName": False},
+                },
+            })
+        )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
@@ -88,11 +94,13 @@ class TestPinPeerNameConfigParsing:
 
     def test_explicit_false_parses(self, tmp_path, monkeypatch):
         config_file = tmp_path / "honcho.json"
-        config_file.write_text(json.dumps({
-            "apiKey": "k",
-            "peerName": "Igor",
-            "pinPeerName": False,
-        }))
+        config_file.write_text(
+            json.dumps({
+                "apiKey": "k",
+                "peerName": "Igor",
+                "pinPeerName": False,
+            })
+        )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
@@ -111,15 +119,15 @@ def _patch_manager_for_resolution_test(mgr: HonchoSessionManager) -> None:
     """
     fake_peer = MagicMock()
     mgr._get_or_create_peer = MagicMock(return_value=fake_peer)
-    mgr._get_or_create_honcho_session = MagicMock(
-        return_value=(MagicMock(), [])
-    )
+    mgr._get_or_create_honcho_session = MagicMock(return_value=(MagicMock(), []))
 
 
 class TestPeerResolutionOrder:
     """Matrix of (runtime_id, pin_peer_name, peer_name) → expected user_peer_id."""
 
-    def _config(self, *, peer_name: str | None, pin_peer_name: bool) -> HonchoClientConfig:
+    def _config(
+        self, *, peer_name: str | None, pin_peer_name: bool
+    ) -> HonchoClientConfig:
         # The test doesn't need auth / Honcho — disable the provider so
         # the manager doesn't try to open a real client.
         return HonchoClientConfig(
@@ -288,10 +296,14 @@ class TestCrossPlatformMemoryUnification:
             write_frequency="turn",
         )
         mgr_a = HonchoSessionManager(
-            honcho=MagicMock(), config=cfg, runtime_user_peer_name="user_a",
+            honcho=MagicMock(),
+            config=cfg,
+            runtime_user_peer_name="user_a",
         )
         mgr_b = HonchoSessionManager(
-            honcho=MagicMock(), config=cfg, runtime_user_peer_name="user_b",
+            honcho=MagicMock(),
+            config=cfg,
+            runtime_user_peer_name="user_b",
         )
         _patch_manager_for_resolution_test(mgr_a)
         _patch_manager_for_resolution_test(mgr_b)

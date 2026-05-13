@@ -127,6 +127,7 @@ def _get_mcp_stderr_log() -> Any:
             return _mcp_stderr_log_fh
         try:
             from hermes_constants import get_hermes_home
+
             log_dir = get_hermes_home() / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / "mcp-stderr.log"
@@ -163,6 +164,7 @@ def _write_stderr_log_header(server_name: str) -> None:
     except Exception:
         pass
 
+
 # ---------------------------------------------------------------------------
 # Graceful import -- MCP SDK is an optional dependency
 # ---------------------------------------------------------------------------
@@ -179,9 +181,11 @@ LATEST_PROTOCOL_VERSION = "2025-03-26"
 try:
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
+
     _MCP_AVAILABLE = True
     try:
         from mcp.client.streamable_http import streamablehttp_client
+
         _MCP_HTTP_AVAILABLE = True
     except ImportError:
         _MCP_HTTP_AVAILABLE = False
@@ -189,19 +193,24 @@ try:
     # deprecated wrapper for older SDK versions.
     try:
         from mcp.client.streamable_http import streamable_http_client
+
         _MCP_NEW_HTTP = True
     except ImportError:
         _MCP_NEW_HTTP = False
     try:
         from mcp.types import LATEST_PROTOCOL_VERSION
     except ImportError:
-        logger.debug("mcp.types.LATEST_PROTOCOL_VERSION not available -- using fallback protocol version")
+        logger.debug(
+            "mcp.types.LATEST_PROTOCOL_VERSION not available -- using fallback protocol version"
+        )
     # SSE transport client (for MCP servers using SSE transport instead of Streamable HTTP)
     try:
         from mcp.client.sse import sse_client
     except ImportError:
         sse_client = None
-        logger.debug("mcp.client.sse.sse_client not available -- SSE transport disabled")
+        logger.debug(
+            "mcp.client.sse.sse_client not available -- SSE transport disabled"
+        )
     # Sampling types -- separated so older SDK versions don't break MCP support
     try:
         from mcp.types import (
@@ -213,6 +222,7 @@ try:
             TextContent,
             ToolUseContent,
         )
+
         _MCP_SAMPLING_TYPES = True
     except ImportError:
         logger.debug("MCP sampling types not available -- sampling disabled")
@@ -224,9 +234,12 @@ try:
             PromptListChangedNotification,
             ResourceListChangedNotification,
         )
+
         _MCP_NOTIFICATION_TYPES = True
     except ImportError:
-        logger.debug("MCP notification types not available -- dynamic tool discovery disabled")
+        logger.debug(
+            "MCP notification types not available -- dynamic tool discovery disabled"
+        )
 except ImportError:
     logger.debug("mcp package not installed -- MCP tool support disabled")
 
@@ -247,34 +260,43 @@ def _check_message_handler_support() -> bool:
 
 _MCP_MESSAGE_HANDLER_SUPPORTED = _check_message_handler_support()
 if _MCP_AVAILABLE and not _MCP_MESSAGE_HANDLER_SUPPORTED:
-    logger.debug("MCP SDK does not support message_handler -- dynamic tool discovery disabled")
+    logger.debug(
+        "MCP SDK does not support message_handler -- dynamic tool discovery disabled"
+    )
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
-_DEFAULT_TOOL_TIMEOUT = 120      # seconds for tool calls
-_DEFAULT_CONNECT_TIMEOUT = 60    # seconds for initial connection per server
+_DEFAULT_TOOL_TIMEOUT = 120  # seconds for tool calls
+_DEFAULT_CONNECT_TIMEOUT = 60  # seconds for initial connection per server
 _MAX_RECONNECT_RETRIES = 5
-_MAX_INITIAL_CONNECT_RETRIES = 3 # retries for the very first connection attempt
+_MAX_INITIAL_CONNECT_RETRIES = 3  # retries for the very first connection attempt
 _MAX_BACKOFF_SECONDS = 60
 
 # Environment variables that are safe to pass to stdio subprocesses
 _SAFE_ENV_KEYS = frozenset({
-    "PATH", "HOME", "USER", "LANG", "LC_ALL", "TERM", "SHELL", "TMPDIR",
+    "PATH",
+    "HOME",
+    "USER",
+    "LANG",
+    "LC_ALL",
+    "TERM",
+    "SHELL",
+    "TMPDIR",
 })
 
 # Regex for credential patterns to strip from error messages
 _CREDENTIAL_PATTERN = re.compile(
     r"(?:"
-    r"ghp_[A-Za-z0-9_]{1,255}"           # GitHub PAT
-    r"|sk-[A-Za-z0-9_]{1,255}"           # OpenAI-style key
-    r"|Bearer\s+\S+"                      # Bearer token
-    r"|token=[^\s&,;\"']{1,255}"         # token=...
-    r"|key=[^\s&,;\"']{1,255}"           # key=...
-    r"|API_KEY=[^\s&,;\"']{1,255}"       # API_KEY=...
-    r"|password=[^\s&,;\"']{1,255}"      # password=...
-    r"|secret=[^\s&,;\"']{1,255}"        # secret=...
+    r"ghp_[A-Za-z0-9_]{1,255}"  # GitHub PAT
+    r"|sk-[A-Za-z0-9_]{1,255}"  # OpenAI-style key
+    r"|Bearer\s+\S+"  # Bearer token
+    r"|token=[^\s&,;\"']{1,255}"  # token=...
+    r"|key=[^\s&,;\"']{1,255}"  # key=...
+    r"|API_KEY=[^\s&,;\"']{1,255}"  # API_KEY=...
+    r"|password=[^\s&,;\"']{1,255}"  # password=...
+    r"|secret=[^\s&,;\"']{1,255}"  # secret=...
     r")",
     re.IGNORECASE,
 )
@@ -283,6 +305,7 @@ _CREDENTIAL_PATTERN = re.compile(
 # ---------------------------------------------------------------------------
 # Security helpers
 # ---------------------------------------------------------------------------
+
 
 def _build_safe_env(user_env: Optional[dict]) -> dict:
     """Build a filtered environment dict for stdio subprocesses.
@@ -332,30 +355,43 @@ def _exc_str(exc: BaseException) -> str:
 # These are WARNING-level — we log but don't block, since false positives
 # would break legitimate MCP servers.
 _MCP_INJECTION_PATTERNS = [
-    (re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.I),
-     "prompt override attempt ('ignore previous instructions')"),
-    (re.compile(r"you\s+are\s+now\s+a", re.I),
-     "identity override attempt ('you are now a...')"),
-    (re.compile(r"your\s+new\s+(task|role|instructions?)\s+(is|are)", re.I),
-     "task override attempt"),
-    (re.compile(r"system\s*:\s*", re.I),
-     "system prompt injection attempt"),
-    (re.compile(r"<\s*(system|human|assistant)\s*>", re.I),
-     "role tag injection attempt"),
-    (re.compile(r"do\s+not\s+(tell|inform|mention|reveal)", re.I),
-     "concealment instruction"),
-    (re.compile(r"(curl|wget|fetch)\s+https?://", re.I),
-     "network command in description"),
-    (re.compile(r"base64\.(b64decode|decodebytes)", re.I),
-     "base64 decode reference"),
-    (re.compile(r"exec\s*\(|eval\s*\(", re.I),
-     "code execution reference"),
-    (re.compile(r"import\s+(subprocess|os|shutil|socket)", re.I),
-     "dangerous import reference"),
+    (
+        re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.I),
+        "prompt override attempt ('ignore previous instructions')",
+    ),
+    (
+        re.compile(r"you\s+are\s+now\s+a", re.I),
+        "identity override attempt ('you are now a...')",
+    ),
+    (
+        re.compile(r"your\s+new\s+(task|role|instructions?)\s+(is|are)", re.I),
+        "task override attempt",
+    ),
+    (re.compile(r"system\s*:\s*", re.I), "system prompt injection attempt"),
+    (
+        re.compile(r"<\s*(system|human|assistant)\s*>", re.I),
+        "role tag injection attempt",
+    ),
+    (
+        re.compile(r"do\s+not\s+(tell|inform|mention|reveal)", re.I),
+        "concealment instruction",
+    ),
+    (
+        re.compile(r"(curl|wget|fetch)\s+https?://", re.I),
+        "network command in description",
+    ),
+    (re.compile(r"base64\.(b64decode|decodebytes)", re.I), "base64 decode reference"),
+    (re.compile(r"exec\s*\(|eval\s*\(", re.I), "code execution reference"),
+    (
+        re.compile(r"import\s+(subprocess|os|shutil|socket)", re.I),
+        "dangerous import reference",
+    ),
 ]
 
 
-def _scan_mcp_description(server_name: str, tool_name: str, description: str) -> List[str]:
+def _scan_mcp_description(
+    server_name: str, tool_name: str, description: str
+) -> List[str]:
     """Scan an MCP tool description for prompt injection patterns.
 
     Returns a list of finding strings (empty = clean).
@@ -370,7 +406,9 @@ def _scan_mcp_description(server_name: str, tool_name: str, description: str) ->
         logger.warning(
             "MCP server '%s' tool '%s': suspicious description content — %s. "
             "Description: %.200s",
-            server_name, tool_name, "; ".join(findings),
+            server_name,
+            tool_name,
+            "; ".join(findings),
             description,
         )
     return findings
@@ -412,7 +450,9 @@ def _resolve_stdio_command(command: str, env: dict) -> tuple[str, dict]:
             )
             candidates = [
                 os.path.join(hermes_home, "node", "bin", resolved_command),
-                os.path.join(os.path.expanduser("~"), ".local", "bin", resolved_command),
+                os.path.join(
+                    os.path.expanduser("~"), ".local", "bin", resolved_command
+                ),
             ]
             for candidate in candidates:
                 if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
@@ -434,6 +474,7 @@ def _resolve_stdio_command(command: str, env: dict) -> tuple[str, dict]:
 def _mcp_image_extension_for_mime_type(mime_type: str) -> str:
     """Return a reasonable file extension for an MCP image MIME type."""
     import mimetypes
+
     normalized = (mime_type or "").split(";", 1)[0].strip().lower()
     if normalized in {"image/jpeg", "image/jpg"}:
         return ".jpg"
@@ -548,6 +589,7 @@ def _format_connect_error(exc: BaseException) -> str:
 # Sampling -- server-initiated LLM requests (MCP sampling/createMessage)
 # ---------------------------------------------------------------------------
 
+
 def _safe_numeric(value, default, coerce=int, minimum=1):
     """Coerce a config value to a numeric type, returning *default* on failure.
 
@@ -576,28 +618,47 @@ class SamplingHandler:
     it doesn't block the event loop.
     """
 
-    _STOP_REASON_MAP = {"stop": "endTurn", "length": "maxTokens", "tool_calls": "toolUse"}
+    _STOP_REASON_MAP = {
+        "stop": "endTurn",
+        "length": "maxTokens",
+        "tool_calls": "toolUse",
+    }
 
     def __init__(self, server_name: str, config: dict):
         self.server_name = server_name
         self.max_rpm = _safe_numeric(config.get("max_rpm", 10), 10, int)
         self.timeout = _safe_numeric(config.get("timeout", 30), 30, float)
-        self.max_tokens_cap = _safe_numeric(config.get("max_tokens_cap", 4096), 4096, int)
+        self.max_tokens_cap = _safe_numeric(
+            config.get("max_tokens_cap", 4096), 4096, int
+        )
         self.max_tool_rounds = _safe_numeric(
-            config.get("max_tool_rounds", 5), 5, int, minimum=0,
+            config.get("max_tool_rounds", 5),
+            5,
+            int,
+            minimum=0,
         )
         self.model_override = config.get("model")
         self.allowed_models = config.get("allowed_models", [])
 
-        _log_levels = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING}
+        _log_levels = {
+            "debug": logging.DEBUG,
+            "info": logging.INFO,
+            "warning": logging.WARNING,
+        }
         self.audit_level = _log_levels.get(
-            str(config.get("log_level", "info")).lower(), logging.INFO,
+            str(config.get("log_level", "info")).lower(),
+            logging.INFO,
         )
 
         # Per-instance state
         self._rate_timestamps: List[float] = []
         self._tool_loop_count = 0
-        self.metrics = {"requests": 0, "errors": 0, "tokens_used": 0, "tool_use_count": 0}
+        self.metrics = {
+            "requests": 0,
+            "errors": 0,
+            "tokens_used": 0,
+            "tool_use_count": 0,
+        }
 
     # -- Rate limiting -------------------------------------------------------
 
@@ -643,14 +704,27 @@ class SamplingHandler:
         """
         messages: List[dict] = []
         for msg in params.messages:
-            blocks = msg.content_as_list if hasattr(msg, "content_as_list") else (
-                msg.content if isinstance(msg.content, list) else [msg.content]
+            blocks = (
+                msg.content_as_list
+                if hasattr(msg, "content_as_list")
+                else (msg.content if isinstance(msg.content, list) else [msg.content])
             )
 
             # Separate blocks by kind
             tool_results = [b for b in blocks if hasattr(b, "toolUseId")]
-            tool_uses = [b for b in blocks if hasattr(b, "name") and hasattr(b, "input") and not hasattr(b, "toolUseId")]
-            content_blocks = [b for b in blocks if not hasattr(b, "toolUseId") and not (hasattr(b, "name") and hasattr(b, "input"))]
+            tool_uses = [
+                b
+                for b in blocks
+                if hasattr(b, "name")
+                and hasattr(b, "input")
+                and not hasattr(b, "toolUseId")
+            ]
+            content_blocks = [
+                b
+                for b in blocks
+                if not hasattr(b, "toolUseId")
+                and not (hasattr(b, "name") and hasattr(b, "input"))
+            ]
 
             # Emit tool result messages (role: tool)
             for tr in tool_results:
@@ -669,7 +743,9 @@ class SamplingHandler:
                         "type": "function",
                         "function": {
                             "name": tu.name,
-                            "arguments": json.dumps(tu.input, ensure_ascii=False) if isinstance(tu.input, dict) else str(tu.input),
+                            "arguments": json.dumps(tu.input, ensure_ascii=False)
+                            if isinstance(tu.input, dict)
+                            else str(tu.input),
                         },
                     })
                 msg_dict: dict = {"role": msg.role, "tool_calls": tc_list}
@@ -681,7 +757,10 @@ class SamplingHandler:
             elif content_blocks:
                 # Pure text/image content
                 if len(content_blocks) == 1 and hasattr(content_blocks[0], "text"):
-                    messages.append({"role": msg.role, "content": content_blocks[0].text})
+                    messages.append({
+                        "role": msg.role,
+                        "content": content_blocks[0].text,
+                    })
                 else:
                     parts = []
                     for block in content_blocks:
@@ -690,7 +769,9 @@ class SamplingHandler:
                         elif hasattr(block, "data") and hasattr(block, "mimeType"):
                             parts.append({
                                 "type": "image_url",
-                                "image_url": {"url": f"data:{block.mimeType};base64,{block.data}"},
+                                "image_url": {
+                                    "url": f"data:{block.mimeType};base64,{block.data}"
+                                },
                             })
                         else:
                             logger.warning(
@@ -742,23 +823,27 @@ class SamplingHandler:
                     logger.warning(
                         "MCP server '%s': malformed tool_calls arguments "
                         "from LLM (wrapping as raw): %.100s",
-                        self.server_name, args,
+                        self.server_name,
+                        args,
                     )
                     parsed = {"_raw": args}
             else:
                 parsed = args if isinstance(args, dict) else {"_raw": str(args)}
 
-            content_blocks.append(ToolUseContent(
-                type="tool_use",
-                id=tc.id,
-                name=tc.function.name,
-                input=parsed,
-            ))
+            content_blocks.append(
+                ToolUseContent(
+                    type="tool_use",
+                    id=tc.id,
+                    name=tc.function.name,
+                    input=parsed,
+                )
+            )
 
         logger.log(
             self.audit_level,
             "MCP server '%s' sampling response: model=%s, tokens=%s, tool_calls=%d",
-            self.server_name, response.model,
+            self.server_name,
+            response.model,
             getattr(getattr(response, "usage", None), "total_tokens", "?"),
             len(content_blocks),
         )
@@ -778,7 +863,8 @@ class SamplingHandler:
         logger.log(
             self.audit_level,
             "MCP server '%s' sampling response: model=%s, tokens=%s",
-            self.server_name, response.model,
+            self.server_name,
+            response.model,
             getattr(getattr(response, "usage", None), "total_tokens", "?"),
         )
 
@@ -813,7 +899,8 @@ class SamplingHandler:
         if not self._check_rate_limit():
             logger.warning(
                 "MCP server '%s' sampling rate limit exceeded (%d/min)",
-                self.server_name, self.max_rpm,
+                self.server_name,
+                self.max_rpm,
             )
             self.metrics["errors"] += 1
             return self._error(
@@ -830,10 +917,15 @@ class SamplingHandler:
         # Model whitelist check (we need to resolve model before calling)
         resolved_model = model or self.model_override or ""
 
-        if self.allowed_models and resolved_model and resolved_model not in self.allowed_models:
+        if (
+            self.allowed_models
+            and resolved_model
+            and resolved_model not in self.allowed_models
+        ):
             logger.warning(
                 "MCP server '%s' requested model '%s' not in allowed_models",
-                self.server_name, resolved_model,
+                self.server_name,
+                resolved_model,
             )
             self.metrics["errors"] += 1
             return self._error(
@@ -873,7 +965,10 @@ class SamplingHandler:
         logger.log(
             self.audit_level,
             "MCP server '%s' sampling request: model=%s, max_tokens=%d, messages=%d",
-            self.server_name, resolved_model, max_tokens, len(messages),
+            self.server_name,
+            resolved_model,
+            max_tokens,
+            len(messages),
         )
 
         # Offload sync LLM call to thread (non-blocking)
@@ -890,7 +985,8 @@ class SamplingHandler:
 
         try:
             response = await asyncio.wait_for(
-                asyncio.to_thread(_sync_call), timeout=self.timeout,
+                asyncio.to_thread(_sync_call),
+                timeout=self.timeout,
             )
         except asyncio.TimeoutError:
             self.metrics["errors"] += 1
@@ -934,6 +1030,7 @@ class SamplingHandler:
 # Server task -- each MCP server lives in one long-lived asyncio Task
 # ---------------------------------------------------------------------------
 
+
 class MCPServerTask:
     """Manages a single MCP server connection in a dedicated asyncio Task.
 
@@ -945,11 +1042,22 @@ class MCPServerTask:
     """
 
     __slots__ = (
-        "name", "session", "tool_timeout",
-        "_task", "_ready", "_shutdown_event", "_reconnect_event",
-        "_tools", "_error", "_config",
-        "_sampling", "_registered_tool_names", "_auth_type", "_refresh_lock",
-        "_rpc_lock", "_pending_refresh_tasks",
+        "name",
+        "session",
+        "tool_timeout",
+        "_task",
+        "_ready",
+        "_shutdown_event",
+        "_reconnect_event",
+        "_tools",
+        "_error",
+        "_config",
+        "_sampling",
+        "_registered_tool_names",
+        "_auth_type",
+        "_refresh_lock",
+        "_rpc_lock",
+        "_pending_refresh_tasks",
         "initialize_result",
     )
 
@@ -1017,10 +1125,13 @@ class MCPServerTask:
         triggers a refresh; prompt and resource change notifications are
         logged as stubs for future work.
         """
+
         async def _handler(message):
             try:
                 if isinstance(message, Exception):
-                    logger.debug("MCP message handler (%s): exception: %s", self.name, message)
+                    logger.debug(
+                        "MCP message handler (%s): exception: %s", self.name, message
+                    )
                     return
                 if _MCP_NOTIFICATION_TYPES and isinstance(message, ServerNotification):
                     match message.root:
@@ -1044,13 +1155,20 @@ class MCPServerTask:
                             # refresh without awaiting the full server RPC.
                             await asyncio.sleep(0)
                         case PromptListChangedNotification():
-                            logger.debug("MCP server '%s': prompts/list_changed (ignored)", self.name)
+                            logger.debug(
+                                "MCP server '%s': prompts/list_changed (ignored)",
+                                self.name,
+                            )
                         case ResourceListChangedNotification():
-                            logger.debug("MCP server '%s': resources/list_changed (ignored)", self.name)
+                            logger.debug(
+                                "MCP server '%s': resources/list_changed (ignored)",
+                                self.name,
+                            )
                         case _:
                             pass
             except Exception:
                 logger.exception("Error in MCP message handler for '%s'", self.name)
+
         return _handler
 
     async def _refresh_tools(self):
@@ -1106,12 +1224,14 @@ class MCPServerTask:
                 logger.warning(
                     "MCP server '%s': tools changed dynamically — %s. "
                     "Verify these changes are expected.",
-                    self.name, "; ".join(changes),
+                    self.name,
+                    "; ".join(changes),
                 )
             else:
                 logger.info(
                     "MCP server '%s': dynamically refreshed %d tool(s) (no changes)",
-                    self.name, len(self._registered_tool_names),
+                    self.name,
+                    len(self._registered_tool_names),
                 )
 
     async def _wait_for_lifecycle_event(self) -> str:
@@ -1159,7 +1279,8 @@ class MCPServerTask:
                         logger.warning(
                             "MCP server '%s' keepalive failed, "
                             "triggering reconnect: %s",
-                            self.name, exc,
+                            self.name,
+                            exc,
                         )
                         self._reconnect_event.set()
                         break
@@ -1184,20 +1305,17 @@ class MCPServerTask:
         user_env = config.get("env")
 
         if not command:
-            raise ValueError(
-                f"MCP server '{self.name}' has no 'command' in config"
-            )
+            raise ValueError(f"MCP server '{self.name}' has no 'command' in config")
 
         safe_env = _build_safe_env(user_env)
         command, safe_env = _resolve_stdio_command(command, safe_env)
 
         # Check package against OSV malware database before spawning
         from tools.osv_check import check_package_for_malware
+
         malware_error = check_package_for_malware(command, args)
         if malware_error:
-            raise ValueError(
-                f"MCP server '{self.name}': {malware_error}"
-            )
+            raise ValueError(f"MCP server '{self.name}': {malware_error}")
 
         server_params = StdioServerParameters(
             command=command,
@@ -1254,6 +1372,7 @@ class MCPServerTask:
                         # ``os.kill(pid, 0)`` is NOT a no-op on Windows
                         # (bpo-14484). Use the cross-platform check.
                         from gateway.status import _pid_exists
+
                         if not _pid_exists(pid):
                             continue  # process already exited — nothing to do
                         _orphan_stdio_pids.add(pid)
@@ -1288,8 +1407,11 @@ class MCPServerTask:
         if self._auth_type == "oauth":
             try:
                 from tools.mcp_oauth_manager import get_manager
+
                 _oauth_auth = get_manager().get_or_build_provider(
-                    self.name, url, config.get("oauth"),
+                    self.name,
+                    url,
+                    config.get("oauth"),
                 )
             except Exception as exc:
                 logger.warning("MCP OAuth setup failed for '%s': %s", self.name, exc)
@@ -1340,7 +1462,8 @@ class MCPServerTask:
                     if reason == "reconnect":
                         logger.info(
                             "MCP server '%s': reconnect requested — "
-                            "tearing down SSE session", self.name,
+                            "tearing down SSE session",
+                            self.name,
                         )
             return
 
@@ -1356,7 +1479,9 @@ class MCPServerTask:
                 if response.is_redirect and response.next_request:
                     target = response.next_request.url
                     if (target.scheme, target.host, target.port) != (
-                        _original_url.scheme, _original_url.host, _original_url.port,
+                        _original_url.scheme,
+                        _original_url.host,
+                        _original_url.port,
                     ):
                         response.next_request.headers.pop("authorization", None)
                         response.next_request.headers.pop("Authorization", None)
@@ -1376,9 +1501,13 @@ class MCPServerTask:
             # http_client is provided, so we wrap in async-with.
             async with httpx.AsyncClient(**client_kwargs) as http_client:
                 async with streamable_http_client(url, http_client=http_client) as (
-                    read_stream, write_stream, _get_session_id,
+                    read_stream,
+                    write_stream,
+                    _get_session_id,
                 ):
-                    async with ClientSession(read_stream, write_stream, **sampling_kwargs) as session:
+                    async with ClientSession(
+                        read_stream, write_stream, **sampling_kwargs
+                    ) as session:
                         self.initialize_result = await session.initialize()
                         self.session = session
                         await self._discover_tools()
@@ -1387,7 +1516,8 @@ class MCPServerTask:
                         if reason == "reconnect":
                             logger.info(
                                 "MCP server '%s': reconnect requested — "
-                                "tearing down HTTP session", self.name,
+                                "tearing down HTTP session",
+                                self.name,
                             )
         else:
             # Deprecated API (mcp < 1.24.0): manages httpx client internally.
@@ -1399,9 +1529,13 @@ class MCPServerTask:
             if _oauth_auth is not None:
                 _http_kwargs["auth"] = _oauth_auth
             async with streamablehttp_client(url, **_http_kwargs) as (
-                read_stream, write_stream, _get_session_id,
+                read_stream,
+                write_stream,
+                _get_session_id,
             ):
-                async with ClientSession(read_stream, write_stream, **sampling_kwargs) as session:
+                async with ClientSession(
+                    read_stream, write_stream, **sampling_kwargs
+                ) as session:
                     self.initialize_result = await session.initialize()
                     self.session = session
                     await self._discover_tools()
@@ -1410,7 +1544,8 @@ class MCPServerTask:
                     if reason == "reconnect":
                         logger.info(
                             "MCP server '%s': reconnect requested — "
-                            "tearing down legacy HTTP session", self.name,
+                            "tearing down legacy HTTP session",
+                            self.name,
                         )
 
     async def _discover_tools(self):
@@ -1419,11 +1554,7 @@ class MCPServerTask:
             return
         async with self._rpc_lock:
             tools_result = await self.session.list_tools()
-        self._tools = (
-            tools_result.tools
-            if hasattr(tools_result, "tools")
-            else []
-        )
+        self._tools = tools_result.tools if hasattr(tools_result, "tools") else []
 
     async def run(self, config: dict):
         """Long-lived coroutine: connect, discover tools, wait, disconnect.
@@ -1468,8 +1599,7 @@ class MCPServerTask:
                 if self._shutdown_event.is_set():
                     break
                 logger.info(
-                    "MCP server '%s': reconnecting (OAuth recovery or "
-                    "manual refresh)",
+                    "MCP server '%s': reconnecting (OAuth recovery or manual refresh)",
                     self.name,
                 )
                 # Reset the session reference; _run_http/_run_stdio will
@@ -1504,7 +1634,9 @@ class MCPServerTask:
                         logger.warning(
                             "MCP server '%s' failed initial connection after "
                             "%d attempts, giving up: %s",
-                            self.name, _MAX_INITIAL_CONNECT_RETRIES, exc,
+                            self.name,
+                            _MAX_INITIAL_CONNECT_RETRIES,
+                            exc,
                         )
                         self._error = exc
                         self._ready.set()
@@ -1513,8 +1645,11 @@ class MCPServerTask:
                     logger.warning(
                         "MCP server '%s' initial connection failed "
                         "(attempt %d/%d), retrying in %.0fs: %s",
-                        self.name, initial_retries,
-                        _MAX_INITIAL_CONNECT_RETRIES, backoff, exc,
+                        self.name,
+                        initial_retries,
+                        _MAX_INITIAL_CONNECT_RETRIES,
+                        backoff,
+                        exc,
                     )
                     await asyncio.sleep(backoff)
                     backoff = min(backoff * 2, _MAX_BACKOFF_SECONDS)
@@ -1530,7 +1665,8 @@ class MCPServerTask:
                 if self._shutdown_event.is_set():
                     logger.debug(
                         "MCP server '%s' disconnected during shutdown: %s",
-                        self.name, exc,
+                        self.name,
+                        exc,
                     )
                     return
 
@@ -1539,15 +1675,20 @@ class MCPServerTask:
                     logger.warning(
                         "MCP server '%s' failed after %d reconnection attempts, "
                         "giving up: %s",
-                        self.name, _MAX_RECONNECT_RETRIES, exc,
+                        self.name,
+                        _MAX_RECONNECT_RETRIES,
+                        exc,
                     )
                     return
 
                 logger.warning(
                     "MCP server '%s' connection lost (attempt %d/%d), "
                     "reconnecting in %.0fs: %s",
-                    self.name, retries, _MAX_RECONNECT_RETRIES,
-                    backoff, exc,
+                    self.name,
+                    retries,
+                    _MAX_RECONNECT_RETRIES,
+                    backoff,
+                    exc,
                 )
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, _MAX_BACKOFF_SECONDS)
@@ -1652,6 +1793,7 @@ def _reset_server_error(server_name: str) -> None:
     _server_error_counts[server_name] = 0
     _server_breaker_opened_at.pop(server_name, None)
 
+
 # ---------------------------------------------------------------------------
 # Auth-failure detection helpers (Task 6 of MCP OAuth consolidation)
 # ---------------------------------------------------------------------------
@@ -1680,22 +1822,26 @@ def _get_auth_error_types() -> tuple:
     types: list = []
     try:
         from mcp.client.auth import OAuthFlowError, OAuthTokenError
+
         types.extend([OAuthFlowError, OAuthTokenError])
     except ImportError:
         pass
     try:
         # Older MCP SDK variants exported this
         from mcp.client.auth import UnauthorizedError  # type: ignore
+
         types.append(UnauthorizedError)
     except ImportError:
         pass
     try:
         from tools.mcp_oauth import OAuthNonInteractiveError
+
         types.append(OAuthNonInteractiveError)
     except ImportError:
         pass
     try:
         import httpx
+
         types.append(httpx.HTTPStatusError)
     except ImportError:
         pass
@@ -1715,6 +1861,7 @@ def _is_auth_error(exc: BaseException) -> bool:
         return False
     try:
         import httpx
+
         if isinstance(exc, httpx.HTTPStatusError):
             return getattr(exc.response, "status_code", None) == 401
     except ImportError:
@@ -1760,6 +1907,7 @@ def _handle_auth_error_and_retry(
         return None
 
     from tools.mcp_oauth_manager import get_manager
+
     manager = get_manager()
 
     async def _recover():
@@ -1770,7 +1918,8 @@ def _handle_auth_error_and_retry(
     except Exception as rec_exc:
         logger.warning(
             "MCP OAuth '%s': recovery attempt failed: %s",
-            server_name, rec_exc,
+            server_name,
+            rec_exc,
         )
         recovered = False
 
@@ -1813,23 +1962,28 @@ def _handle_auth_error_and_retry(
         except Exception as retry_exc:
             logger.warning(
                 "MCP %s/%s retry after auth recovery failed: %s",
-                server_name, op_description, retry_exc,
+                server_name,
+                op_description,
+                retry_exc,
             )
 
     # No recovery available, or retry also failed: surface a structured
     # needs_reauth error. Bumps the circuit breaker so the model stops
     # retrying the tool.
     _bump_server_error(server_name)
-    return json.dumps({
-        "error": (
-            f"MCP server '{server_name}' requires re-authentication. "
-            f"Run `hermes mcp login {server_name}` (or delete the tokens "
-            f"file under ~/.hermes/mcp-tokens/ and restart). Do NOT retry "
-            f"this tool — ask the user to re-authenticate."
-        ),
-        "needs_reauth": True,
-        "server": server_name,
-    }, ensure_ascii=False)
+    return json.dumps(
+        {
+            "error": (
+                f"MCP server '{server_name}' requires re-authentication. "
+                f"Run `hermes mcp login {server_name}` (or delete the tokens "
+                f"file under ~/.hermes/mcp-tokens/ and restart). Do NOT retry "
+                f"this tool — ask the user to re-authenticate."
+            ),
+            "needs_reauth": True,
+            "server": server_name,
+        },
+        ensure_ascii=False,
+    )
 
 
 # Substrings (lower-cased match) that indicate the MCP server rejected
@@ -1922,7 +2076,9 @@ def _handle_session_expired_and_retry(
     logger.info(
         "MCP server '%s': %s failed with session-expired error (%s); "
         "signalling transport reconnect and retrying once.",
-        server_name, op_description, exc,
+        server_name,
+        op_description,
+        exc,
     )
 
     # Trigger the same reconnect mechanism the OAuth recovery path
@@ -1956,7 +2112,9 @@ def _handle_session_expired_and_retry(
     except Exception as retry_exc:
         logger.warning(
             "MCP %s/%s retry after session reconnect failed: %s",
-            server_name, op_description, retry_exc,
+            server_name,
+            op_description,
+            retry_exc,
         )
     return None
 
@@ -2001,6 +2159,7 @@ def _snapshot_child_pids() -> set:
     # Fallback: psutil
     try:
         import psutil
+
         return {c.pid for c in psutil.Process(my_pid).children()}
     except Exception:
         pass
@@ -2080,20 +2239,23 @@ def _run_on_mcp_loop(coro, timeout: float = 30):
 
 def _interrupted_call_result() -> str:
     """Standardized JSON error for a user-interrupted MCP tool call."""
-    return json.dumps({
-        "error": "MCP call interrupted: user sent a new message"
-    }, ensure_ascii=False)
+    return json.dumps(
+        {"error": "MCP call interrupted: user sent a new message"}, ensure_ascii=False
+    )
 
 
 # ---------------------------------------------------------------------------
 # Config loading
 # ---------------------------------------------------------------------------
 
+
 def _interpolate_env_vars(value):
     """Recursively resolve ``${VAR}`` placeholders from ``os.environ``."""
     if isinstance(value, str):
+
         def _replace(m):
             return os.environ.get(m.group(1), m.group(0))
+
         return re.sub(r"\$\{([^}]+)\}", _replace, value)
     if isinstance(value, dict):
         return {k: _interpolate_env_vars(v) for k, v in value.items()}
@@ -2115,6 +2277,7 @@ def _load_mcp_config() -> Dict[str, dict]:
     """
     try:
         from hermes_cli.config import load_config
+
         config = load_config()
         servers = config.get("mcp_servers")
         if not servers or not isinstance(servers, dict):
@@ -2122,6 +2285,7 @@ def _load_mcp_config() -> Dict[str, dict]:
         # Ensure .env vars are available for interpolation
         try:
             from hermes_cli.env_loader import load_hermes_dotenv
+
             load_hermes_dotenv()
         except Exception:
             pass
@@ -2134,6 +2298,7 @@ def _load_mcp_config() -> Dict[str, dict]:
 # ---------------------------------------------------------------------------
 # Server connection helper
 # ---------------------------------------------------------------------------
+
 
 async def _connect_server(name: str, config: dict) -> MCPServerTask:
     """Create an MCPServerTask, start it, and return when ready.
@@ -2154,6 +2319,7 @@ async def _connect_server(name: str, config: dict) -> MCPServerTask:
 # ---------------------------------------------------------------------------
 # Handler / check-fn factories
 # ---------------------------------------------------------------------------
+
 
 def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
     """Return a sync handler that calls an MCP tool via the background loop.
@@ -2178,24 +2344,28 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             age = time.monotonic() - opened_at
             if age < _CIRCUIT_BREAKER_COOLDOWN_SEC:
                 remaining = max(1, int(_CIRCUIT_BREAKER_COOLDOWN_SEC - age))
-                return json.dumps({
-                    "error": (
-                        f"MCP server '{server_name}' is unreachable after "
-                        f"{_server_error_counts[server_name]} consecutive "
-                        f"failures. Auto-retry available in ~{remaining}s. "
-                        f"Do NOT retry this tool yet — use alternative "
-                        f"approaches or ask the user to check the MCP server."
-                    )
-                }, ensure_ascii=False)
+                return json.dumps(
+                    {
+                        "error": (
+                            f"MCP server '{server_name}' is unreachable after "
+                            f"{_server_error_counts[server_name]} consecutive "
+                            f"failures. Auto-retry available in ~{remaining}s. "
+                            f"Do NOT retry this tool yet — use alternative "
+                            f"approaches or ask the user to check the MCP server."
+                        )
+                    },
+                    ensure_ascii=False,
+                )
             # Cooldown elapsed → fall through as a half-open probe.
 
         with _lock:
             server = _servers.get(server_name)
         if not server or not server.session:
             _bump_server_error(server_name)
-            return json.dumps({
-                "error": f"MCP server '{server_name}' is not connected"
-            }, ensure_ascii=False)
+            return json.dumps(
+                {"error": f"MCP server '{server_name}' is not connected"},
+                ensure_ascii=False,
+            )
 
         async def _call():
             async with server._rpc_lock:
@@ -2203,14 +2373,17 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             # MCP CallToolResult has .content (list of content blocks) and .isError
             if result.isError:
                 error_text = ""
-                for block in (result.content or []):
+                for block in result.content or []:
                     if hasattr(block, "text"):
                         error_text += block.text
-                return json.dumps({
-                    "error": _sanitize_error(
-                        error_text or "MCP tool returned an error"
-                    )
-                }, ensure_ascii=False)
+                return json.dumps(
+                    {
+                        "error": _sanitize_error(
+                            error_text or "MCP tool returned an error"
+                        )
+                    },
+                    ensure_ascii=False,
+                )
 
             # Collect text from content blocks. MCP tool results can also
             # include ImageContent blocks (screenshot / Blockbench / Playwright
@@ -2224,7 +2397,7 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             # Hermes' MEDIA tag + cache_image_from_bytes) was the cleaner of
             # the two — plugs into existing infrastructure.
             parts: List[str] = []
-            for block in (result.content or []):
+            for block in result.content or []:
                 if hasattr(block, "text") and block.text:
                     parts.append(block.text)
                     continue
@@ -2240,10 +2413,13 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             structured = getattr(result, "structuredContent", None)
             if structured is not None:
                 if text_result:
-                    return json.dumps({
-                        "result": text_result,
-                        "structuredContent": structured,
-                    }, ensure_ascii=False)
+                    return json.dumps(
+                        {
+                            "result": text_result,
+                            "structuredContent": structured,
+                        },
+                        ensure_ascii=False,
+                    )
                 return json.dumps({"result": structured}, ensure_ascii=False)
             return json.dumps({"result": text_result}, ensure_ascii=False)
 
@@ -2269,7 +2445,9 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             # reconnect if viable, retry once. Returns None to fall
             # through for non-auth exceptions.
             recovered = _handle_auth_error_and_retry(
-                server_name, exc, _call_once,
+                server_name,
+                exc,
+                _call_once,
                 f"tools/call {tool_name}",
             )
             if recovered is not None:
@@ -2279,7 +2457,9 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             # but skips OAuth recovery because the access token is
             # still valid — only the server-side session is stale.
             recovered = _handle_session_expired_and_retry(
-                server_name, exc, _call_once,
+                server_name,
+                exc,
+                _call_once,
                 f"tools/call {tool_name}",
             )
             if recovered is not None:
@@ -2288,13 +2468,18 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             _bump_server_error(server_name)
             logger.error(
                 "MCP tool %s/%s call failed: %s",
-                server_name, tool_name, exc,
+                server_name,
+                tool_name,
+                exc,
             )
-            return json.dumps({
-                "error": _sanitize_error(
-                    f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
-                )
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "error": _sanitize_error(
+                        f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
+                    )
+                },
+                ensure_ascii=False,
+            )
 
     return _handler
 
@@ -2306,15 +2491,16 @@ def _make_list_resources_handler(server_name: str, tool_timeout: float):
         with _lock:
             server = _servers.get(server_name)
         if not server or not server.session:
-            return json.dumps({
-                "error": f"MCP server '{server_name}' is not connected"
-            }, ensure_ascii=False)
+            return json.dumps(
+                {"error": f"MCP server '{server_name}' is not connected"},
+                ensure_ascii=False,
+            )
 
         async def _call():
             async with server._rpc_lock:
                 result = await server.session.list_resources()
             resources = []
-            for r in (result.resources if hasattr(result, "resources") else []):
+            for r in result.resources if hasattr(result, "resources") else []:
                 entry = {}
                 if hasattr(r, "uri"):
                     entry["uri"] = str(r.uri)
@@ -2336,23 +2522,34 @@ def _make_list_resources_handler(server_name: str, tool_timeout: float):
             return _interrupted_call_result()
         except Exception as exc:
             recovered = _handle_auth_error_and_retry(
-                server_name, exc, _call_once, "resources/list",
+                server_name,
+                exc,
+                _call_once,
+                "resources/list",
             )
             if recovered is not None:
                 return recovered
             recovered = _handle_session_expired_and_retry(
-                server_name, exc, _call_once, "resources/list",
+                server_name,
+                exc,
+                _call_once,
+                "resources/list",
             )
             if recovered is not None:
                 return recovered
             logger.error(
-                "MCP %s/list_resources failed: %s", server_name, exc,
+                "MCP %s/list_resources failed: %s",
+                server_name,
+                exc,
             )
-            return json.dumps({
-                "error": _sanitize_error(
-                    f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
-                )
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "error": _sanitize_error(
+                        f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
+                    )
+                },
+                ensure_ascii=False,
+            )
 
     return _handler
 
@@ -2366,9 +2563,10 @@ def _make_read_resource_handler(server_name: str, tool_timeout: float):
         with _lock:
             server = _servers.get(server_name)
         if not server or not server.session:
-            return json.dumps({
-                "error": f"MCP server '{server_name}' is not connected"
-            }, ensure_ascii=False)
+            return json.dumps(
+                {"error": f"MCP server '{server_name}' is not connected"},
+                ensure_ascii=False,
+            )
 
         uri = args.get("uri")
         if not uri:
@@ -2385,7 +2583,9 @@ def _make_read_resource_handler(server_name: str, tool_timeout: float):
                     parts.append(block.text)
                 elif hasattr(block, "blob"):
                     parts.append(f"[binary data, {len(block.blob)} bytes]")
-            return json.dumps({"result": "\n".join(parts) if parts else ""}, ensure_ascii=False)
+            return json.dumps(
+                {"result": "\n".join(parts) if parts else ""}, ensure_ascii=False
+            )
 
         def _call_once():
             return _run_on_mcp_loop(_call(), timeout=tool_timeout)
@@ -2396,23 +2596,34 @@ def _make_read_resource_handler(server_name: str, tool_timeout: float):
             return _interrupted_call_result()
         except Exception as exc:
             recovered = _handle_auth_error_and_retry(
-                server_name, exc, _call_once, "resources/read",
+                server_name,
+                exc,
+                _call_once,
+                "resources/read",
             )
             if recovered is not None:
                 return recovered
             recovered = _handle_session_expired_and_retry(
-                server_name, exc, _call_once, "resources/read",
+                server_name,
+                exc,
+                _call_once,
+                "resources/read",
             )
             if recovered is not None:
                 return recovered
             logger.error(
-                "MCP %s/read_resource failed: %s", server_name, exc,
+                "MCP %s/read_resource failed: %s",
+                server_name,
+                exc,
             )
-            return json.dumps({
-                "error": _sanitize_error(
-                    f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
-                )
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "error": _sanitize_error(
+                        f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
+                    )
+                },
+                ensure_ascii=False,
+            )
 
     return _handler
 
@@ -2424,15 +2635,16 @@ def _make_list_prompts_handler(server_name: str, tool_timeout: float):
         with _lock:
             server = _servers.get(server_name)
         if not server or not server.session:
-            return json.dumps({
-                "error": f"MCP server '{server_name}' is not connected"
-            }, ensure_ascii=False)
+            return json.dumps(
+                {"error": f"MCP server '{server_name}' is not connected"},
+                ensure_ascii=False,
+            )
 
         async def _call():
             async with server._rpc_lock:
                 result = await server.session.list_prompts()
             prompts = []
-            for p in (result.prompts if hasattr(result, "prompts") else []):
+            for p in result.prompts if hasattr(result, "prompts") else []:
                 entry = {}
                 if hasattr(p, "name"):
                     entry["name"] = p.name
@@ -2442,8 +2654,16 @@ def _make_list_prompts_handler(server_name: str, tool_timeout: float):
                     entry["arguments"] = [
                         {
                             "name": a.name,
-                            **({"description": a.description} if hasattr(a, "description") and a.description else {}),
-                            **({"required": a.required} if hasattr(a, "required") else {}),
+                            **(
+                                {"description": a.description}
+                                if hasattr(a, "description") and a.description
+                                else {}
+                            ),
+                            **(
+                                {"required": a.required}
+                                if hasattr(a, "required")
+                                else {}
+                            ),
                         }
                         for a in p.arguments
                     ]
@@ -2459,23 +2679,34 @@ def _make_list_prompts_handler(server_name: str, tool_timeout: float):
             return _interrupted_call_result()
         except Exception as exc:
             recovered = _handle_auth_error_and_retry(
-                server_name, exc, _call_once, "prompts/list",
+                server_name,
+                exc,
+                _call_once,
+                "prompts/list",
             )
             if recovered is not None:
                 return recovered
             recovered = _handle_session_expired_and_retry(
-                server_name, exc, _call_once, "prompts/list",
+                server_name,
+                exc,
+                _call_once,
+                "prompts/list",
             )
             if recovered is not None:
                 return recovered
             logger.error(
-                "MCP %s/list_prompts failed: %s", server_name, exc,
+                "MCP %s/list_prompts failed: %s",
+                server_name,
+                exc,
             )
-            return json.dumps({
-                "error": _sanitize_error(
-                    f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
-                )
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "error": _sanitize_error(
+                        f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
+                    )
+                },
+                ensure_ascii=False,
+            )
 
     return _handler
 
@@ -2489,9 +2720,10 @@ def _make_get_prompt_handler(server_name: str, tool_timeout: float):
         with _lock:
             server = _servers.get(server_name)
         if not server or not server.session:
-            return json.dumps({
-                "error": f"MCP server '{server_name}' is not connected"
-            }, ensure_ascii=False)
+            return json.dumps(
+                {"error": f"MCP server '{server_name}' is not connected"},
+                ensure_ascii=False,
+            )
 
         name = args.get("name")
         if not name:
@@ -2503,7 +2735,7 @@ def _make_get_prompt_handler(server_name: str, tool_timeout: float):
                 result = await server.session.get_prompt(name, arguments=arguments)
             # GetPromptResult has .messages list
             messages = []
-            for msg in (result.messages if hasattr(result, "messages") else []):
+            for msg in result.messages if hasattr(result, "messages") else []:
                 entry = {}
                 if hasattr(msg, "role"):
                     entry["role"] = msg.role
@@ -2530,23 +2762,34 @@ def _make_get_prompt_handler(server_name: str, tool_timeout: float):
             return _interrupted_call_result()
         except Exception as exc:
             recovered = _handle_auth_error_and_retry(
-                server_name, exc, _call_once, "prompts/get",
+                server_name,
+                exc,
+                _call_once,
+                "prompts/get",
             )
             if recovered is not None:
                 return recovered
             recovered = _handle_session_expired_and_retry(
-                server_name, exc, _call_once, "prompts/get",
+                server_name,
+                exc,
+                _call_once,
+                "prompts/get",
             )
             if recovered is not None:
                 return recovered
             logger.error(
-                "MCP %s/get_prompt failed: %s", server_name, exc,
+                "MCP %s/get_prompt failed: %s",
+                server_name,
+                exc,
             )
-            return json.dumps({
-                "error": _sanitize_error(
-                    f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
-                )
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "error": _sanitize_error(
+                        f"MCP call failed: {type(exc).__name__}: {_exc_str(exc)}"
+                    )
+                },
+                ensure_ascii=False,
+            )
 
     return _handler
 
@@ -2565,6 +2808,7 @@ def _make_check_fn(server_name: str):
 # ---------------------------------------------------------------------------
 # Discovery & registration
 # ---------------------------------------------------------------------------
+
 
 def _normalize_mcp_input_schema(schema: dict | None) -> dict:
     """Normalize MCP input schemas for LLM tool-calling compatibility.
@@ -2604,7 +2848,7 @@ def _normalize_mcp_input_schema(schema: dict | None) -> dict:
                 normalized[out_key] = _rewrite_local_refs(value)
             ref = normalized.get("$ref")
             if isinstance(ref, str) and ref.startswith("#/definitions/"):
-                normalized["$ref"] = "#/$defs/" + ref[len("#/definitions/"):]
+                normalized["$ref"] = "#/$defs/" + ref[len("#/definitions/") :]
             return normalized
         if isinstance(node, list):
             return [_rewrite_local_refs(item) for item in node]
@@ -2644,7 +2888,9 @@ def _normalize_mcp_input_schema(schema: dict | None) -> dict:
             if "properties" not in repaired or not isinstance(
                 repaired.get("properties"), dict
             ):
-                repaired["properties"] = {} if "properties" not in repaired else repaired["properties"]
+                repaired["properties"] = (
+                    {} if "properties" not in repaired else repaired["properties"]
+                )
                 if not isinstance(repaired.get("properties"), dict):
                     repaired["properties"] = {}
 
@@ -2701,8 +2947,11 @@ def _convert_mcp_schema(server_name: str, mcp_tool) -> dict:
     prefixed_name = f"mcp_{safe_server_name}_{safe_tool_name}"
     return {
         "name": prefixed_name,
-        "description": mcp_tool.description or f"MCP tool {mcp_tool.name} from {server_name}",
-        "parameters": _normalize_mcp_input_schema(getattr(mcp_tool, "inputSchema", None)),
+        "description": mcp_tool.description
+        or f"MCP tool {mcp_tool.name} from {server_name}",
+        "parameters": _normalize_mcp_input_schema(
+            getattr(mcp_tool, "inputSchema", None)
+        ),
     }
 
 
@@ -2787,7 +3036,9 @@ def _normalize_name_filter(value: Any, label: str) -> set[str]:
         return {value}
     if isinstance(value, (list, tuple, set)):
         return {str(item) for item in value}
-    logger.warning("MCP config %s must be a string or list of strings; ignoring %r", label, value)
+    logger.warning(
+        "MCP config %s must be a string or list of strings; ignoring %r", label, value
+    )
     return set()
 
 
@@ -2803,7 +3054,11 @@ def _parse_boolish(value: Any, default: bool = True) -> bool:
             return True
         if lowered in {"false", "0", "no", "off"}:
             return False
-    logger.warning("MCP config expected a boolean-ish value, got %r; using default=%s", value, default)
+    logger.warning(
+        "MCP config expected a boolean-ish value, got %r; using default=%s",
+        value,
+        default,
+    )
     return default
 
 
@@ -2832,7 +3087,9 @@ _UTILITY_CAPABILITY_ATTRS = {
 }
 
 
-def _select_utility_schemas(server_name: str, server: MCPServerTask, config: dict) -> List[dict]:
+def _select_utility_schemas(
+    server_name: str, server: MCPServerTask, config: dict
+) -> List[dict]:
     """Select utility schemas based on config and server capabilities."""
     tools_filter = config.get("tools") or {}
     resources_enabled = _parse_boolish(tools_filter.get("resources"), default=True)
@@ -2852,10 +3109,18 @@ def _select_utility_schemas(server_name: str, server: MCPServerTask, config: dic
     for entry in _build_utility_schemas(server_name):
         handler_key = entry["handler_key"]
         if handler_key in {"list_resources", "read_resource"} and not resources_enabled:
-            logger.debug("MCP server '%s': skipping utility '%s' (resources disabled)", server_name, handler_key)
+            logger.debug(
+                "MCP server '%s': skipping utility '%s' (resources disabled)",
+                server_name,
+                handler_key,
+            )
             continue
         if handler_key in {"list_prompts", "get_prompt"} and not prompts_enabled:
-            logger.debug("MCP server '%s': skipping utility '%s' (prompts disabled)", server_name, handler_key)
+            logger.debug(
+                "MCP server '%s': skipping utility '%s' (prompts disabled)",
+                server_name,
+                handler_key,
+            )
             continue
 
         # Preferred gate: check the server's advertised capabilities. Skip
@@ -2926,8 +3191,12 @@ def _register_server_tools(name: str, server: MCPServerTask, config: dict) -> Li
     #   include takes precedence over exclude
     #   Neither set → register all tools (backward-compatible default)
     tools_filter = config.get("tools") or {}
-    include_set = _normalize_name_filter(tools_filter.get("include"), f"mcp_servers.{name}.tools.include")
-    exclude_set = _normalize_name_filter(tools_filter.get("exclude"), f"mcp_servers.{name}.tools.exclude")
+    include_set = _normalize_name_filter(
+        tools_filter.get("include"), f"mcp_servers.{name}.tools.include"
+    )
+    exclude_set = _normalize_name_filter(
+        tools_filter.get("exclude"), f"mcp_servers.{name}.tools.exclude"
+    )
 
     def _should_register(tool_name: str) -> bool:
         if include_set:
@@ -2938,7 +3207,11 @@ def _register_server_tools(name: str, server: MCPServerTask, config: dict) -> Li
 
     for mcp_tool in server._tools:
         if not _should_register(mcp_tool.name):
-            logger.debug("MCP server '%s': skipping tool '%s' (filtered by config)", name, mcp_tool.name)
+            logger.debug(
+                "MCP server '%s': skipping tool '%s' (filtered by config)",
+                name,
+                mcp_tool.name,
+            )
             continue
 
         # Scan tool description for prompt injection patterns
@@ -2953,7 +3226,10 @@ def _register_server_tools(name: str, server: MCPServerTask, config: dict) -> Li
             logger.warning(
                 "MCP server '%s': tool '%s' (→ '%s') collides with built-in "
                 "tool in toolset '%s' — skipping to preserve built-in",
-                name, mcp_tool.name, tool_name_prefixed, existing_toolset,
+                name,
+                mcp_tool.name,
+                tool_name_prefixed,
+                existing_toolset,
             )
             continue
 
@@ -2989,7 +3265,9 @@ def _register_server_tools(name: str, server: MCPServerTask, config: dict) -> Li
             logger.warning(
                 "MCP server '%s': utility tool '%s' collides with built-in "
                 "tool in toolset '%s' — skipping to preserve built-in",
-                name, util_name, existing_toolset,
+                name,
+                util_name,
+                existing_toolset,
             )
             continue
 
@@ -3029,7 +3307,9 @@ async def _discover_and_register_server(name: str, config: dict) -> List[str]:
     transport_type = "HTTP" if "url" in config else "stdio"
     logger.info(
         "MCP server '%s' (%s): registered %d tool(s): %s",
-        name, transport_type, len(registered_names),
+        name,
+        transport_type,
+        len(registered_names),
         ", ".join(registered_names),
     )
     return registered_names
@@ -3038,6 +3318,7 @@ async def _discover_and_register_server(name: str, config: dict) -> List[str]:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
     """Connect to explicit MCP servers and register their tools.
@@ -3065,7 +3346,8 @@ def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
         new_servers = {
             k: v
             for k, v in servers.items()
-            if k not in _servers and _parse_boolish(v.get("enabled", True), default=True)
+            if k not in _servers
+            and _parse_boolish(v.get("enabled", True), default=True)
         }
 
     if not new_servers:
@@ -3101,7 +3383,11 @@ def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
     # Temporarily clear the interrupt flag on the current thread so that MCP
     # discovery is never cancelled by a stale interrupt from a prior agent
     # session (executor threads get reused and may carry old interrupt state).
-    from tools.interrupt import is_interrupted as _is_interrupted, set_interrupt as _set_interrupt
+    from tools.interrupt import (
+        is_interrupted as _is_interrupted,
+        set_interrupt as _set_interrupt,
+    )
+
     _was_interrupted = _is_interrupted()
     if _was_interrupted:
         _set_interrupt(False)
@@ -3115,12 +3401,13 @@ def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
     with _lock:
         connected = [n for n in new_servers if n in _servers]
         new_tool_count = sum(
-            len(getattr(_servers[n], "_registered_tool_names", []))
-            for n in connected
+            len(getattr(_servers[n], "_registered_tool_names", [])) for n in connected
         )
     failed = len(new_servers) - len(connected)
     if new_tool_count or failed:
-        summary = f"MCP: registered {new_tool_count} tool(s) from {len(connected)} server(s)"
+        summary = (
+            f"MCP: registered {new_tool_count} tool(s) from {len(connected)} server(s)"
+        )
         if failed:
             summary += f" ({failed} failed)"
         logger.info(summary)
@@ -3153,7 +3440,8 @@ def discover_mcp_tools() -> List[str]:
         new_server_names = [
             name
             for name, cfg in servers.items()
-            if name not in _servers and _parse_boolish(cfg.get("enabled", True), default=True)
+            if name not in _servers
+            and _parse_boolish(cfg.get("enabled", True), default=True)
         ]
 
     tool_names = register_mcp_servers(servers)
@@ -3200,7 +3488,9 @@ def get_mcp_status() -> List[dict]:
             entry = {
                 "name": name,
                 "transport": transport,
-                "tools": len(server._registered_tool_names) if hasattr(server, "_registered_tool_names") else len(server._tools),
+                "tools": len(server._registered_tool_names)
+                if hasattr(server, "_registered_tool_names")
+                else len(server._tools),
                 "connected": True,
             }
             if server._sampling:
@@ -3236,7 +3526,8 @@ def probe_mcp_server_tools() -> Dict[str, List[tuple]]:
         return {}
 
     enabled = {
-        k: v for k, v in servers_config.items()
+        k: v
+        for k, v in servers_config.items()
         if _parse_boolish(v.get("enabled", True), default=True)
     }
     if not enabled:
@@ -3306,7 +3597,9 @@ def shutdown_mcp_servers():
         for server, result in zip(servers_snapshot, results):
             if isinstance(result, Exception):
                 logger.debug(
-                    "Error closing MCP server '%s': %s", server.name, result,
+                    "Error closing MCP server '%s': %s",
+                    server.name,
+                    result,
                 )
         with _lock:
             _servers.clear()
@@ -3361,7 +3654,9 @@ def _kill_orphaned_mcp_children(include_active: bool = False) -> None:
     for pid, server_name in pids.items():
         try:
             os.kill(pid, _signal.SIGTERM)
-            logger.debug("Sent SIGTERM to orphaned MCP process %d (%s)", pid, server_name)
+            logger.debug(
+                "Sent SIGTERM to orphaned MCP process %d (%s)", pid, server_name
+            )
         except (ProcessLookupError, PermissionError, OSError):
             pass
 
@@ -3373,6 +3668,7 @@ def _kill_orphaned_mcp_children(include_active: bool = False) -> None:
     # ``os.kill(pid, 0)`` is NOT a no-op on Windows. Use the cross-platform
     # existence check before escalating to SIGKILL.
     from gateway.status import _pid_exists
+
     for pid, server_name in pids.items():
         if not _pid_exists(pid):
             continue  # Good — exited after SIGTERM
@@ -3380,7 +3676,8 @@ def _kill_orphaned_mcp_children(include_active: bool = False) -> None:
             os.kill(pid, _sigkill)
             logger.warning(
                 "Force-killed MCP process %d (%s) after SIGTERM timeout",
-                pid, server_name,
+                pid,
+                server_name,
             )
         except (ProcessLookupError, PermissionError, OSError):
             pass

@@ -16,6 +16,7 @@ any future refactor of that predicate must preserve the invariant:
     bare ValueError     → IS local validation error (programming bug)
     bare TypeError      → IS local validation error (programming bug)
 """
+
 from __future__ import annotations
 
 import json
@@ -28,14 +29,12 @@ def _mirror_agent_predicate(err: BaseException) -> bool:
     or, better, refactor the check into a shared helper and have both
     sites import it.
     """
-    return (
-        isinstance(err, (ValueError, TypeError))
-        and not isinstance(err, (UnicodeEncodeError, json.JSONDecodeError))
+    return isinstance(err, (ValueError, TypeError)) and not isinstance(
+        err, (UnicodeEncodeError, json.JSONDecodeError)
     )
 
 
 class TestJSONDecodeErrorIsRetryable:
-
     def test_json_decode_error_is_not_local_validation(self):
         """Provider returning malformed JSON surfaces as JSONDecodeError —
         must be treated as transient so the retry path runs."""
@@ -75,6 +74,7 @@ class TestAgentLoopSourceStillHasCarveOut:
     def test_run_agent_excludes_jsondecodeerror_from_local_validation(self):
         import run_agent
         import inspect
+
         src = inspect.getsource(run_agent)
         # The predicate we care about must reference json.JSONDecodeError
         # in its exclusion tuple. We check for the specific co-occurrence

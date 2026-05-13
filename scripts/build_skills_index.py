@@ -85,11 +85,33 @@ def crawl_skills_sh(source: SkillsShSource) -> list:
 
     queries = [
         "",  # featured
-        "react", "python", "web", "api", "database", "docker",
-        "testing", "scraping", "design", "typescript", "git",
-        "aws", "security", "data", "ml", "ai", "devops",
-        "frontend", "backend", "mobile", "cli", "documentation",
-        "kubernetes", "terraform", "rust", "go", "java",
+        "react",
+        "python",
+        "web",
+        "api",
+        "database",
+        "docker",
+        "testing",
+        "scraping",
+        "design",
+        "typescript",
+        "git",
+        "aws",
+        "security",
+        "data",
+        "ml",
+        "ai",
+        "devops",
+        "frontend",
+        "backend",
+        "mobile",
+        "cli",
+        "documentation",
+        "kubernetes",
+        "terraform",
+        "rust",
+        "go",
+        "java",
     ]
 
     all_skills: dict[str, dict] = {}
@@ -101,12 +123,12 @@ def crawl_skills_sh(source: SkillsShSource) -> list:
                 if entry["identifier"] not in all_skills:
                     all_skills[entry["identifier"]] = entry
         except Exception as e:
-            print(f"    Warning: skills.sh search '{query}' failed: {e}",
-                  file=sys.stderr)
+            print(
+                f"    Warning: skills.sh search '{query}' failed: {e}", file=sys.stderr
+            )
 
     elapsed = time.time() - start
-    print(f"  skills.sh: {len(all_skills)} unique skills ({elapsed:.1f}s)",
-          flush=True)
+    print(f"  skills.sh: {len(all_skills)} unique skills ({elapsed:.1f}s)", flush=True)
     return list(all_skills.values())
 
 
@@ -116,7 +138,9 @@ def _fetch_repo_tree(repo: str, auth: GitHubAuth) -> list:
     try:
         resp = httpx.get(
             f"https://api.github.com/repos/{repo}",
-            headers=headers, timeout=15, follow_redirects=True,
+            headers=headers,
+            timeout=15,
+            follow_redirects=True,
         )
         if resp.status_code != 200:
             return []
@@ -125,7 +149,9 @@ def _fetch_repo_tree(repo: str, auth: GitHubAuth) -> list:
         resp = httpx.get(
             f"https://api.github.com/repos/{repo}/git/trees/{branch}",
             params={"recursive": "1"},
-            headers=headers, timeout=30, follow_redirects=True,
+            headers=headers,
+            timeout=30,
+            follow_redirects=True,
         )
         if resp.status_code != 200:
             return []
@@ -151,8 +177,7 @@ def batch_resolve_paths(skills: list, auth: GitHubAuth) -> list:
     if not skills_sh:
         return skills
 
-    print(f"  Resolving paths for {len(skills_sh)} skills.sh entries...",
-          flush=True)
+    print(f"  Resolving paths for {len(skills_sh)} skills.sh entries...", flush=True)
     start = time.time()
 
     # Group by repo
@@ -213,11 +238,11 @@ def batch_resolve_paths(skills: list, auth: GitHubAuth) -> list:
             else:
                 # Try fuzzy: skill_token with common transformations
                 for tree_name, tree_path in skill_paths.items():
-                    if (skill_token and (
+                    if skill_token and (
                         tree_name.replace("-", "") == skill_token.replace("-", "")
                         or skill_token in tree_name
                         or tree_name in skill_token
-                    )):
+                    ):
                         entry["resolved_github_id"] = tree_path
                         count += 1
                         break
@@ -237,8 +262,10 @@ def batch_resolve_paths(skills: list, auth: GitHubAuth) -> list:
                 print(f"    Warning: {repo}: {e}", file=sys.stderr)
 
     elapsed = time.time() - start
-    print(f"  Resolved {resolved_count}/{len(skills_sh)} paths ({elapsed:.1f}s)",
-          flush=True)
+    print(
+        f"  Resolved {resolved_count}/{len(skills_sh)} paths ({elapsed:.1f}s)",
+        flush=True,
+    )
     return skills
 
 
@@ -249,8 +276,11 @@ def main():
     auth = GitHubAuth()
     print(f"GitHub auth: {auth.auth_method()}")
     if auth.auth_method() == "anonymous":
-        print("WARNING: No GitHub authentication — rate limit is 60/hr. "
-              "Set GITHUB_TOKEN for better results.", file=sys.stderr)
+        print(
+            "WARNING: No GitHub authentication — rate limit is 60/hr. "
+            "Set GITHUB_TOKEN for better results.",
+            file=sys.stderr,
+        )
 
     skills_sh_source = SkillsShSource(auth=auth)
     sources = {
@@ -290,9 +320,16 @@ def main():
     deduped = list(seen.values())
 
     # Sort
-    source_order = {"official": 0, "skills-sh": 1, "skills.sh": 1,
-                    "github": 2, "well-known": 3, "clawhub": 4,
-                    "claude-marketplace": 5, "lobehub": 6}
+    source_order = {
+        "official": 0,
+        "skills-sh": 1,
+        "skills.sh": 1,
+        "github": 2,
+        "well-known": 3,
+        "clawhub": 4,
+        "claude-marketplace": 5,
+        "lobehub": 6,
+    }
     deduped.sort(key=lambda s: (source_order.get(s["source"], 99), s["name"]))
 
     # Build index
@@ -313,10 +350,12 @@ def main():
     print(f"Output: {OUTPUT_PATH} ({file_size / 1024:.0f} KB)")
 
     from collections import Counter
+
     by_source = Counter(s["source"] for s in deduped)
     for src, count in sorted(by_source.items(), key=lambda x: -x[1]):
-        resolved = sum(1 for s in deduped
-                       if s["source"] == src and s.get("resolved_github_id"))
+        resolved = sum(
+            1 for s in deduped if s["source"] == src and s.get("resolved_github_id")
+        )
         extra = f" ({resolved} resolved)" if resolved else ""
         print(f"  {src}: {count}{extra}")
 

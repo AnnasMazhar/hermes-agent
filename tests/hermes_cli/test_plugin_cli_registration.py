@@ -88,11 +88,11 @@ class TestMemoryPluginCliDiscovery:
         other_dir.mkdir()
         (other_dir / "__init__.py").write_text("pass\n")
         (other_dir / "cli.py").write_text(
-            "def register_cli(subparser):\n"
-            "    subparser.add_argument('--other')\n"
+            "def register_cli(subparser):\n    subparser.add_argument('--other')\n"
         )
 
         import plugins.memory as pm
+
         original_dir = pm._MEMORY_PLUGINS_DIR
         mod_key = "plugins.memory.testplugin.cli"
         sys.modules.pop(mod_key, None)
@@ -118,11 +118,10 @@ class TestMemoryPluginCliDiscovery:
         plugin_dir = tmp_path / "testplugin"
         plugin_dir.mkdir()
         (plugin_dir / "__init__.py").write_text("pass\n")
-        (plugin_dir / "cli.py").write_text(
-            "def register_cli(subparser):\n    pass\n"
-        )
+        (plugin_dir / "cli.py").write_text("def register_cli(subparser):\n    pass\n")
 
         import plugins.memory as pm
+
         original_dir = pm._MEMORY_PLUGINS_DIR
         monkeypatch.setattr(pm, "_MEMORY_PLUGINS_DIR", tmp_path)
         monkeypatch.setattr(pm, "_get_active_memory_provider", lambda: None)
@@ -141,6 +140,7 @@ class TestMemoryPluginCliDiscovery:
         (plugin_dir / "cli.py").write_text("def some_other_fn():\n    pass\n")
 
         import plugins.memory as pm
+
         original_dir = pm._MEMORY_PLUGINS_DIR
         monkeypatch.setattr(pm, "_MEMORY_PLUGINS_DIR", tmp_path)
         monkeypatch.setattr(pm, "_get_active_memory_provider", lambda: "noplugin")
@@ -159,6 +159,7 @@ class TestMemoryPluginCliDiscovery:
         (plugin_dir / "__init__.py").write_text("pass\n")
 
         import plugins.memory as pm
+
         original_dir = pm._MEMORY_PLUGINS_DIR
         monkeypatch.setattr(pm, "_MEMORY_PLUGINS_DIR", tmp_path)
         monkeypatch.setattr(pm, "_get_active_memory_provider", lambda: "nocli")

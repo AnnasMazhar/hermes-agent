@@ -73,21 +73,35 @@ _SAFE_ACTIONS = frozenset({"capture", "wait", "list_apps"})
 
 # Actions that mutate user-visible state. Go through approval.
 _DESTRUCTIVE_ACTIONS = frozenset({
-    "click", "double_click", "right_click", "middle_click",
-    "drag", "scroll", "type", "key", "set_value", "focus_app",
+    "click",
+    "double_click",
+    "right_click",
+    "middle_click",
+    "drag",
+    "scroll",
+    "type",
+    "key",
+    "set_value",
+    "focus_app",
 })
 
 # Hard-blocked key combinations. Mirrored from #4562 — these are destructive
 # regardless of approval level (e.g. logout kills the session Hermes runs in).
 _BLOCKED_KEY_COMBOS = {
-    frozenset({"cmd", "shift", "backspace"}),   # empty trash
-    frozenset({"cmd", "option", "backspace"}),   # force delete
-    frozenset({"cmd", "ctrl", "q"}),             # lock screen
-    frozenset({"cmd", "shift", "q"}),            # log out
+    frozenset({"cmd", "shift", "backspace"}),  # empty trash
+    frozenset({"cmd", "option", "backspace"}),  # force delete
+    frozenset({"cmd", "ctrl", "q"}),  # lock screen
+    frozenset({"cmd", "shift", "q"}),  # log out
     frozenset({"cmd", "option", "shift", "q"}),  # force log out
 }
 
-_KEY_ALIASES = {"command": "cmd", "control": "ctrl", "alt": "option", "⌘": "cmd", "⌥": "option"}
+_KEY_ALIASES = {
+    "command": "cmd",
+    "control": "ctrl",
+    "alt": "option",
+    "⌘": "cmd",
+    "⌥": "option",
+}
 
 
 def _canon_key_combo(keys: str) -> frozenset:
@@ -133,11 +147,14 @@ def _get_backend() -> ComputerUseBackend:
             backend_name = os.environ.get("HERMES_COMPUTER_USE_BACKEND", "cua").lower()
             if backend_name in ("cua", "cua-driver", ""):
                 from tools.computer_use.cua_backend import CuaDriverBackend
+
                 _backend = CuaDriverBackend()
             elif backend_name == "noop":  # pragma: no cover
                 _backend = _NoopBackend()
             else:
-                raise RuntimeError(f"Unknown HERMES_COMPUTER_USE_BACKEND={backend_name!r}")
+                raise RuntimeError(
+                    f"Unknown HERMES_COMPUTER_USE_BACKEND={backend_name!r}"
+                )
             _backend.start()
         return _backend
 
@@ -163,14 +180,26 @@ class _NoopBackend(ComputerUseBackend):  # pragma: no cover
         self.calls: List[Tuple[str, Dict[str, Any]]] = []
         self._started = False
 
-    def start(self) -> None: self._started = True
-    def stop(self) -> None: self._started = False
-    def is_available(self) -> bool: return True
+    def start(self) -> None:
+        self._started = True
+
+    def stop(self) -> None:
+        self._started = False
+
+    def is_available(self) -> bool:
+        return True
 
     def capture(self, mode: str = "som", app: Optional[str] = None) -> CaptureResult:
         self.calls.append(("capture", {"mode": mode, "app": app}))
-        return CaptureResult(mode=mode, width=1024, height=768, png_b64=None,
-                             elements=[], app=app or "", window_title="")
+        return CaptureResult(
+            mode=mode,
+            width=1024,
+            height=768,
+            png_b64=None,
+            elements=[],
+            app=app or "",
+            window_title="",
+        )
 
     def click(self, **kw) -> ActionResult:
         self.calls.append(("click", kw))
@@ -204,6 +233,7 @@ class _NoopBackend(ComputerUseBackend):  # pragma: no cover
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
+
 
 def handle_computer_use(args: Dict[str, Any], **kwargs) -> Any:
     """Main entry point — dispatched by tools.registry.
@@ -305,7 +335,9 @@ def _summarize_action(action: str, args: Dict[str, Any]) -> str:
     if action == "key":
         return f"key {args.get('keys', '')!r}"
     if action == "focus_app":
-        return f"focus {args.get('app', '')!r}" + (" (raise)" if args.get("raise_window") else "")
+        return f"focus {args.get('app', '')!r}" + (
+            " (raise)" if args.get("raise_window") else ""
+        )
     return action
 
 
@@ -351,7 +383,10 @@ def _dispatch(backend: ComputerUseBackend, action: str, args: Dict[str, Any]) ->
         x, y = (coord[0], coord[1]) if coord and coord[0] is not None else (None, None)
         res = backend.click(
             element=element if element is not None else None,
-            x=x, y=y, button=button or "left", click_count=click_count,
+            x=x,
+            y=y,
+            button=button or "left",
+            click_count=click_count,
             modifiers=args.get("modifiers"),
         )
         return _maybe_follow_capture(backend, res, capture_after)
@@ -360,7 +395,9 @@ def _dispatch(backend: ComputerUseBackend, action: str, args: Dict[str, Any]) ->
         res = backend.drag(
             from_element=args.get("from_element"),
             to_element=args.get("to_element"),
-            from_xy=tuple(args["from_coordinate"]) if args.get("from_coordinate") else None,
+            from_xy=tuple(args["from_coordinate"])
+            if args.get("from_coordinate")
+            else None,
             to_xy=tuple(args["to_coordinate"]) if args.get("to_coordinate") else None,
             button=args.get("button", "left"),
             modifiers=args.get("modifiers"),
@@ -401,6 +438,7 @@ def _dispatch(backend: ComputerUseBackend, action: str, args: Dict[str, Any]) ->
 # Response shaping
 # ---------------------------------------------------------------------------
 
+
 def _text_response(res: ActionResult) -> str:
     payload: Dict[str, Any] = {"ok": res.ok, "action": res.action}
     if res.message:
@@ -432,12 +470,19 @@ def _capture_response(cap: CaptureResult) -> Any:
             "_multimodal": True,
             "content": [
                 {"type": "text", "text": summary},
-                {"type": "image_url",
-                 "image_url": {"url": f"data:{_mime};base64,{cap.png_b64}"}},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{_mime};base64,{cap.png_b64}"},
+                },
             ],
             "text_summary": summary,
-            "meta": {"mode": cap.mode, "width": cap.width, "height": cap.height,
-                     "elements": len(cap.elements), "png_bytes": cap.png_bytes_len},
+            "meta": {
+                "mode": cap.mode,
+                "width": cap.width,
+                "height": cap.height,
+                "elements": len(cap.elements),
+                "png_bytes": cap.png_bytes_len,
+            },
         }
     # AX-only (or image missing): text path.
     return json.dumps({
@@ -452,7 +497,9 @@ def _capture_response(cap: CaptureResult) -> Any:
 
 
 def _maybe_follow_capture(
-    backend: ComputerUseBackend, res: ActionResult, do_capture: bool,
+    backend: ComputerUseBackend,
+    res: ActionResult,
+    do_capture: bool,
 ) -> Any:
     if not do_capture:
         return _text_response(res)
@@ -464,7 +511,9 @@ def _maybe_follow_capture(
     # Combine action summary with the capture.
     resp = _capture_response(cap)
     if isinstance(resp, dict) and resp.get("_multimodal"):
-        prefix = f"[{res.action}] ok={res.ok}" + (f" — {res.message}" if res.message else "")
+        prefix = f"[{res.action}] ok={res.ok}" + (
+            f" — {res.message}" if res.message else ""
+        )
         resp["content"][0]["text"] = prefix + "\n\n" + resp["content"][0]["text"]
         resp["text_summary"] = prefix + "\n\n" + resp["text_summary"]
         return resp
@@ -484,10 +533,14 @@ def _format_elements(elements: List[UIElement], max_lines: int = 40) -> List[str
     out: List[str] = []
     for e in elements[:max_lines]:
         label = e.label.replace("\n", " ")[:60]
-        out.append(f"  #{e.index} {e.role} {label!r} @ {e.bounds}"
-                   + (f" [{e.app}]" if e.app else ""))
+        out.append(
+            f"  #{e.index} {e.role} {label!r} @ {e.bounds}"
+            + (f" [{e.app}]" if e.app else "")
+        )
     if len(elements) > max_lines:
-        out.append(f"  ... +{len(elements) - max_lines} more (call capture with app= to narrow)")
+        out.append(
+            f"  ... +{len(elements) - max_lines} more (call capture with app= to narrow)"
+        )
     return out
 
 
@@ -505,6 +558,7 @@ def _element_to_dict(e: UIElement) -> Dict[str, Any]:
 # Availability check (used by the tool registry check_fn)
 # ---------------------------------------------------------------------------
 
+
 def check_computer_use_requirements() -> bool:
     """Return True iff computer_use can run on this host.
 
@@ -513,9 +567,11 @@ def check_computer_use_requirements() -> bool:
     if sys.platform != "darwin":
         return False
     from tools.computer_use.cua_backend import cua_driver_binary_available
+
     return cua_driver_binary_available()
 
 
 def get_computer_use_schema() -> Dict[str, Any]:
     from tools.computer_use.schema import COMPUTER_USE_SCHEMA
+
     return COMPUTER_USE_SCHEMA

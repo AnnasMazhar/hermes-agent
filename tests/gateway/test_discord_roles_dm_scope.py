@@ -31,6 +31,7 @@ def _set_dm_role_auth_guild(monkeypatch, guild_id=None):
     # Patch the attribute ``hermes_cli.config.read_raw_config`` — that's
     # what ``_read_dm_role_auth_guild`` imports at call time.
     import hermes_cli.config as _cfg_mod
+
     monkeypatch.setattr(_cfg_mod, "read_raw_config", lambda: cfg, raising=True)
 
 
@@ -95,10 +96,7 @@ def test_dm_rejects_role_held_in_other_guild(monkeypatch):
     )
 
     # DM from user 42: role check must NOT scan other guilds.
-    assert (
-        adapter._is_allowed_user("42", author=None, guild=None, is_dm=True)
-        is False
-    )
+    assert adapter._is_allowed_user("42", author=None, guild=None, is_dm=True) is False
 
 
 def test_dm_role_auth_requires_explicit_guild_optin(monkeypatch):
@@ -119,10 +117,7 @@ def test_dm_role_auth_requires_explicit_guild_optin(monkeypatch):
     )
     _set_dm_role_auth_guild(monkeypatch, 222222)
 
-    assert (
-        adapter._is_allowed_user("42", author=None, guild=None, is_dm=True)
-        is True
-    )
+    assert adapter._is_allowed_user("42", author=None, guild=None, is_dm=True) is True
 
 
 def test_dm_role_auth_optin_rejects_when_not_member(monkeypatch):
@@ -142,10 +137,7 @@ def test_dm_role_auth_optin_rejects_when_not_member(monkeypatch):
     )
     _set_dm_role_auth_guild(monkeypatch, 222222)
 
-    assert (
-        adapter._is_allowed_user("42", author=None, guild=None, is_dm=True)
-        is False
-    )
+    assert adapter._is_allowed_user("42", author=None, guild=None, is_dm=True) is False
 
 
 # ---------------------------------------------------------------------------
@@ -174,9 +166,7 @@ def test_guild_message_role_check_scoped_to_originating_guild(monkeypatch):
 
     # No author object passed → falls through to guild.get_member path
     assert (
-        adapter._is_allowed_user(
-            "42", author=None, guild=trusted_guild, is_dm=False
-        )
+        adapter._is_allowed_user("42", author=None, guild=trusted_guild, is_dm=False)
         is False
     )
 
@@ -196,9 +186,7 @@ def test_guild_message_role_check_allows_when_role_in_same_guild(monkeypatch):
     )
 
     assert (
-        adapter._is_allowed_user(
-            "42", author=None, guild=trusted_guild, is_dm=False
-        )
+        adapter._is_allowed_user("42", author=None, guild=trusted_guild, is_dm=False)
         is True
     )
 
@@ -240,29 +228,21 @@ def test_guild_message_rejects_author_roles_from_different_guild(monkeypatch):
 
 def test_user_id_allowlist_works_in_dm():
     adapter = _make_adapter(allowed_users=["42"])
-    assert (
-        adapter._is_allowed_user("42", author=None, guild=None, is_dm=True)
-        is True
-    )
+    assert adapter._is_allowed_user("42", author=None, guild=None, is_dm=True) is True
 
 
 def test_user_id_allowlist_works_in_guild():
     adapter = _make_adapter(allowed_users=["42"])
     some_guild = SimpleNamespace(id=111, get_member=lambda uid: None)
     assert (
-        adapter._is_allowed_user(
-            "42", author=None, guild=some_guild, is_dm=False
-        )
+        adapter._is_allowed_user("42", author=None, guild=some_guild, is_dm=False)
         is True
     )
 
 
 def test_empty_allowlists_allow_everyone():
     adapter = _make_adapter()
-    assert (
-        adapter._is_allowed_user("42", author=None, guild=None, is_dm=True)
-        is True
-    )
+    assert adapter._is_allowed_user("42", author=None, guild=None, is_dm=True) is True
 
 
 # ---------------------------------------------------------------------------
@@ -275,6 +255,7 @@ def test_slash_authorization_rejects_cross_guild_role_dm(monkeypatch):
     """Slash interaction in a DM must not be authorized by a role held in
     any mutual guild (parallel to the on_message cross-guild bypass)."""
     import discord as _discord  # type: ignore
+
     _set_dm_role_auth_guild(monkeypatch)
 
     public_guild, _ = _guild_with_member(

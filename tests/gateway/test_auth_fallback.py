@@ -47,6 +47,7 @@ class TestResolveRuntimeAgentKwargsAuthFallback:
             side_effect=_mock_resolve,
         ):
             from gateway.run import _resolve_runtime_agent_kwargs
+
             result = _resolve_runtime_agent_kwargs()
 
         assert result["provider"] == "openrouter"
@@ -69,5 +70,6 @@ class TestResolveRuntimeAgentKwargsAuthFallback:
             side_effect=AuthError("token expired"),
         ):
             from gateway.run import _resolve_runtime_agent_kwargs
+
             with pytest.raises(RuntimeError):
                 _resolve_runtime_agent_kwargs()

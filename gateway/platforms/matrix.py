@@ -112,12 +112,15 @@ logger = logging.getLogger(__name__)
 class _MatrixApprovalPrompt:
     """Tracks a pending Matrix reaction-based exec approval prompt."""
 
-    def __init__(self, session_key: str, chat_id: str, message_id: str, resolved: bool = False):
+    def __init__(
+        self, session_key: str, chat_id: str, message_id: str, resolved: bool = False
+    ):
         self.session_key = session_key
         self.chat_id = chat_id
         self.message_id = message_id
         self.resolved = resolved
         self.bot_reaction_events: dict[str, str] = {}  # emoji -> event_id
+
 
 # Matrix message size limit (4000 chars practical, spec has no hard limit
 # but clients render poorly above this).
@@ -464,7 +467,9 @@ class MatrixAdapter(BasePlatformAdapter):
                     )
                     return False
         except Exception as exc:
-            logger.error("Matrix: post-upload key verification failed: %s", exc, exc_info=True)
+            logger.error(
+                "Matrix: post-upload key verification failed: %s", exc, exc_info=True
+            )
             return False
         return True
 
@@ -495,7 +500,9 @@ class MatrixAdapter(BasePlatformAdapter):
             try:
                 await olm.share_keys()
             except Exception as exc:
-                logger.error("Matrix: failed to re-upload device keys: %s", exc, exc_info=True)
+                logger.error(
+                    "Matrix: failed to re-upload device keys: %s", exc, exc_info=True
+                )
                 return False
             return await self._reverify_keys_after_upload(client, local_ed25519)
 
@@ -1018,7 +1025,6 @@ class MatrixAdapter(BasePlatformAdapter):
             except Exception:
                 pass
 
-
     async def edit_message(
         self, chat_id: str, message_id: str, content: str, *, finalize: bool = False
     ) -> SendResult:
@@ -1035,7 +1041,7 @@ class MatrixAdapter(BasePlatformAdapter):
             msg_content["m.mentions"] = new_content["m.mentions"]
         if "formatted_body" in new_content:
             msg_content["format"] = "org.matrix.custom.html"
-            msg_content["formatted_body"] = f'* {new_content["formatted_body"]}'
+            msg_content["formatted_body"] = f"* {new_content['formatted_body']}"
         msg_content["m.relates_to"] = {
             "rel_type": "m.replace",
             "event_id": message_id,
@@ -1072,6 +1078,7 @@ class MatrixAdapter(BasePlatformAdapter):
             # Try aiohttp first (always available), fall back to httpx
             try:
                 import aiohttp as _aiohttp
+
                 _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(self._proxy_url)
                 async with _aiohttp.ClientSession(**_sess_kw) as http:
                     async with http.get(
@@ -1087,6 +1094,7 @@ class MatrixAdapter(BasePlatformAdapter):
                         )
             except ImportError:
                 import httpx
+
                 _httpx_kw: dict = {}
                 if self._proxy_url:
                     _httpx_kw["proxy"] = self._proxy_url
@@ -1206,12 +1214,16 @@ class MatrixAdapter(BasePlatformAdapter):
 
         for emoji in ("✅", "❎"):
             try:
-                reaction_result = await self._send_reaction(chat_id, result.message_id, emoji)
+                reaction_result = await self._send_reaction(
+                    chat_id, result.message_id, emoji
+                )
                 # Save the bot's reaction event_id for later cleanup
                 if reaction_result:
                     prompt.bot_reaction_events[emoji] = str(reaction_result)
             except Exception as exc:
-                logger.debug("Matrix: failed to add approval reaction %s: %s", emoji, exc)
+                logger.debug(
+                    "Matrix: failed to add approval reaction %s: %s", emoji, exc
+                )
 
         return result
 
@@ -1245,12 +1257,15 @@ class MatrixAdapter(BasePlatformAdapter):
             state_store = getattr(self._client, "state_store", None)
             if state_store:
                 try:
-                    room_encrypted = bool(await state_store.is_encrypted(RoomID(room_id)))
+                    room_encrypted = bool(
+                        await state_store.is_encrypted(RoomID(room_id))
+                    )
                 except Exception:
                     room_encrypted = False
                 if room_encrypted:
                     try:
                         from mautrix.crypto.attachments import encrypt_attachment
+
                         upload_data, encrypted_file = encrypt_attachment(data)
                     except Exception as exc:
                         logger.error("Matrix: attachment encryption failed: %s", exc)
@@ -1627,7 +1642,9 @@ class MatrixAdapter(BasePlatformAdapter):
             body = self._strip_mention(body)
 
         # Auto-thread.
-        if not thread_id and ((not is_dm and self._auto_thread) or (is_dm and self._dm_auto_thread)):
+        if not thread_id and (
+            (not is_dm and self._auto_thread) or (is_dm and self._dm_auto_thread)
+        ):
             thread_id = event_id
             self._threads.mark(thread_id)
 
@@ -1771,9 +1788,17 @@ class MatrixAdapter(BasePlatformAdapter):
 
         # Cache media locally when downstream tools need a real file path.
         cached_path = None
-        should_cache_locally = msg_type in (
-            MessageType.PHOTO, MessageType.AUDIO, MessageType.VIDEO, MessageType.DOCUMENT,
-        ) or is_voice_message or is_encrypted_media
+        should_cache_locally = (
+            msg_type
+            in (
+                MessageType.PHOTO,
+                MessageType.AUDIO,
+                MessageType.VIDEO,
+                MessageType.DOCUMENT,
+            )
+            or is_voice_message
+            or is_encrypted_media
+        )
         if should_cache_locally and url:
             try:
                 file_bytes = await self._client.download_media(ContentURI(url))
@@ -2084,7 +2109,8 @@ class MatrixAdapter(BasePlatformAdapter):
                 if self._allowed_user_ids and sender not in self._allowed_user_ids:
                     logger.info(
                         "Matrix: ignoring approval reaction from unauthorized user %s on %s",
-                        sender, reacts_to,
+                        sender,
+                        reacts_to,
                     )
                     return
                 choice = self._approval_reaction_map.get(key)
@@ -2101,12 +2127,18 @@ class MatrixAdapter(BasePlatformAdapter):
                         logger.info(
                             "Matrix reaction resolved %d approval(s) for session %s "
                             "(choice=%s, user=%s)",
-                            count, prompt.session_key, choice, sender,
+                            count,
+                            prompt.session_key,
+                            choice,
+                            sender,
                         )
                         # Redact bot's seed reactions, leaving only the user's
                         await self._redact_bot_approval_reactions(room_id, prompt)
                 except Exception as exc:
-                    logger.error("Failed to resolve gateway approval from Matrix reaction: %s", exc)
+                    logger.error(
+                        "Failed to resolve gateway approval from Matrix reaction: %s",
+                        exc,
+                    )
 
     async def _redact_bot_approval_reactions(
         self,
@@ -2116,7 +2148,9 @@ class MatrixAdapter(BasePlatformAdapter):
         """Redact the bot's seed ✅/❎ reactions, leaving only the user's reaction."""
         for emoji, evt_id in prompt.bot_reaction_events.items():
             self._schedule_reaction_redaction(room_id, evt_id, "approval resolved")
-            logger.debug("Matrix: scheduled bot reaction redaction %s (%s)", emoji, evt_id)
+            logger.debug(
+                "Matrix: scheduled bot reaction redaction %s (%s)", emoji, evt_id
+            )
 
     # ------------------------------------------------------------------
     # Text message aggregation (handles Matrix client-side splits)
@@ -2406,7 +2440,9 @@ class MatrixAdapter(BasePlatformAdapter):
     # Mention detection helpers
     # ------------------------------------------------------------------
 
-    def _build_text_message_content(self, text: str, msgtype: str = "m.text") -> Dict[str, Any]:
+    def _build_text_message_content(
+        self, text: str, msgtype: str = "m.text"
+    ) -> Dict[str, Any]:
         """Build Matrix text content with HTML and outbound mention metadata."""
         msg_content: Dict[str, Any] = {"msgtype": msgtype, "body": text}
         mention_user_ids = self._extract_outbound_mentions(text)
@@ -2529,15 +2565,15 @@ class MatrixAdapter(BasePlatformAdapter):
             localpart = self._user_id.split(":")[0].lstrip("@")
             if localpart:
                 body = re.sub(
-                    r'(?<![\w])@' + re.escape(localpart) + r'\b',
-                    '',
+                    r"(?<![\w])@" + re.escape(localpart) + r"\b",
+                    "",
                     body,
                     flags=re.IGNORECASE,
                 )
 
         # Normalize spacing after mention removal.
-        body = re.sub(r'[ \t]{2,}', ' ', body)
-        body = re.sub(r'\s+([,.;:!?])', r'\1', body)
+        body = re.sub(r"[ \t]{2,}", " ", body)
+        body = re.sub(r"\s+([,.;:!?])", r"\1", body)
         return body.strip()
 
     async def _get_display_name(self, room_id: str, user_id: str) -> str:

@@ -5,6 +5,7 @@ spec (type, tags, pricing). The pricing object uses ``input`` / ``output``
 where hermes's shared picker expects ``prompt`` / ``completion``; these tests
 pin the translation and the curated-list filtering.
 """
+
 import json
 from unittest.mock import patch, MagicMock
 
@@ -145,7 +146,10 @@ def test_paid_moonshot_does_not_get_auto_promoted():
     payload = {
         "data": [
             {"id": first_curated, "pricing": {"input": "0.001", "output": "0.002"}},
-            {"id": "moonshotai/some-paid-variant", "pricing": {"input": "0.001", "output": "0.002"}},
+            {
+                "id": "moonshotai/some-paid-variant",
+                "pricing": {"input": "0.001", "output": "0.002"},
+            },
         ]
     }
     with patch("urllib.request.urlopen", return_value=_mock_urlopen(payload)):

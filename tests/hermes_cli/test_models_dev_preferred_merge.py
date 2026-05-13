@@ -38,6 +38,7 @@ class TestMergeHelper:
 
     def test_merge_mdev_raises_returns_curated(self):
         """Offline / broken models.dev must not break the catalog path."""
+
         def boom(_provider):
             raise RuntimeError("network down")
 

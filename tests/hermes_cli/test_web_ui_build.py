@@ -34,7 +34,6 @@ def _make_web_dir(tmp_path: Path) -> tuple[Path, Path]:
 
 
 class TestWebUIBuildNeeded:
-
     def test_returns_true_when_dist_missing(self, tmp_path):
         web_dir, _ = _make_web_dir(tmp_path)
         assert _web_ui_build_needed(web_dir) is True
@@ -97,13 +96,14 @@ class TestWebUIBuildNeeded:
 
 
 class TestBuildWebUISkipsWhenFresh:
-
     def test_skips_npm_when_dist_is_fresh(self, tmp_path):
         web_dir, dist_dir = _make_web_dir(tmp_path)
         _touch(dist_dir / ".vite" / "manifest.json")
 
-        with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-             patch("hermes_cli.main.subprocess.run") as mock_run:
+        with (
+            patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"),
+            patch("hermes_cli.main.subprocess.run") as mock_run,
+        ):
             result = _build_web_ui(web_dir)
 
         assert result is True
@@ -112,9 +112,13 @@ class TestBuildWebUISkipsWhenFresh:
     def test_runs_npm_when_dist_missing(self, tmp_path):
         web_dir, _ = _make_web_dir(tmp_path)
 
-        mock_cp = __import__("subprocess").CompletedProcess([], 0, stdout=b"", stderr=b"")
-        with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
-             patch("hermes_cli.main.subprocess.run", return_value=mock_cp) as mock_run:
+        mock_cp = __import__("subprocess").CompletedProcess(
+            [], 0, stdout=b"", stderr=b""
+        )
+        with (
+            patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"),
+            patch("hermes_cli.main.subprocess.run", return_value=mock_cp) as mock_run,
+        ):
             result = _build_web_ui(web_dir)
 
         assert result is True

@@ -244,7 +244,9 @@ class TestHermesAgentLoop:
     async def test_tool_call_then_text(self, basic_tools, valid_names):
         """Model calls a tool, then responds with text."""
         server = MockServer([
-            make_tool_response("todo", {"todos": [{"id": "1", "content": "test", "status": "pending"}]}),
+            make_tool_response(
+                "todo", {"todos": [{"id": "1", "content": "test", "status": "pending"}]}
+            ),
             make_text_response("I created a todo for you."),
         ])
         agent = HermesAgentLoop(
@@ -267,7 +269,15 @@ class TestHermesAgentLoop:
         """Model keeps calling tools until max_turns is hit."""
         # Create responses that always call a tool
         responses = [
-            make_tool_response("todo", {"todos": [{"id": str(i), "content": f"task {i}", "status": "pending"}]}, tool_call_id=f"call_{i}")
+            make_tool_response(
+                "todo",
+                {
+                    "todos": [
+                        {"id": str(i), "content": f"task {i}", "status": "pending"}
+                    ]
+                },
+                tool_call_id=f"call_{i}",
+            )
             for i in range(10)
         ]
         server = MockServer(responses)
@@ -411,7 +421,9 @@ class TestHermesAgentLoop:
         """Memory tool should return error in RL environments."""
         valid = {"terminal", "read_file", "todo", "memory"}
         server = MockServer([
-            make_tool_response("memory", {"action": "add", "target": "user", "content": "test"}),
+            make_tool_response(
+                "memory", {"action": "add", "target": "user", "content": "test"}
+            ),
             make_text_response("Done"),
         ])
         agent = HermesAgentLoop(

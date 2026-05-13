@@ -56,6 +56,7 @@ _AUTO_DELETE_SECONDS = 21600
 # Pending-deletion tracking (replaces the old fork-and-sleep subprocess).
 # ---------------------------------------------------------------------------
 
+
 def _pending_file() -> Path:
     """Path to ``~/.hermes/pastes/pending.json``.
 
@@ -82,7 +83,8 @@ def _load_pending() -> list[dict]:
         if isinstance(data, list):
             # Filter to well-formed entries only
             return [
-                e for e in data
+                e
+                for e in data
                 if isinstance(e, dict) and "url" in e and "expire_at" in e
             ]
     except (OSError, ValueError, json.JSONDecodeError):
@@ -211,7 +213,7 @@ def _extract_paste_id(url: str) -> Optional[str]:
     url = url.strip().rstrip("/")
     for prefix in ("https://paste.rs/", "http://paste.rs/"):
         if url.startswith(prefix):
-            return url[len(prefix):]
+            return url[len(prefix) :]
     return None
 
 
@@ -229,7 +231,8 @@ def delete_paste(url: str) -> bool:
 
     target = f"{_PASTE_RS_URL}{paste_id}"
     req = urllib.request.Request(
-        target, method="DELETE",
+        target,
+        method="DELETE",
         headers={"User-Agent": "hermes-agent/debug-share"},
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -269,7 +272,9 @@ def _upload_paste_rs(content: str) -> str:
     """
     data = content.encode("utf-8")
     req = urllib.request.Request(
-        _PASTE_RS_URL, data=data, method="POST",
+        _PASTE_RS_URL,
+        data=data,
+        method="POST",
         headers={
             "Content-Type": "text/plain; charset=utf-8",
             "User-Agent": "hermes-agent/debug-share",
@@ -305,7 +310,9 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
     ).encode("utf-8")
 
     req = urllib.request.Request(
-        _DPASTE_COM_URL, data=body, method="POST",
+        _DPASTE_COM_URL,
+        data=body,
+        method="POST",
         headers={
             "Content-Type": f"multipart/form-data; boundary={boundary}",
             "User-Agent": "hermes-agent/debug-share",
@@ -446,7 +453,11 @@ def _capture_log_snapshot(
                 total = 0
                 newline_count = 0
 
-                while pos > 0 and (total < max_bytes or newline_count <= tail_lines + 1) and total < max_bytes * 2:
+                while (
+                    pos > 0
+                    and (total < max_bytes or newline_count <= tail_lines + 1)
+                    and total < max_bytes * 2
+                ):
                     read_size = min(chunk_size, pos)
                     pos -= read_size
                     f.seek(pos)
@@ -472,7 +483,9 @@ def _capture_log_snapshot(
                 full_raw = full_raw.split(b"\n", 1)[1]
 
         all_text = raw.decode("utf-8", errors="replace")
-        tail_text = "".join(all_text.splitlines(keepends=True)[-tail_lines:]).rstrip("\n")
+        tail_text = "".join(all_text.splitlines(keepends=True)[-tail_lines:]).rstrip(
+            "\n"
+        )
 
         full_text = full_raw.decode("utf-8", errors="replace")
         if truncated:
@@ -484,7 +497,9 @@ def _capture_log_snapshot(
 
         return LogSnapshot(path=log_path, tail_text=tail_text, full_text=full_text)
     except Exception as exc:
-        return LogSnapshot(path=log_path, tail_text=f"(error reading: {exc})", full_text=None)
+        return LogSnapshot(
+            path=log_path, tail_text=f"(error reading: {exc})", full_text=None
+        )
 
 
 def _capture_default_log_snapshots(
@@ -497,9 +512,7 @@ def _capture_default_log_snapshots(
     """
     errors_lines = min(log_lines, 100)
     return {
-        "agent": _capture_log_snapshot(
-            "agent", tail_lines=log_lines, redact=redact
-        ),
+        "agent": _capture_log_snapshot("agent", tail_lines=log_lines, redact=redact),
         "errors": _capture_log_snapshot(
             "errors", tail_lines=errors_lines, redact=redact
         ),
@@ -512,6 +525,7 @@ def _capture_default_log_snapshots(
 # ---------------------------------------------------------------------------
 # Debug report collection
 # ---------------------------------------------------------------------------
+
 
 def _capture_dump() -> str:
     """Run ``hermes dump`` and return its stdout as a string."""
@@ -580,6 +594,7 @@ def collect_debug_report(
 # ---------------------------------------------------------------------------
 # CLI entry points
 # ---------------------------------------------------------------------------
+
 
 def run_debug_share(args):
     """Collect debug report + full logs, upload each, print URLs."""

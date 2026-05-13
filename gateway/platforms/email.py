@@ -46,9 +46,19 @@ from gateway.config import Platform, PlatformConfig
 logger = logging.getLogger(__name__)
 # Automated sender patterns — emails from these are silently ignored
 _NOREPLY_PATTERNS = (
-    "noreply", "no-reply", "no_reply", "donotreply", "do-not-reply",
-    "mailer-daemon", "postmaster", "bounce", "notifications@",
-    "automated@", "auto-confirm", "auto-reply", "automailer",
+    "noreply",
+    "no-reply",
+    "no_reply",
+    "donotreply",
+    "do-not-reply",
+    "mailer-daemon",
+    "postmaster",
+    "bounce",
+    "notifications@",
+    "automated@",
+    "auto-confirm",
+    "auto-reply",
+    "automailer",
 )
 
 # RFC headers that indicate bulk/automated mail
@@ -65,6 +75,7 @@ MAX_MESSAGE_LENGTH = 50_000
 # Supported image extensions for inline detection
 _IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
+
 def _is_automated_sender(address: str, headers: dict) -> bool:
     """Return True if this email is from an automated/noreply source."""
     addr = address.lower()
@@ -75,7 +86,8 @@ def _is_automated_sender(address: str, headers: dict) -> bool:
         if value and check(value):
             return True
     return False
-    
+
+
 def check_email_requirements() -> bool:
     """Check if email platform dependencies are available."""
     addr = os.getenv("EMAIL_ADDRESS")
@@ -174,13 +186,18 @@ def _extract_attachments(
 
     for part in msg.walk():
         disposition = str(part.get("Content-Disposition", ""))
-        if skip_attachments and ("attachment" in disposition or "inline" in disposition):
+        if skip_attachments and (
+            "attachment" in disposition or "inline" in disposition
+        ):
             continue
         if "attachment" not in disposition and "inline" not in disposition:
             continue
         # Skip text/plain and text/html body parts
         content_type = part.get_content_type()
-        if content_type in ("text/plain", "text/html") and "attachment" not in disposition:
+        if (
+            content_type in ("text/plain", "text/html")
+            and "attachment" not in disposition
+        ):
             continue
 
         filename = part.get_filename()
@@ -199,7 +216,9 @@ def _extract_attachments(
             try:
                 cached_path = cache_image_from_bytes(payload, ext)
             except ValueError:
-                logger.debug("Skipping non-image attachment %s (invalid magic bytes)", filename)
+                logger.debug(
+                    "Skipping non-image attachment %s (invalid magic bytes)", filename
+                )
                 continue
             attachments.append({
                 "path": cached_path,
@@ -242,7 +261,7 @@ class EmailAdapter(BasePlatformAdapter):
 
         # Track message IDs we've already processed to avoid duplicates
         self._seen_uids: set = set()
-        self._seen_uids_max: int = 2000   # cap to prevent unbounded memory growth
+        self._seen_uids_max: int = 2000  # cap to prevent unbounded memory growth
         self._poll_task: Optional[asyncio.Task] = None
 
         # Map chat_id (sender email) -> last subject + message-id for threading
@@ -265,10 +284,12 @@ class EmailAdapter(BasePlatformAdapter):
             sorted_uids = sorted(self._seen_uids, key=lambda u: int(u))
             keep = self._seen_uids_max // 2
             self._seen_uids = set(sorted_uids[-keep:])
-            logger.debug("[Email] Trimmed seen UIDs to %d entries", len(self._seen_uids))
+            logger.debug(
+                "[Email] Trimmed seen UIDs to %d entries", len(self._seen_uids)
+            )
         except (ValueError, TypeError):
             # Fallback: just clear old entries if sort fails
-            self._seen_uids = set(list(self._seen_uids)[-self._seen_uids_max // 2:])
+            self._seen_uids = set(list(self._seen_uids)[-self._seen_uids_max // 2 :])
 
     async def connect(self) -> bool:
         """Connect to the IMAP server and start polling for new messages."""
@@ -285,7 +306,10 @@ class EmailAdapter(BasePlatformAdapter):
             # Keep only the most recent UIDs to prevent unbounded growth
             self._trim_seen_uids()
             imap.logout()
-            logger.info("[Email] IMAP connection test passed. %d existing messages skipped.", len(self._seen_uids))
+            logger.info(
+                "[Email] IMAP connection test passed. %d existing messages skipped.",
+                len(self._seen_uids),
+            )
         except Exception as e:
             logger.error("[Email] IMAP connection failed: %s", e)
             return False
@@ -378,10 +402,14 @@ class EmailAdapter(BasePlatformAdapter):
                     # Skip automated/noreply senders before any processing
                     msg_headers = dict(msg.items())
                     if _is_automated_sender(sender_addr, msg_headers):
-                        logger.debug("[Email] Skipping automated sender: %s", sender_addr)
+                        logger.debug(
+                            "[Email] Skipping automated sender: %s", sender_addr
+                        )
                         continue
                     body = _extract_text_body(msg)
-                    attachments = _extract_attachments(msg, skip_attachments=self._skip_attachments)
+                    attachments = _extract_attachments(
+                        msg, skip_attachments=self._skip_attachments
+                    )
 
                     results.append({
                         "uid": uid,
@@ -413,7 +441,9 @@ class EmailAdapter(BasePlatformAdapter):
 
         # Never reply to automated senders
         if _is_automated_sender(sender_addr, {}):
-            logger.debug("[Email] Dropping automated sender at dispatch: %s", sender_addr)
+            logger.debug(
+                "[Email] Dropping automated sender at dispatch: %s", sender_addr
+            )
             return
 
         # Skip senders not in EMAIL_ALLOWED_USERS — prevents the adapter
@@ -423,9 +453,14 @@ class EmailAdapter(BasePlatformAdapter):
         # sending a reply even though the handler returned None.
         allowed_raw = os.getenv("EMAIL_ALLOWED_USERS", "").strip()
         if allowed_raw:
-            allowed = {addr.strip().lower() for addr in allowed_raw.split(",") if addr.strip()}
+            allowed = {
+                addr.strip().lower() for addr in allowed_raw.split(",") if addr.strip()
+            }
             if sender_addr.lower() not in allowed:
-                logger.debug("[Email] Dropping non-allowlisted sender at dispatch: %s", sender_addr)
+                logger.debug(
+                    "[Email] Dropping non-allowlisted sender at dispatch: %s",
+                    sender_addr,
+                )
                 return
 
         subject = msg_data["subject"]
@@ -537,7 +572,9 @@ class EmailAdapter(BasePlatformAdapter):
         logger.info("[Email] Sent reply to %s (subject: %s)", to_addr, subject)
         return msg_id
 
-    async def send_typing(self, chat_id: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+    async def send_typing(
+        self, chat_id: str, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Email has no typing indicator — no-op."""
 
     async def send_image(
@@ -601,7 +638,9 @@ class EmailAdapter(BasePlatformAdapter):
                 local_paths,
             )
         except Exception as e:
-            logger.error("[Email] Multi-image send failed, falling back: %s", e, exc_info=True)
+            logger.error(
+                "[Email] Multi-image send failed, falling back: %s", e, exc_info=True
+            )
             await super().send_multiple_images(chat_id, images, metadata, human_delay)
 
     def _send_email_with_attachments(
@@ -640,7 +679,9 @@ class EmailAdapter(BasePlatformAdapter):
                     part = MIMEBase("application", "octet-stream")
                     part.set_payload(f.read())
                     encoders.encode_base64(part)
-                    part.add_header("Content-Disposition", f"attachment; filename={p.name}")
+                    part.add_header(
+                        "Content-Disposition", f"attachment; filename={p.name}"
+                    )
                     msg.attach(part)
             except Exception as e:
                 logger.warning("[Email] Failed to attach %s: %s", file_path, e)
@@ -656,7 +697,11 @@ class EmailAdapter(BasePlatformAdapter):
             except Exception:
                 smtp.close()
 
-        logger.info("[Email] Sent multi-attachment email to %s (%d files)", to_addr, len(file_paths))
+        logger.info(
+            "[Email] Sent multi-attachment email to %s (%d files)",
+            to_addr,
+            len(file_paths),
+        )
         return msg_id
 
     async def send_document(

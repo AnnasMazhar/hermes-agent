@@ -21,47 +21,51 @@ logger = logging.getLogger(__name__)
 
 # ── Error taxonomy ──────────────────────────────────────────────────────
 
+
 class FailoverReason(enum.Enum):
     """Why an API call failed — determines recovery strategy."""
 
     # Authentication / authorization
-    auth = "auth"                        # Transient auth (401/403) — refresh/rotate
-    auth_permanent = "auth_permanent"    # Auth failed after refresh — abort
+    auth = "auth"  # Transient auth (401/403) — refresh/rotate
+    auth_permanent = "auth_permanent"  # Auth failed after refresh — abort
 
     # Billing / quota
-    billing = "billing"                  # 402 or confirmed credit exhaustion — rotate immediately
-    rate_limit = "rate_limit"            # 429 or quota-based throttling — backoff then rotate
+    billing = "billing"  # 402 or confirmed credit exhaustion — rotate immediately
+    rate_limit = "rate_limit"  # 429 or quota-based throttling — backoff then rotate
 
     # Server-side
-    overloaded = "overloaded"            # 503/529 — provider overloaded, backoff
-    server_error = "server_error"        # 500/502 — internal server error, retry
+    overloaded = "overloaded"  # 503/529 — provider overloaded, backoff
+    server_error = "server_error"  # 500/502 — internal server error, retry
 
     # Transport
-    timeout = "timeout"                  # Connection/read timeout — rebuild client + retry
+    timeout = "timeout"  # Connection/read timeout — rebuild client + retry
 
     # Context / payload
     context_overflow = "context_overflow"  # Context too large — compress, not failover
     payload_too_large = "payload_too_large"  # 413 — compress payload
-    image_too_large = "image_too_large"   # Native image part exceeds provider's per-image limit — shrink and retry
+    image_too_large = "image_too_large"  # Native image part exceeds provider's per-image limit — shrink and retry
 
     # Model
-    model_not_found = "model_not_found"  # 404 or invalid model — fallback to different model
+    model_not_found = (
+        "model_not_found"  # 404 or invalid model — fallback to different model
+    )
     provider_policy_blocked = "provider_policy_blocked"  # Aggregator (e.g. OpenRouter) blocked the only endpoint due to account data/privacy policy
 
     # Request format
-    format_error = "format_error"        # 400 bad request — abort or strip + retry
+    format_error = "format_error"  # 400 bad request — abort or strip + retry
 
     # Provider-specific
     thinking_signature = "thinking_signature"  # Anthropic thinking block sig invalid
-    long_context_tier = "long_context_tier"    # Anthropic "extra usage" tier gate
+    long_context_tier = "long_context_tier"  # Anthropic "extra usage" tier gate
     oauth_long_context_beta_forbidden = "oauth_long_context_beta_forbidden"  # Anthropic OAuth subscription rejects 1M context beta — disable beta and retry
     llama_cpp_grammar_pattern = "llama_cpp_grammar_pattern"  # llama.cpp json-schema-to-grammar rejects regex escapes in `pattern` / `format` — strip from tools and retry
 
     # Catch-all
-    unknown = "unknown"                  # Unclassifiable — retry with backoff
+    unknown = "unknown"  # Unclassifiable — retry with backoff
 
 
 # ── Classification result ───────────────────────────────────────────────
+
 
 @dataclass
 class ClassifiedError:
@@ -84,7 +88,6 @@ class ClassifiedError:
     @property
     def is_auth(self) -> bool:
         return self.reason in (FailoverReason.auth, FailoverReason.auth_permanent)
-
 
 
 # ── Provider-specific patterns ──────────────────────────────────────────
@@ -157,10 +160,10 @@ _PAYLOAD_TOO_LARGE_PATTERNS = [
 # important here (hard 5 MB per image, returned as
 # "messages.N.content.K.image.source.base64: image exceeds 5 MB maximum").
 _IMAGE_TOO_LARGE_PATTERNS = [
-    "image exceeds",        # Anthropic: "image exceeds 5 MB maximum"
-    "image too large",      # generic
-    "image_too_large",      # error_code variant
-    "image size exceeds",   # variant
+    "image exceeds",  # Anthropic: "image exceeds 5 MB maximum"
+    "image too large",  # generic
+    "image_too_large",  # error_code variant
+    "image size exceeds",  # variant
     # "request_too_large" on a request known to contain an image → image is
     # the likely culprit; we still try the shrink path before giving up.
 ]
@@ -182,14 +185,14 @@ _CONTEXT_OVERFLOW_PATTERNS = [
     # vLLM / local inference server patterns
     "exceeds the max_model_len",
     "max_model_len",
-    "prompt length",             # "engine prompt length X exceeds"
+    "prompt length",  # "engine prompt length X exceeds"
     "input is too long",
     "maximum model length",
     # Ollama patterns
     "context length exceeded",
     "truncating input",
     # llama.cpp / llama-server patterns
-    "slot context",              # "slot context: N tokens, prompt N tokens"
+    "slot context",  # "slot context: N tokens, prompt N tokens"
     "n_ctx_slot",
     # Chinese error messages (some providers return these)
     "超过最大长度",
@@ -256,11 +259,17 @@ _THINKING_SIG_PATTERNS = [
 
 # Transport error type names
 _TRANSPORT_ERROR_TYPES = frozenset({
-    "ReadTimeout", "ConnectTimeout", "PoolTimeout",
-    "ConnectError", "RemoteProtocolError",
-    "ConnectionError", "ConnectionResetError",
-    "ConnectionAbortedError", "BrokenPipeError",
-    "TimeoutError", "ReadError",
+    "ReadTimeout",
+    "ConnectTimeout",
+    "PoolTimeout",
+    "ConnectError",
+    "RemoteProtocolError",
+    "ConnectionError",
+    "ConnectionResetError",
+    "ConnectionAbortedError",
+    "BrokenPipeError",
+    "TimeoutError",
+    "ReadError",
     "ServerDisconnectedError",
     # SSL/TLS transport errors — transient mid-stream handshake/record
     # failures that should retry rather than surface as a stalled session.
@@ -268,8 +277,12 @@ _TRANSPORT_ERROR_TYPES = frozenset({
     # the type names here so provider-wrapped SSL errors (e.g. when the
     # SDK re-raises without preserving the exception chain) still classify
     # as transport rather than falling through to the unknown bucket.
-    "SSLError", "SSLZeroReturnError", "SSLWantReadError",
-    "SSLWantWriteError", "SSLEOFError", "SSLSyscallError",
+    "SSLError",
+    "SSLZeroReturnError",
+    "SSLWantReadError",
+    "SSLWantWriteError",
+    "SSLEOFError",
+    "SSLSyscallError",
     # OpenAI SDK errors (not subclasses of Python builtins)
     "APIConnectionError",
     "APITimeoutError",
@@ -327,6 +340,7 @@ _SSL_TRANSIENT_PATTERNS = [
 
 
 # ── Classification pipeline ─────────────────────────────────────────────
+
 
 def classify_api_error(
     error: Exception,
@@ -393,11 +407,14 @@ def classify_api_error(
                 if isinstance(_raw_json, str) and _raw_json.strip():
                     try:
                         import json
+
                         _inner = json.loads(_raw_json)
                         if isinstance(_inner, dict):
                             _inner_err = _inner.get("error", {})
                             if isinstance(_inner_err, dict):
-                                _metadata_msg = str(_inner_err.get("message") or "").lower()
+                                _metadata_msg = str(
+                                    _inner_err.get("message") or ""
+                                ).lower()
                     except (json.JSONDecodeError, TypeError):
                         pass
         if not _body_msg:
@@ -406,7 +423,11 @@ def classify_api_error(
     parts = [_raw_msg]
     if _body_msg and _body_msg not in _raw_msg:
         parts.append(_body_msg)
-    if _metadata_msg and _metadata_msg not in _raw_msg and _metadata_msg not in _body_msg:
+    if (
+        _metadata_msg
+        and _metadata_msg not in _raw_msg
+        and _metadata_msg not in _body_msg
+    ):
         parts.append(_metadata_msg)
     error_msg = " ".join(parts)
     provider_lower = (provider or "").strip().lower()
@@ -429,11 +450,7 @@ def classify_api_error(
     # Don't gate on provider — OpenRouter proxies Anthropic errors, so the
     # provider may be "openrouter" even though the error is Anthropic-specific.
     # The message pattern ("signature" + "thinking") is unique enough.
-    if (
-        status_code == 400
-        and "signature" in error_msg
-        and "thinking" in error_msg
-    ):
+    if status_code == 400 and "signature" in error_msg and "thinking" in error_msg:
         return _result(
             FailoverReason.thinking_signature,
             retryable=True,
@@ -479,16 +496,10 @@ def classify_api_error(
     # recognizable phrases; on match we strip ``pattern``/``format`` from
     # ``self.tools`` in the retry loop and retry once. Cloud providers are
     # unaffected — they accept these keywords and we never hit this branch.
-    if (
-        status_code == 400
-        and (
-            "error parsing grammar" in error_msg
-            or "json-schema-to-grammar" in error_msg
-            or (
-                "unable to generate parser" in error_msg
-                and "template" in error_msg
-            )
-        )
+    if status_code == 400 and (
+        "error parsing grammar" in error_msg
+        or "json-schema-to-grammar" in error_msg
+        or ("unable to generate parser" in error_msg and "template" in error_msg)
     ):
         return _result(
             FailoverReason.llama_cpp_grammar_pattern,
@@ -500,9 +511,14 @@ def classify_api_error(
 
     if status_code is not None:
         classified = _classify_by_status(
-            status_code, error_msg, error_code, body,
-            provider=provider_lower, model=model_lower,
-            approx_tokens=approx_tokens, context_length=context_length,
+            status_code,
+            error_msg,
+            error_code,
+            body,
+            provider=provider_lower,
+            model=model_lower,
+            approx_tokens=approx_tokens,
+            context_length=context_length,
             num_messages=num_messages,
             result_fn=_result,
         )
@@ -519,7 +535,8 @@ def classify_api_error(
     # ── 4. Message pattern matching (no status code) ────────────────
 
     classified = _classify_by_message(
-        error_msg, error_type,
+        error_msg,
+        error_type,
         approx_tokens=approx_tokens,
         context_length=context_length,
         result_fn=_result,
@@ -562,7 +579,9 @@ def classify_api_error(
 
     # ── 7. Transport / timeout heuristics ───────────────────────────
 
-    if error_type in _TRANSPORT_ERROR_TYPES or isinstance(error, (TimeoutError, ConnectionError, OSError)):
+    if error_type in _TRANSPORT_ERROR_TYPES or isinstance(
+        error, (TimeoutError, ConnectionError, OSError)
+    ):
         return _result(FailoverReason.timeout, retryable=True)
 
     # ── 8. Fallback: unknown ────────────────────────────────────────
@@ -571,6 +590,7 @@ def classify_api_error(
 
 
 # ── Status code classification ──────────────────────────────────────────
+
 
 def _classify_by_status(
     status_code: int,
@@ -666,8 +686,11 @@ def _classify_by_status(
 
     if status_code == 400:
         return _classify_400(
-            error_msg, error_code, body,
-            provider=provider, model=model,
+            error_msg,
+            error_code,
+            body,
+            provider=provider,
+            model=model,
             approx_tokens=approx_tokens,
             context_length=context_length,
             num_messages=num_messages,
@@ -821,8 +844,11 @@ def _classify_400(
 
 # ── Error code classification ───────────────────────────────────────────
 
+
 def _classify_by_error_code(
-    error_code: str, error_msg: str, result_fn,
+    error_code: str,
+    error_msg: str,
+    result_fn,
 ) -> Optional[ClassifiedError]:
     """Classify by structured error codes from the response body."""
     code_lower = error_code.lower()
@@ -861,6 +887,7 @@ def _classify_by_error_code(
 
 # ── Message pattern classification ──────────────────────────────────────
 
+
 def _classify_by_message(
     error_msg: str,
     error_type: str,
@@ -892,7 +919,9 @@ def _classify_by_message(
     # billing exhaustion.
     has_usage_limit = any(p in error_msg for p in _USAGE_LIMIT_PATTERNS)
     if has_usage_limit:
-        has_transient_signal = any(p in error_msg for p in _USAGE_LIMIT_TRANSIENT_SIGNALS)
+        has_transient_signal = any(
+            p in error_msg for p in _USAGE_LIMIT_TRANSIENT_SIGNALS
+        )
         if has_transient_signal:
             return result_fn(
                 FailoverReason.rate_limit,
@@ -968,6 +997,7 @@ def _classify_by_message(
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
+
 def _extract_status_code(error: Exception) -> Optional[int]:
     """Walk the error and its cause chain to find an HTTP status code."""
     current = error
@@ -980,7 +1010,9 @@ def _extract_status_code(error: Exception) -> Optional[int]:
         if isinstance(code, int) and 100 <= code < 600:
             return code
         # Walk cause chain
-        cause = getattr(current, "__cause__", None) or getattr(current, "__context__", None)
+        cause = getattr(current, "__cause__", None) or getattr(
+            current, "__context__", None
+        )
         if cause is None or cause is current:
             break
         current = cause

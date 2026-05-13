@@ -12,6 +12,7 @@ class TestDeprecatedCwdWarning:
         monkeypatch.delenv("TERMINAL_CWD", raising=False)
 
         from hermes_cli.config import warn_deprecated_cwd_env_vars
+
         warn_deprecated_cwd_env_vars(config={})
 
         captured = capsys.readouterr()
@@ -19,11 +20,14 @@ class TestDeprecatedCwdWarning:
         assert "deprecated" in captured.err.lower()
         assert "config.yaml" in captured.err
 
-    def test_terminal_cwd_triggers_warning_when_config_placeholder(self, monkeypatch, capsys):
+    def test_terminal_cwd_triggers_warning_when_config_placeholder(
+        self, monkeypatch, capsys
+    ):
         monkeypatch.setenv("TERMINAL_CWD", "/project")
         monkeypatch.delenv("MESSAGING_CWD", raising=False)
 
         from hermes_cli.config import warn_deprecated_cwd_env_vars
+
         # config has placeholder cwd → TERMINAL_CWD likely from .env
         warn_deprecated_cwd_env_vars(config={"terminal": {"cwd": "."}})
 
@@ -36,6 +40,7 @@ class TestDeprecatedCwdWarning:
         monkeypatch.delenv("MESSAGING_CWD", raising=False)
 
         from hermes_cli.config import warn_deprecated_cwd_env_vars
+
         # config has explicit cwd → TERMINAL_CWD could be from config bridge
         warn_deprecated_cwd_env_vars(config={"terminal": {"cwd": "/project"}})
 
@@ -47,6 +52,7 @@ class TestDeprecatedCwdWarning:
         monkeypatch.delenv("TERMINAL_CWD", raising=False)
 
         from hermes_cli.config import warn_deprecated_cwd_env_vars
+
         warn_deprecated_cwd_env_vars(config={})
 
         captured = capsys.readouterr()
@@ -57,6 +63,7 @@ class TestDeprecatedCwdWarning:
         monkeypatch.setenv("TERMINAL_CWD", "/term/path")
 
         from hermes_cli.config import warn_deprecated_cwd_env_vars
+
         warn_deprecated_cwd_env_vars(config={})
 
         captured = capsys.readouterr()

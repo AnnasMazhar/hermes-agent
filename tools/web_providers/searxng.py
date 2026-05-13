@@ -91,16 +91,25 @@ class SearXNGSearchProvider(WebSearchProvider):
             resp.raise_for_status()
         except httpx.HTTPStatusError as exc:
             logger.warning("SearXNG HTTP error: %s", exc)
-            return {"success": False, "error": f"SearXNG returned HTTP {exc.response.status_code}"}
+            return {
+                "success": False,
+                "error": f"SearXNG returned HTTP {exc.response.status_code}",
+            }
         except httpx.RequestError as exc:
             logger.warning("SearXNG request error: %s", exc)
-            return {"success": False, "error": f"Could not reach SearXNG at {base_url}: {exc}"}
+            return {
+                "success": False,
+                "error": f"Could not reach SearXNG at {base_url}: {exc}",
+            }
 
         try:
             data = resp.json()
         except Exception as exc:  # noqa: BLE001
             logger.warning("SearXNG response parse error: %s", exc)
-            return {"success": False, "error": "Could not parse SearXNG response as JSON"}
+            return {
+                "success": False,
+                "error": "Could not parse SearXNG response as JSON",
+            }
 
         raw_results = data.get("results", [])
 

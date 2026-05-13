@@ -101,7 +101,7 @@ logger = logging.getLogger(__name__)
 MAX_MESSAGE_LENGTH = 20000
 RECONNECT_BACKOFF = [2, 5, 10, 30, 60]
 _SESSION_WEBHOOKS_MAX = 500
-_DINGTALK_WEBHOOK_RE = re.compile(r'^https://(?:api|oapi)\.dingtalk\.com/')
+_DINGTALK_WEBHOOK_RE = re.compile(r"^https://(?:api|oapi)\.dingtalk\.com/")
 
 # DingTalk message type → runtime content type
 DINGTALK_TYPE_MAPPING = {
@@ -230,8 +230,10 @@ class DingTalkAdapter(BasePlatformAdapter):
         try:
             # Tighter keepalive so idle CLOSE_WAIT drains promptly (#18451).
             from gateway.platforms._http_client_limits import platform_httpx_limits
+
             self._http_client = httpx.AsyncClient(
-                timeout=30.0, limits=platform_httpx_limits(),
+                timeout=30.0,
+                limits=platform_httpx_limits(),
             )
 
             credential = dingtalk_stream.Credential(
@@ -304,12 +306,18 @@ class DingTalkAdapter(BasePlatformAdapter):
         # Close the active websocket first so the stream task sees the
         # disconnection and exits cleanly, rather than getting stuck
         # awaiting frames that will never arrive.
-        websocket = getattr(self._stream_client, "websocket", None) if self._stream_client else None
+        websocket = (
+            getattr(self._stream_client, "websocket", None)
+            if self._stream_client
+            else None
+        )
         if websocket is not None:
             try:
                 await websocket.close()
             except Exception as e:
-                logger.debug("[%s] websocket close during disconnect failed: %s", self.name, e)
+                logger.debug(
+                    "[%s] websocket close during disconnect failed: %s", self.name, e
+                )
 
         if self._stream_task:
             # Try graceful close first if SDK supports it. The SDK's close()
@@ -324,7 +332,9 @@ class DingTalkAdapter(BasePlatformAdapter):
             try:
                 await asyncio.wait_for(self._stream_task, timeout=5.0)
             except (asyncio.CancelledError, asyncio.TimeoutError):
-                logger.debug("[%s] stream task did not exit cleanly during disconnect", self.name)
+                logger.debug(
+                    "[%s] stream task did not exit cleanly during disconnect", self.name
+                )
             self._stream_task = None
 
         # Cancel any in-flight background tasks (emoji reactions, etc.)
@@ -355,7 +365,12 @@ class DingTalkAdapter(BasePlatformAdapter):
             if isinstance(configured, str):
                 return configured.lower() in ("true", "1", "yes", "on")
             return bool(configured)
-        return os.getenv("DINGTALK_REQUIRE_MENTION", "false").lower() in ("true", "1", "yes", "on")
+        return os.getenv("DINGTALK_REQUIRE_MENTION", "false").lower() in (
+            "true",
+            "1",
+            "yes",
+            "on",
+        )
 
     def _dingtalk_free_response_chats(self) -> Set[str]:
         raw = self.config.extra.get("free_response_chats")
@@ -381,7 +396,9 @@ class DingTalkAdapter(BasePlatformAdapter):
 
     def _compile_mention_patterns(self) -> List[re.Pattern]:
         """Compile optional regex wake-word patterns for group triggers."""
-        patterns = self.config.extra.get("mention_patterns") if self.config.extra else None
+        patterns = (
+            self.config.extra.get("mention_patterns") if self.config.extra else None
+        )
         if patterns is None:
             raw = os.getenv("DINGTALK_MENTION_PATTERNS", "").strip()
             if raw:
@@ -390,7 +407,9 @@ class DingTalkAdapter(BasePlatformAdapter):
                 except Exception:
                     loaded = [part.strip() for part in raw.splitlines() if part.strip()]
                     if not loaded:
-                        loaded = [part.strip() for part in raw.split(",") if part.strip()]
+                        loaded = [
+                            part.strip() for part in raw.split(",") if part.strip()
+                        ]
                 patterns = loaded
 
         if patterns is None:
@@ -412,9 +431,16 @@ class DingTalkAdapter(BasePlatformAdapter):
             try:
                 compiled.append(re.compile(pattern, re.IGNORECASE))
             except re.error as exc:
-                logger.warning("[%s] Invalid DingTalk mention pattern %r: %s", self.name, pattern, exc)
+                logger.warning(
+                    "[%s] Invalid DingTalk mention pattern %r: %s",
+                    self.name,
+                    pattern,
+                    exc,
+                )
         if compiled:
-            logger.info("[%s] Loaded %d DingTalk mention pattern(s)", self.name, len(compiled))
+            logger.info(
+                "[%s] Loaded %d DingTalk mention pattern(s)", self.name, len(compiled)
+            )
         return compiled
 
     def _load_allowed_users(self) -> Set[str]:
@@ -452,7 +478,9 @@ class DingTalkAdapter(BasePlatformAdapter):
             return False
         return any(pattern.search(text) for pattern in self._mention_patterns)
 
-    def _should_process_message(self, message: "ChatbotMessage", text: str, is_group: bool, chat_id: str) -> bool:
+    def _should_process_message(
+        self, message: "ChatbotMessage", text: str, is_group: bool, chat_id: str
+    ) -> bool:
         """Apply DingTalk group trigger rules.
 
         DMs remain unrestricted (subject to ``allowed_users`` which is enforced
@@ -506,16 +534,22 @@ class DingTalkAdapter(BasePlatformAdapter):
         for out_track_id, last_content in list(cards.items()):
             try:
                 await self._stream_card_content(
-                    out_track_id, token, last_content, finalize=True,
+                    out_track_id,
+                    token,
+                    last_content,
+                    finalize=True,
                 )
                 logger.debug(
                     "[%s] AI Card sibling closed: %s",
-                    self.name, out_track_id,
+                    self.name,
+                    out_track_id,
                 )
             except Exception as e:
                 logger.debug(
                     "[%s] Sibling close failed for %s: %s",
-                    self.name, out_track_id, e,
+                    self.name,
+                    out_track_id,
+                    e,
                 )
 
     def _fire_done_reaction(self, chat_id: str) -> None:
@@ -537,10 +571,16 @@ class DingTalkAdapter(BasePlatformAdapter):
 
         async def _swap() -> None:
             await self._send_emotion(
-                msg_id, conversation_id, "🤔Thinking", recall=True,
+                msg_id,
+                conversation_id,
+                "🤔Thinking",
+                recall=True,
             )
             await self._send_emotion(
-                msg_id, conversation_id, "🥳Done", recall=False,
+                msg_id,
+                conversation_id,
+                "🥳Done",
+                recall=False,
             )
 
         self._spawn_bg(_swap())
@@ -572,7 +612,9 @@ class DingTalkAdapter(BasePlatformAdapter):
         if not self._is_user_allowed(sender_id, sender_staff_id):
             logger.debug(
                 "[%s] Dropping message from non-allowlisted user staff_id=%s sender_id=%s",
-                self.name, sender_staff_id, sender_id,
+                self.name,
+                sender_staff_id,
+                sender_id,
             )
             return
 
@@ -584,7 +626,9 @@ class DingTalkAdapter(BasePlatformAdapter):
         if not self._should_process_message(message, _early_text, is_group, chat_id):
             logger.debug(
                 "[%s] Dropping group message that failed mention gate message_id=%s chat_id=%s",
-                self.name, msg_id, chat_id,
+                self.name,
+                msg_id,
+                chat_id,
             )
             return
 
@@ -797,7 +841,8 @@ class DingTalkAdapter(BasePlatformAdapter):
             if not webhook_info:
                 logger.warning(
                     "[%s] No valid session_webhook for chat_id=%s",
-                    self.name, chat_id,
+                    self.name,
+                    chat_id,
                 )
                 return SendResult(
                     success=False,
@@ -829,7 +874,9 @@ class DingTalkAdapter(BasePlatformAdapter):
             await self._close_streaming_siblings(chat_id)
 
             result = await self._create_and_stream_card(
-                chat_id, current_message, content,
+                chat_id,
+                current_message,
+                content,
                 finalize=is_final_reply,
             )
             if result and result.success:
@@ -841,12 +888,14 @@ class DingTalkAdapter(BasePlatformAdapter):
                     # first chunk): keep the card open and track it so the
                     # next send() auto-closes it as a sibling, or
                     # edit_message(finalize=True) closes it explicitly.
-                    self._streaming_cards.setdefault(chat_id, {})[
-                        result.message_id
-                    ] = content
+                    self._streaming_cards.setdefault(chat_id, {})[result.message_id] = (
+                        content
+                    )
                 return result
 
-            logger.warning("[%s] AI Card send failed, falling back to webhook", self.name)
+            logger.warning(
+                "[%s] AI Card send failed, falling back to webhook", self.name
+            )
 
         logger.debug("[%s] Sending via webhook", self.name)
         # Normalize markdown for DingTalk
@@ -1011,7 +1060,10 @@ class DingTalkAdapter(BasePlatformAdapter):
             # card immediately (one-shot); finalize=False keeps it open
             # for streaming edit_message updates by out_track_id.
             await self._stream_card_content(
-                out_track_id, token, content, finalize=finalize,
+                out_track_id,
+                token,
+                content,
+                finalize=finalize,
             )
 
             logger.info(
@@ -1025,7 +1077,9 @@ class DingTalkAdapter(BasePlatformAdapter):
         except Exception as e:
             logger.warning(
                 "[%s] AI Card create failed: %s\n%s",
-                self.name, e, traceback.format_exc(),
+                self.name,
+                e,
+                traceback.format_exc(),
             )
             return None
 
@@ -1052,7 +1106,10 @@ class DingTalkAdapter(BasePlatformAdapter):
 
         try:
             await self._stream_card_content(
-                message_id, token, content, finalize=finalize,
+                message_id,
+                token,
+                content,
+                finalize=finalize,
             )
             if finalize:
                 # Remove from streaming-cards tracking and fire Done.  This
@@ -1063,7 +1120,8 @@ class DingTalkAdapter(BasePlatformAdapter):
                     self._streaming_cards.pop(chat_id, None)
                 logger.debug(
                     "[%s] AI Card finalized (edit): %s",
-                    self.name, message_id,
+                    self.name,
+                    message_id,
                 )
                 self._fire_done_reaction(chat_id)
             else:
@@ -1179,7 +1237,10 @@ class DingTalkAdapter(BasePlatformAdapter):
                 )
             logger.info(
                 "[%s] _send_emotion: %s %s on msg=%s",
-                self.name, action, emoji_name, open_msg_id[:24],
+                self.name,
+                action,
+                emoji_name,
+                open_msg_id[:24],
             )
         except Exception:
             logger.debug(
@@ -1244,8 +1305,10 @@ class DingTalkAdapter(BasePlatformAdapter):
                 x_acs_dingtalk_access_token=token,
             )
             runtime = tea_util_models.RuntimeOptions()
-            response = await self._robot_sdk.robot_message_file_download_with_options_async(
-                request, headers, runtime
+            response = (
+                await self._robot_sdk.robot_message_file_download_with_options_async(
+                    request, headers, runtime
+                )
             )
             body = response.body if response else None
             if body:
@@ -1304,7 +1367,9 @@ class _IncomingHandler(
     CallbackMessage.data dict into a ChatbotMessage before forwarding.
     """
 
-    def __init__(self, adapter: DingTalkAdapter, loop: Optional[asyncio.AbstractEventLoop] = None):
+    def __init__(
+        self, adapter: DingTalkAdapter, loop: Optional[asyncio.AbstractEventLoop] = None
+    ):
         if DINGTALK_STREAM_AVAILABLE:
             super().__init__()
         self._adapter = adapter
@@ -1335,10 +1400,10 @@ class _IncomingHandler(
             # SDK versions).
             if not getattr(chatbot_msg, "session_webhook", None):
                 webhook = (
-                    data.get("sessionWebhook")
-                    or data.get("session_webhook")
-                    or ""
-                ) if isinstance(data, dict) else ""
+                    (data.get("sessionWebhook") or data.get("session_webhook") or "")
+                    if isinstance(data, dict)
+                    else ""
+                )
                 if webhook:
                     chatbot_msg.session_webhook = webhook
 
@@ -1347,9 +1412,7 @@ class _IncomingHandler(
             # ``isInAtList`` in the raw payload; the adapter's mention check
             # reads the ChatbotMessage attribute ``is_in_at_list``.
             if not getattr(chatbot_msg, "is_in_at_list", False):
-                raw_flag = (
-                    data.get("isInAtList") if isinstance(data, dict) else False
-                )
+                raw_flag = data.get("isInAtList") if isinstance(data, dict) else False
                 if raw_flag:
                     chatbot_msg.is_in_at_list = True
 
@@ -1360,7 +1423,10 @@ class _IncomingHandler(
             if msg_id and conversation_id:
                 self._adapter._spawn_bg(
                     self._adapter._send_emotion(
-                        msg_id, conversation_id, "🤔Thinking", recall=False,
+                        msg_id,
+                        conversation_id,
+                        "🤔Thinking",
+                        recall=False,
                     )
                 )
 

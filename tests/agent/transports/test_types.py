@@ -16,6 +16,7 @@ from agent.transports.types import (
 # ToolCall
 # ---------------------------------------------------------------------------
 
+
 class TestToolCall:
     def test_basic_construction(self):
         tc = ToolCall(id="call_abc", name="terminal", arguments='{"cmd": "ls"}')
@@ -43,6 +44,7 @@ class TestToolCall:
 # Usage
 # ---------------------------------------------------------------------------
 
+
 class TestUsage:
     def test_defaults(self):
         u = Usage()
@@ -52,13 +54,16 @@ class TestUsage:
         assert u.cached_tokens == 0
 
     def test_explicit(self):
-        u = Usage(prompt_tokens=100, completion_tokens=50, total_tokens=150, cached_tokens=80)
+        u = Usage(
+            prompt_tokens=100, completion_tokens=50, total_tokens=150, cached_tokens=80
+        )
         assert u.total_tokens == 150
 
 
 # ---------------------------------------------------------------------------
 # NormalizedResponse
 # ---------------------------------------------------------------------------
+
 
 class TestNormalizedResponse:
     def test_text_only(self):
@@ -91,7 +96,9 @@ class TestNormalizedResponse:
             content=None,
             tool_calls=None,
             finish_reason="stop",
-            provider_data={"reasoning_details": [{"type": "thinking", "thinking": "hmm"}]},
+            provider_data={
+                "reasoning_details": [{"type": "thinking", "thinking": "hmm"}]
+            },
         )
         assert r.provider_data["reasoning_details"][0]["type"] == "thinking"
 
@@ -100,6 +107,7 @@ class TestNormalizedResponse:
 # build_tool_call
 # ---------------------------------------------------------------------------
 
+
 class TestBuildToolCall:
     def test_dict_arguments_serialized(self):
         tc = build_tool_call(id="call_1", name="terminal", arguments={"cmd": "ls"})
@@ -107,7 +115,9 @@ class TestBuildToolCall:
         assert tc.provider_data is None
 
     def test_string_arguments_passthrough(self):
-        tc = build_tool_call(id="call_2", name="read_file", arguments='{"path": "/tmp"}')
+        tc = build_tool_call(
+            id="call_2", name="read_file", arguments='{"path": "/tmp"}'
+        )
         assert tc.arguments == '{"path": "/tmp"}'
 
     def test_provider_fields(self):
@@ -128,6 +138,7 @@ class TestBuildToolCall:
 # ---------------------------------------------------------------------------
 # map_finish_reason
 # ---------------------------------------------------------------------------
+
 
 class TestMapFinishReason:
     ANTHROPIC_MAP = {
@@ -155,6 +166,7 @@ class TestMapFinishReason:
 # Backward-compat property tests
 # ---------------------------------------------------------------------------
 
+
 class TestToolCallBackwardCompat:
     """Test duck-typing properties that let ToolCall pass through code expecting
     the old SimpleNamespace(id, type, function=SimpleNamespace(name, arguments)) shape."""
@@ -178,7 +190,9 @@ class TestToolCallBackwardCompat:
         assert tc.function.arguments == tc.arguments
 
     def test_call_id_from_provider_data(self):
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"}
+        )
         assert tc.call_id == "c1"
 
     def test_call_id_none_when_no_provider_data(self):
@@ -186,16 +200,22 @@ class TestToolCallBackwardCompat:
         assert tc.call_id is None
 
     def test_response_item_id_from_provider_data(self):
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"response_item_id": "r1"})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"response_item_id": "r1"}
+        )
         assert tc.response_item_id == "r1"
 
     def test_response_item_id_none_when_missing(self):
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"}
+        )
         assert tc.response_item_id is None
 
     def test_getattr_pattern_matches_agent_loop(self):
         """run_agent.py uses getattr(tool_call, 'call_id', None) — verify it works."""
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"}
+        )
         assert getattr(tc, "call_id", None) == "c1"
         tc_no_pd = ToolCall(id="1", name="fn", arguments="{}")
         assert getattr(tc_no_pd, "call_id", None) is None
@@ -203,7 +223,9 @@ class TestToolCallBackwardCompat:
     def test_extra_content_from_provider_data(self):
         """Gemini thought_signature stored in provider_data is exposed via property."""
         ec = {"google": {"thought_signature": "SIG_ABC123"}}
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"extra_content": ec})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"extra_content": ec}
+        )
         assert tc.extra_content == ec
 
     def test_extra_content_none_when_no_provider_data(self):
@@ -211,7 +233,9 @@ class TestToolCallBackwardCompat:
         assert tc.extra_content is None
 
     def test_extra_content_none_when_key_absent(self):
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"}
+        )
         assert tc.extra_content is None
 
     def test_extra_content_getattr_pattern(self):
@@ -223,7 +247,9 @@ class TestToolCallBackwardCompat:
         causing HTTP 400 on subsequent turns (issue #14488).
         """
         ec = {"google": {"thought_signature": "SIG_ABC123"}}
-        tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"extra_content": ec})
+        tc = ToolCall(
+            id="1", name="fn", arguments="{}", provider_data={"extra_content": ec}
+        )
         assert getattr(tc, "extra_content", None) == ec
 
         tc_no_extra = ToolCall(id="1", name="fn", arguments="{}")
@@ -235,7 +261,9 @@ class TestNormalizedResponseBackwardCompat:
 
     def test_reasoning_content_from_provider_data(self):
         nr = NormalizedResponse(
-            content="hi", tool_calls=None, finish_reason="stop",
+            content="hi",
+            tool_calls=None,
+            finish_reason="stop",
             provider_data={"reasoning_content": "thought process"},
         )
         assert nr.reasoning_content == "thought process"
@@ -247,14 +275,18 @@ class TestNormalizedResponseBackwardCompat:
     def test_reasoning_details_from_provider_data(self):
         details = [{"type": "thinking", "thinking": "hmm"}]
         nr = NormalizedResponse(
-            content="hi", tool_calls=None, finish_reason="stop",
+            content="hi",
+            tool_calls=None,
+            finish_reason="stop",
             provider_data={"reasoning_details": details},
         )
         assert nr.reasoning_details == details
 
     def test_reasoning_details_none_when_no_provider_data(self):
         nr = NormalizedResponse(
-            content="hi", tool_calls=None, finish_reason="stop",
+            content="hi",
+            tool_calls=None,
+            finish_reason="stop",
             provider_data=None,
         )
         assert nr.reasoning_details is None
@@ -262,7 +294,9 @@ class TestNormalizedResponseBackwardCompat:
     def test_codex_reasoning_items_from_provider_data(self):
         items = ["item1", "item2"]
         nr = NormalizedResponse(
-            content="hi", tool_calls=None, finish_reason="stop",
+            content="hi",
+            tool_calls=None,
+            finish_reason="stop",
             provider_data={"codex_reasoning_items": items},
         )
         assert nr.codex_reasoning_items == items
@@ -274,7 +308,9 @@ class TestNormalizedResponseBackwardCompat:
     def test_codex_message_items_from_provider_data(self):
         items = [{"id": "msg_1", "type": "message"}]
         nr = NormalizedResponse(
-            content="hi", tool_calls=None, finish_reason="stop",
+            content="hi",
+            tool_calls=None,
+            finish_reason="stop",
             provider_data={"codex_message_items": items},
         )
         assert nr.codex_message_items == items

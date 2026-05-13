@@ -38,9 +38,7 @@ def _load_lib():
     """Import the plugin's library module directly from the repo path."""
     repo_root = Path(__file__).resolve().parents[2]
     lib_path = repo_root / "plugins" / "disk-cleanup" / "disk_cleanup.py"
-    spec = importlib.util.spec_from_file_location(
-        "disk_cleanup_under_test", lib_path
-    )
+    spec = importlib.util.spec_from_file_location("disk_cleanup_under_test", lib_path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -58,6 +56,7 @@ def _load_plugin_init():
     )
     # Ensure parent namespace package exists for the relative `. import disk_cleanup`
     import types
+
     if "hermes_plugins" not in sys.modules:
         ns = types.ModuleType("hermes_plugins")
         ns.__path__ = []
@@ -73,6 +72,7 @@ def _load_plugin_init():
 # ---------------------------------------------------------------------------
 # Library tests
 # ---------------------------------------------------------------------------
+
 
 class TestIsSafePath:
     def test_accepts_path_under_hermes_home(self, _isolate_env):
@@ -234,6 +234,7 @@ class TestDryRun:
 # Plugin hooks tests
 # ---------------------------------------------------------------------------
 
+
 class TestPostToolCallHook:
     def test_write_file_test_pattern_tracked(self, _isolate_env):
         pi = _load_plugin_init()
@@ -243,7 +244,8 @@ class TestPostToolCallHook:
             tool_name="write_file",
             args={"path": str(p), "content": "x"},
             result="OK",
-            task_id="t1", session_id="s1",
+            task_id="t1",
+            session_id="s1",
         )
         tracked_file = _isolate_env / "disk-cleanup" / "tracked.json"
         data = json.loads(tracked_file.read_text())
@@ -258,7 +260,8 @@ class TestPostToolCallHook:
             tool_name="write_file",
             args={"path": str(p), "content": "x"},
             result="OK",
-            task_id="t2", session_id="s2",
+            task_id="t2",
+            session_id="s2",
         )
         tracked_file = _isolate_env / "disk-cleanup" / "tracked.json"
         assert not tracked_file.exists() or tracked_file.read_text().strip() == "[]"
@@ -271,7 +274,8 @@ class TestPostToolCallHook:
             tool_name="terminal",
             args={"command": f"touch {p}"},
             result=f"created {p}\n",
-            task_id="t3", session_id="s3",
+            task_id="t3",
+            session_id="s3",
         )
         tracked_file = _isolate_env / "disk-cleanup" / "tracked.json"
         data = json.loads(tracked_file.read_text())
@@ -283,7 +287,8 @@ class TestPostToolCallHook:
             tool_name="read_file",
             args={"path": str(_isolate_env / "test_x.py")},
             result="contents",
-            task_id="t4", session_id="s4",
+            task_id="t4",
+            session_id="s4",
         )
         # read_file should never trigger tracking.
         tracked_file = _isolate_env / "disk-cleanup" / "tracked.json"
@@ -299,7 +304,8 @@ class TestOnSessionEndHook:
             tool_name="write_file",
             args={"path": str(p), "content": "x"},
             result="OK",
-            task_id="", session_id="s1",
+            task_id="",
+            session_id="s1",
         )
         assert p.exists()
         pi._on_session_end(session_id="s1", completed=True, interrupted=False)
@@ -315,6 +321,7 @@ class TestOnSessionEndHook:
 # Slash command
 # ---------------------------------------------------------------------------
 
+
 class TestSlashCommand:
     def test_help(self, _isolate_env):
         pi = _load_plugin_init()
@@ -329,9 +336,7 @@ class TestSlashCommand:
 
     def test_track_rejects_missing(self, _isolate_env):
         pi = _load_plugin_init()
-        out = pi._handle_slash(
-            f"track {_isolate_env / 'nope.txt'} temp"
-        )
+        out = pi._handle_slash(f"track {_isolate_env / 'nope.txt'} temp")
         assert "Not tracked" in out
 
     def test_track_rejects_bad_category(self, _isolate_env):
@@ -365,16 +370,19 @@ class TestSlashCommand:
 # Bundled-plugin discovery
 # ---------------------------------------------------------------------------
 
+
 class TestBundledDiscovery:
     def _write_enabled_config(self, hermes_home, names):
         """Write plugins.enabled allow-list to config.yaml."""
         import yaml
+
         cfg_path = hermes_home / "config.yaml"
         cfg_path.write_text(yaml.safe_dump({"plugins": {"enabled": list(names)}}))
 
     def test_disk_cleanup_discovered_but_not_loaded_by_default(self, _isolate_env):
         """Bundled plugins are discovered but NOT loaded without opt-in."""
         from hermes_cli import plugins as pmod
+
         mgr = pmod.PluginManager()
         mgr.discover_and_load()
         # Discovered — appears in the registry
@@ -389,6 +397,7 @@ class TestBundledDiscovery:
         """Adding to plugins.enabled activates the bundled plugin."""
         self._write_enabled_config(_isolate_env, ["disk-cleanup"])
         from hermes_cli import plugins as pmod
+
         mgr = pmod.PluginManager()
         mgr.discover_and_load()
         loaded = mgr._plugins["disk-cleanup"]
@@ -400,14 +409,18 @@ class TestBundledDiscovery:
     def test_disabled_beats_enabled(self, _isolate_env):
         """plugins.disabled wins even if the plugin is also in plugins.enabled."""
         import yaml
+
         cfg_path = _isolate_env / "config.yaml"
-        cfg_path.write_text(yaml.safe_dump({
-            "plugins": {
-                "enabled": ["disk-cleanup"],
-                "disabled": ["disk-cleanup"],
-            }
-        }))
+        cfg_path.write_text(
+            yaml.safe_dump({
+                "plugins": {
+                    "enabled": ["disk-cleanup"],
+                    "disabled": ["disk-cleanup"],
+                }
+            })
+        )
         from hermes_cli import plugins as pmod
+
         mgr = pmod.PluginManager()
         mgr.discover_and_load()
         loaded = mgr._plugins["disk-cleanup"]
@@ -421,6 +434,7 @@ class TestBundledDiscovery:
             _isolate_env, ["memory", "context_engine", "disk-cleanup"]
         )
         from hermes_cli import plugins as pmod
+
         mgr = pmod.PluginManager()
         mgr.discover_and_load()
         assert "memory" not in mgr._plugins

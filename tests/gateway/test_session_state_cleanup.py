@@ -99,7 +99,9 @@ class TestReleaseRunningAgentStateUnit:
                 runner._release_running_agent_state(k)
 
         threads = [
-            threading.Thread(target=worker, args=([f"s{i}" for i in range(start, 50, 5)],))
+            threading.Thread(
+                target=worker, args=([f"s{i}" for i in range(start, 50, 5)],)
+            )
             for start in range(5)
         ]
         for t in threads:
@@ -124,7 +126,9 @@ class TestNoMoreBareDeleteSites:
         from pathlib import Path
         import re
 
-        gateway_run = (Path(__file__).parent.parent.parent / "gateway" / "run.py").read_text()
+        gateway_run = (
+            Path(__file__).parent.parent.parent / "gateway" / "run.py"
+        ).read_text()
         # Match `del self._running_agents[...]` that is NOT inside a
         # triple-quoted docstring.  We scan non-docstring lines only.
         lines = gateway_run.splitlines()

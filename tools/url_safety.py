@@ -47,13 +47,15 @@ _BLOCKED_HOSTNAMES = frozenset({
 # they all live.
 _ALWAYS_BLOCKED_IPS = frozenset({
     ipaddress.ip_address("169.254.169.254"),  # AWS/GCP/Azure/DO/Oracle metadata
-    ipaddress.ip_address("169.254.170.2"),     # AWS ECS task metadata (task IAM creds)
-    ipaddress.ip_address("169.254.169.253"),   # Azure IMDS wire server
-    ipaddress.ip_address("fd00:ec2::254"),     # AWS metadata (IPv6)
-    ipaddress.ip_address("100.100.100.200"),   # Alibaba Cloud metadata
+    ipaddress.ip_address("169.254.170.2"),  # AWS ECS task metadata (task IAM creds)
+    ipaddress.ip_address("169.254.169.253"),  # Azure IMDS wire server
+    ipaddress.ip_address("fd00:ec2::254"),  # AWS metadata (IPv6)
+    ipaddress.ip_address("100.100.100.200"),  # Alibaba Cloud metadata
 })
 _ALWAYS_BLOCKED_NETWORKS = (
-    ipaddress.ip_network("169.254.0.0/16"),    # Entire link-local range (no legit agent target)
+    ipaddress.ip_network(
+        "169.254.0.0/16"
+    ),  # Entire link-local range (no legit agent target)
 )
 
 # Exact HTTPS hostnames allowed to resolve to private/benchmark-space IPs.
@@ -106,6 +108,7 @@ def _global_allow_private_urls() -> bool:
     # 2. Config file
     try:
         from hermes_cli.config import read_raw_config
+
         cfg = read_raw_config()
         # security.allow_private_urls (preferred)
         sec = cfg.get("security", {})
@@ -278,7 +281,9 @@ def is_safe_url(url: str) -> bool:
 
         # Try to resolve and check IP
         try:
-            addr_info = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            addr_info = socket.getaddrinfo(
+                hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM
+            )
         except socket.gaierror:
             # DNS resolution failed — fail closed. If DNS can't resolve it,
             # the HTTP client will also fail, so blocking loses nothing.
@@ -293,17 +298,21 @@ def is_safe_url(url: str) -> bool:
                 continue
 
             # Always block cloud metadata IPs and link-local, even with toggle on
-            if ip in _ALWAYS_BLOCKED_IPS or any(ip in net for net in _ALWAYS_BLOCKED_NETWORKS):
+            if ip in _ALWAYS_BLOCKED_IPS or any(
+                ip in net for net in _ALWAYS_BLOCKED_NETWORKS
+            ):
                 logger.warning(
                     "Blocked request to cloud metadata address: %s -> %s",
-                    hostname, ip_str,
+                    hostname,
+                    ip_str,
                 )
                 return False
 
             if not allow_all_private and not allow_private_ip and _is_blocked_ip(ip):
                 logger.warning(
                     "Blocked request to private/internal address: %s -> %s",
-                    hostname, ip_str,
+                    hostname,
+                    ip_str,
                 )
                 return False
 

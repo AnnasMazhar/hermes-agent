@@ -17,6 +17,7 @@ These tests exercise the helper directly on a bare ``AIAgent`` built
 via ``__new__`` so the full ``run_conversation`` machinery isn't needed
 — the method is pure logic and three state arguments.
 """
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -83,7 +84,8 @@ class TestSyncExternalMemoryForTurn:
             interrupted=False,
         )
         agent._memory_manager.sync_all.assert_called_once_with(
-            "What's the weather in Paris?", "It's sunny and 22°C.",
+            "What's the weather in Paris?",
+            "It's sunny and 22°C.",
             session_id="test_session_001",
         )
         agent._memory_manager.queue_prefetch_all.assert_called_once_with(
@@ -138,9 +140,7 @@ class TestSyncExternalMemoryForTurn:
         or offline backend must not block the user from seeing their
         response by propagating the exception up."""
         agent = _bare_agent()
-        agent._memory_manager.sync_all.side_effect = RuntimeError(
-            "backend unreachable"
-        )
+        agent._memory_manager.sync_all.side_effect = RuntimeError("backend unreachable")
 
         # Must not raise.
         agent._sync_external_memory_for_turn(
@@ -170,16 +170,19 @@ class TestSyncExternalMemoryForTurn:
 
     # --- The specific matrix the reporter asked about ------------------
 
-    @pytest.mark.parametrize("interrupted,final,user,expect_sync", [
-        (False, "resp", "user",  True),   # normal completed → sync
-        (True,  "resp", "user",  False),  # interrupted → skip (the fix)
-        (False, None,   "user",  False),  # no response → skip
-        (False, "resp", None,    False),  # no user msg → skip
-        (True,  None,   "user",  False),  # interrupted + no response → skip
-        (True,  "resp", None,    False),  # interrupted + no user → skip
-        (False, None,   None,    False),  # nothing → skip
-        (True,  None,   None,    False),  # interrupted + nothing → skip
-    ])
+    @pytest.mark.parametrize(
+        "interrupted,final,user,expect_sync",
+        [
+            (False, "resp", "user", True),  # normal completed → sync
+            (True, "resp", "user", False),  # interrupted → skip (the fix)
+            (False, None, "user", False),  # no response → skip
+            (False, "resp", None, False),  # no user msg → skip
+            (True, None, "user", False),  # interrupted + no response → skip
+            (True, "resp", None, False),  # interrupted + no user → skip
+            (False, None, None, False),  # nothing → skip
+            (True, None, None, False),  # interrupted + nothing → skip
+        ],
+    )
     def test_sync_matrix(self, interrupted, final, user, expect_sync):
         agent = _bare_agent()
         agent._sync_external_memory_for_turn(

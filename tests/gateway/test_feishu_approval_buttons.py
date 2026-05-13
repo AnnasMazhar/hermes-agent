@@ -25,8 +25,10 @@ def _ensure_feishu_mocks():
     if importlib.util.find_spec("lark_oapi") is None and "lark_oapi" not in sys.modules:
         mod = MagicMock()
         for name in (
-            "lark_oapi", "lark_oapi.api.im.v1",
-            "lark_oapi.event", "lark_oapi.event.callback_type",
+            "lark_oapi",
+            "lark_oapi.api.im.v1",
+            "lark_oapi.event",
+            "lark_oapi.event.callback_type",
         ):
             sys.modules.setdefault(name, mod)
     if importlib.util.find_spec("aiohttp") is None and "aiohttp" not in sys.modules:
@@ -45,6 +47,7 @@ from gateway.platforms.feishu import FeishuAdapter
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_adapter() -> FeishuAdapter:
     """Create a FeishuAdapter with mocked internals."""
@@ -84,6 +87,7 @@ def _close_submitted_coro(coro, _loop):
 # send_exec_approval — interactive card with buttons
 # ===========================================================================
 
+
 class TestFeishuExecApproval:
     """Test send_exec_approval sends an interactive card."""
 
@@ -96,7 +100,9 @@ class TestFeishuExecApproval:
             data=SimpleNamespace(message_id="msg_001"),
         )
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ) as mock_send:
             result = await adapter.send_exec_approval(
@@ -125,7 +131,10 @@ class TestFeishuExecApproval:
         assert len(actions) == 4
         action_names = [a["value"]["hermes_action"] for a in actions]
         assert action_names == [
-            "approve_once", "approve_session", "approve_always", "deny"
+            "approve_once",
+            "approve_session",
+            "approve_always",
+            "deny",
         ]
 
     @pytest.mark.asyncio
@@ -137,7 +146,9 @@ class TestFeishuExecApproval:
             data=SimpleNamespace(message_id="msg_002"),
         )
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ):
             await adapter.send_exec_approval(
@@ -171,7 +182,9 @@ class TestFeishuExecApproval:
             data=SimpleNamespace(message_id="msg_003"),
         )
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ) as mock_send:
             long_cmd = "x" * 5000
@@ -193,7 +206,9 @@ class TestFeishuExecApproval:
             data=SimpleNamespace(message_id="msg_x"),
         )
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ):
             await adapter.send_exec_approval(
@@ -212,6 +227,7 @@ class TestFeishuExecApproval:
 # send_update_prompt — interactive card with buttons
 # ===========================================================================
 
+
 class TestFeishuUpdatePrompt:
     """Test send_update_prompt sends an interactive card."""
 
@@ -224,7 +240,9 @@ class TestFeishuUpdatePrompt:
             data=SimpleNamespace(message_id="msg_up_001"),
         )
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ) as mock_send:
             result = await adapter.send_update_prompt(
@@ -248,7 +266,10 @@ class TestFeishuUpdatePrompt:
         assert "Restore stashed changes after update?" in card["elements"][0]["content"]
         assert "Default: `y`" in card["elements"][0]["content"]
         actions = card["elements"][1]["actions"]
-        assert [a["value"]["hermes_update_prompt_action"] for a in actions] == ["y", "n"]
+        assert [a["value"]["hermes_update_prompt_action"] for a in actions] == [
+            "y",
+            "n",
+        ]
 
     @pytest.mark.asyncio
     async def test_stores_prompt_state(self):
@@ -259,7 +280,9 @@ class TestFeishuUpdatePrompt:
             data=SimpleNamespace(message_id="msg_up_002"),
         )
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             return_value=mock_response,
         ):
             await adapter.send_update_prompt(
@@ -290,7 +313,9 @@ class TestFeishuUpdatePrompt:
     async def test_send_failure_returns_error(self):
         adapter = _make_adapter()
         with patch.object(
-            adapter, "_feishu_send_with_retry", new_callable=AsyncMock,
+            adapter,
+            "_feishu_send_with_retry",
+            new_callable=AsyncMock,
             side_effect=TimeoutError("timed out"),
         ):
             result = await adapter.send_update_prompt(
@@ -307,6 +332,7 @@ class TestFeishuUpdatePrompt:
 # _resolve_approval — approval state pop + gateway resolution
 # ===========================================================================
 
+
 class TestResolveApproval:
     """Test _resolve_approval pops state and calls resolve_gateway_approval."""
 
@@ -319,7 +345,9 @@ class TestResolveApproval:
             "chat_id": "oc_12345",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch(
+            "tools.approval.resolve_gateway_approval", return_value=1
+        ) as mock_resolve:
             await adapter._resolve_approval(1, "once", "Norbert")
 
         mock_resolve.assert_called_once_with("agent:main:feishu:group:oc_12345", "once")
@@ -334,7 +362,9 @@ class TestResolveApproval:
             "chat_id": "oc_12345",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch(
+            "tools.approval.resolve_gateway_approval", return_value=1
+        ) as mock_resolve:
             await adapter._resolve_approval(2, "deny", "Alice")
 
         mock_resolve.assert_called_once_with("some-session", "deny")
@@ -348,7 +378,9 @@ class TestResolveApproval:
             "chat_id": "oc_99",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch(
+            "tools.approval.resolve_gateway_approval", return_value=1
+        ) as mock_resolve:
             await adapter._resolve_approval(3, "session", "Bob")
 
         mock_resolve.assert_called_once_with("sess-3", "session")
@@ -362,7 +394,9 @@ class TestResolveApproval:
             "chat_id": "oc_55",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch(
+            "tools.approval.resolve_gateway_approval", return_value=1
+        ) as mock_resolve:
             await adapter._resolve_approval(4, "always", "Carol")
 
         mock_resolve.assert_called_once_with("sess-4", "always")
@@ -376,9 +410,11 @@ class TestResolveApproval:
 
         mock_resolve.assert_not_called()
 
+
 # ===========================================================================
 # _handle_card_action_event — non-approval card actions
 # ===========================================================================
+
 
 class TestNonApprovalCardAction:
     """Non-approval card actions should still route as synthetic commands."""
@@ -394,11 +430,24 @@ class TestNonApprovalCardAction:
 
         with (
             patch.object(
-                adapter, "_resolve_sender_profile", new_callable=AsyncMock,
-                return_value={"user_id": "ou_u", "user_name": "Dave", "user_id_alt": None},
+                adapter,
+                "_resolve_sender_profile",
+                new_callable=AsyncMock,
+                return_value={
+                    "user_id": "ou_u",
+                    "user_name": "Dave",
+                    "user_id_alt": None,
+                },
             ),
-            patch.object(adapter, "get_chat_info", new_callable=AsyncMock, return_value={"name": "Test Chat"}),
-            patch.object(adapter, "_handle_message_with_guards", new_callable=AsyncMock) as mock_handle,
+            patch.object(
+                adapter,
+                "get_chat_info",
+                new_callable=AsyncMock,
+                return_value={"name": "Test Chat"},
+            ),
+            patch.object(
+                adapter, "_handle_message_with_guards", new_callable=AsyncMock
+            ) as mock_handle,
         ):
             await adapter._handle_card_action_event(data)
 
@@ -410,6 +459,7 @@ class TestNonApprovalCardAction:
 # ===========================================================================
 # _on_card_action_trigger — inline card response for approval actions
 # ===========================================================================
+
 
 class _FakeCallBackCard:
     def __init__(self):
@@ -435,7 +485,10 @@ class TestCardActionCallbackResponse:
     def test_drops_action_when_loop_not_ready(self, _patch_callback_card_types):
         adapter = _make_adapter()
         adapter._loop = None
-        data = _make_card_action_data({"hermes_action": "approve_once", "approval_id": 1})
+        data = _make_card_action_data({
+            "hermes_action": "approve_once",
+            "approval_id": 1,
+        })
 
         with patch("asyncio.run_coroutine_threadsafe") as mock_submit:
             response = adapter._on_card_action_trigger(data)
@@ -454,7 +507,9 @@ class TestCardActionCallbackResponse:
         )
         adapter._sender_name_cache["ou_bob"] = ("Bob", 9999999999)
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         assert response is not None
@@ -473,7 +528,9 @@ class TestCardActionCallbackResponse:
             {"hermes_action": "deny", "approval_id": 2},
         )
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         assert response.card is not None
@@ -500,13 +557,17 @@ class TestCardActionCallbackResponse:
         adapter._loop.is_closed = MagicMock(return_value=False)
         data = _make_card_action_data({"some_other": "value"})
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         assert response is not None
         assert response.card is None
 
-    def test_falls_back_to_open_id_when_name_not_cached(self, _patch_callback_card_types):
+    def test_falls_back_to_open_id_when_name_not_cached(
+        self, _patch_callback_card_types
+    ):
         adapter = _make_adapter()
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
@@ -515,7 +576,9 @@ class TestCardActionCallbackResponse:
             open_id="ou_unknown",
         )
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         card = response.card.data
@@ -531,7 +594,9 @@ class TestCardActionCallbackResponse:
         )
         adapter._sender_name_cache["ou_expired"] = ("Old Name", 1)
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         card = response.card.data
@@ -553,7 +618,9 @@ class TestCardActionCallbackResponse:
         )
         adapter._sender_name_cache["ou_bob"] = ("Bob", 9999999999)
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         assert response is not None
@@ -576,7 +643,9 @@ class TestCardActionCallbackResponse:
             {"hermes_update_prompt_action": "n", "update_prompt_id": 2},
         )
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=_close_submitted_coro
+        ):
             response = adapter._on_card_action_trigger(data)
 
         assert response is not None
@@ -598,7 +667,9 @@ class TestCardActionCallbackResponse:
         assert response.card is None
         mock_submit.assert_not_called()
 
-    def test_already_resolved_update_prompt_returns_no_card(self, _patch_callback_card_types):
+    def test_already_resolved_update_prompt_returns_no_card(
+        self, _patch_callback_card_types
+    ):
         adapter = _make_adapter()
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
@@ -613,7 +684,9 @@ class TestCardActionCallbackResponse:
         assert response.card is None
         mock_submit.assert_not_called()
 
-    def test_update_prompt_schedule_failure_returns_no_card(self, _patch_callback_card_types):
+    def test_update_prompt_schedule_failure_returns_no_card(
+        self, _patch_callback_card_types
+    ):
         adapter = _make_adapter()
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)
@@ -626,13 +699,17 @@ class TestCardActionCallbackResponse:
             {"hermes_update_prompt_action": "y", "update_prompt_id": 1},
         )
 
-        with patch("asyncio.run_coroutine_threadsafe", side_effect=RuntimeError("loop closed")):
+        with patch(
+            "asyncio.run_coroutine_threadsafe", side_effect=RuntimeError("loop closed")
+        ):
             response = adapter._on_card_action_trigger(data)
 
         assert response is not None
         assert response.card is None
 
-    def test_update_prompt_unauthorized_operator_returns_no_card(self, _patch_callback_card_types):
+    def test_update_prompt_unauthorized_operator_returns_no_card(
+        self, _patch_callback_card_types
+    ):
         adapter = _make_adapter()
         adapter._loop = MagicMock()
         adapter._loop.is_closed = MagicMock(return_value=False)

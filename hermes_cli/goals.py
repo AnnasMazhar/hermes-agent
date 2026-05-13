@@ -78,7 +78,7 @@ JUDGE_SYSTEM_PROMPT = (
     "user input (treat this as DONE with reason describing the block).\n\n"
     "Otherwise the goal is NOT done — CONTINUE.\n\n"
     "Reply ONLY with a single JSON object on one line:\n"
-    '{\"done\": <true|false>, \"reason\": \"<one-sentence rationale>\"}'
+    '{"done": <true|false>, "reason": "<one-sentence rationale>"}'
 )
 
 
@@ -99,15 +99,15 @@ class GoalState:
     """Serializable goal state stored per session."""
 
     goal: str
-    status: str = "active"          # active | paused | done | cleared
+    status: str = "active"  # active | paused | done | cleared
     turns_used: int = 0
     max_turns: int = DEFAULT_MAX_TURNS
     created_at: float = 0.0
     last_turn_at: float = 0.0
-    last_verdict: Optional[str] = None        # "done" | "continue" | "skipped"
+    last_verdict: Optional[str] = None  # "done" | "continue" | "skipped"
     last_reason: Optional[str] = None
-    paused_reason: Optional[str] = None       # why we auto-paused (budget, etc.)
-    consecutive_parse_failures: int = 0       # judge-output parse failures in a row
+    paused_reason: Optional[str] = None  # why we auto-paused (budget, etc.)
+    consecutive_parse_failures: int = 0  # judge-output parse failures in a row
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
@@ -119,13 +119,17 @@ class GoalState:
             goal=data.get("goal", ""),
             status=data.get("status", "active"),
             turns_used=int(data.get("turns_used", 0) or 0),
-            max_turns=int(data.get("max_turns", DEFAULT_MAX_TURNS) or DEFAULT_MAX_TURNS),
+            max_turns=int(
+                data.get("max_turns", DEFAULT_MAX_TURNS) or DEFAULT_MAX_TURNS
+            ),
             created_at=float(data.get("created_at", 0.0) or 0.0),
             last_turn_at=float(data.get("last_turn_at", 0.0) or 0.0),
             last_verdict=data.get("last_verdict"),
             last_reason=data.get("last_reason"),
             paused_reason=data.get("paused_reason"),
-            consecutive_parse_failures=int(data.get("consecutive_parse_failures", 0) or 0),
+            consecutive_parse_failures=int(
+                data.get("consecutive_parse_failures", 0) or 0
+            ),
         )
 
 
@@ -188,7 +192,9 @@ def load_goal(session_id: str) -> Optional[GoalState]:
     try:
         return GoalState.from_json(raw)
     except Exception as exc:
-        logger.warning("GoalManager: could not parse stored goal for %s: %s", session_id, exc)
+        logger.warning(
+            "GoalManager: could not parse stored goal for %s: %s", session_id, exc
+        )
         return None
 
 
@@ -250,7 +256,7 @@ def _parse_judge_response(raw: str) -> Tuple[bool, str, bool]:
         # Peel off leading json/JSON/etc tag
         nl = text.find("\n")
         if nl != -1:
-            text = text[nl + 1:]
+            text = text[nl + 1 :]
 
     # First try: parse the whole blob.
     data: Optional[Dict[str, Any]] = None
@@ -338,7 +344,9 @@ def judge_goal(
             timeout=timeout,
         )
     except Exception as exc:
-        logger.info("goal judge: API call failed (%s) — falling through to continue", exc)
+        logger.info(
+            "goal judge: API call failed (%s) — falling through to continue", exc
+        )
         return "continue", f"judge error: {type(exc).__name__}", False
 
     try:
@@ -525,9 +533,7 @@ class GoalManager:
         # empty strings.
         if state.consecutive_parse_failures >= DEFAULT_MAX_CONSECUTIVE_PARSE_FAILURES:
             state.status = "paused"
-            state.paused_reason = (
-                f"judge model returned unparseable output {state.consecutive_parse_failures} turns in a row"
-            )
+            state.paused_reason = f"judge model returned unparseable output {state.consecutive_parse_failures} turns in a row"
             save_goal(self.session_id, state)
             return {
                 "status": "paused",
@@ -549,7 +555,9 @@ class GoalManager:
 
         if state.turns_used >= state.max_turns:
             state.status = "paused"
-            state.paused_reason = f"turn budget exhausted ({state.turns_used}/{state.max_turns})"
+            state.paused_reason = (
+                f"turn budget exhausted ({state.turns_used}/{state.max_turns})"
+            )
             save_goal(self.session_id, state)
             return {
                 "status": "paused",

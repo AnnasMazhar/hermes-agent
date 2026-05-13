@@ -19,16 +19,16 @@ class TestToolCallStripping:
         assert "result" in result
 
     def test_function_calls_block_stripped(self):
-        text = '<function_calls>[{}]</function_calls>\nanswer'
+        text = "<function_calls>[{}]</function_calls>\nanswer"
         result = _strip_reasoning_tags(text)
         assert "<function_calls>" not in result
         assert "answer" in result
 
     def test_gemma_function_name_block_stripped(self):
         text = (
-            'Reading.\n'
+            "Reading.\n"
             '<function name="r"><parameter name="p">/tmp/x</parameter></function>\n'
-            'Done.'
+            "Done."
         )
         result = _strip_reasoning_tags(text)
         assert '<function name="r">' not in result

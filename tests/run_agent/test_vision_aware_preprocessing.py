@@ -63,12 +63,14 @@ class TestPrepareAnthropicMessages:
 
     def test_non_vision_replaces_images_with_text(self):
         agent = _make_agent()
-        with patch.object(agent, "_model_supports_vision", return_value=False), \
-             patch.object(
-                 agent,
-                 "_describe_image_for_anthropic_fallback",
-                 return_value="[Image description: a cat]",
-             ):
+        with (
+            patch.object(agent, "_model_supports_vision", return_value=False),
+            patch.object(
+                agent,
+                "_describe_image_for_anthropic_fallback",
+                return_value="[Image description: a cat]",
+            ),
+        ):
             out = agent._prepare_anthropic_messages_for_api([IMG_PARTS_USER_MSG])
         # Content collapsed to a string containing the description + user text.
         content = out[0]["content"]
@@ -102,12 +104,14 @@ class TestPrepareMessagesForNonVision:
         agent = _make_agent()
         agent.provider = "openrouter"
         agent.model = "qwen/qwen3-235b-a22b"
-        with patch.object(agent, "_model_supports_vision", return_value=False), \
-             patch.object(
-                 agent,
-                 "_describe_image_for_anthropic_fallback",
-                 return_value="[Image description: a dog]",
-             ):
+        with (
+            patch.object(agent, "_model_supports_vision", return_value=False),
+            patch.object(
+                agent,
+                "_describe_image_for_anthropic_fallback",
+                return_value="[Image description: a dog]",
+            ),
+        ):
             out = agent._prepare_messages_for_non_vision_model([IMG_PARTS_USER_MSG])
         content = out[0]["content"]
         assert isinstance(content, str)
@@ -122,12 +126,14 @@ class TestPrepareMessagesForNonVision:
             {"role": "assistant", "content": "ack"},
             IMG_PARTS_USER_MSG,
         ]
-        with patch.object(agent, "_model_supports_vision", return_value=False), \
-             patch.object(
-                 agent,
-                 "_describe_image_for_anthropic_fallback",
-                 return_value="[Image: thing]",
-             ):
+        with (
+            patch.object(agent, "_model_supports_vision", return_value=False),
+            patch.object(
+                agent,
+                "_describe_image_for_anthropic_fallback",
+                return_value="[Image: thing]",
+            ),
+        ):
             out = agent._prepare_messages_for_non_vision_model(msgs)
         # First two messages unchanged (no images), third stripped.
         assert out[0]["content"] == "first turn"
@@ -166,5 +172,7 @@ class TestModelSupportsVision:
 
     def test_exception_returns_false(self):
         agent = _make_agent()
-        with patch("agent.models_dev.get_model_capabilities", side_effect=RuntimeError("boom")):
+        with patch(
+            "agent.models_dev.get_model_capabilities", side_effect=RuntimeError("boom")
+        ):
             assert agent._model_supports_vision() is False

@@ -30,8 +30,8 @@ _SENSITIVE_QUERY_PARAMS = frozenset({
     "session",
     "secret",
     "key",
-    "code",           # OAuth authorization codes
-    "signature",      # pre-signed URL signatures
+    "code",  # OAuth authorization codes
+    "signature",  # pre-signed URL signatures
     "x-amz-signature",
 })
 
@@ -64,45 +64,50 @@ _SENSITIVE_BODY_KEYS = frozenset({
 # cli.py) or `HERMES_REDACT_SECRETS=false` in ~/.hermes/.env. An opt-out
 # warning is logged at gateway and CLI startup so operators see the
 # downgrade — see `_log_redaction_status()` in gateway/run.py and cli.py.
-_REDACT_ENABLED = os.getenv("HERMES_REDACT_SECRETS", "true").lower() in ("1", "true", "yes", "on")
+_REDACT_ENABLED = os.getenv("HERMES_REDACT_SECRETS", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
 # Known API key prefixes -- match the prefix + contiguous token chars
 _PREFIX_PATTERNS = [
-    r"sk-[A-Za-z0-9_-]{10,}",           # OpenAI / OpenRouter / Anthropic (sk-ant-*)
-    r"ghp_[A-Za-z0-9]{10,}",            # GitHub PAT (classic)
-    r"github_pat_[A-Za-z0-9_]{10,}",    # GitHub PAT (fine-grained)
-    r"gho_[A-Za-z0-9]{10,}",            # GitHub OAuth access token
-    r"ghu_[A-Za-z0-9]{10,}",            # GitHub user-to-server token
-    r"ghs_[A-Za-z0-9]{10,}",            # GitHub server-to-server token
-    r"ghr_[A-Za-z0-9]{10,}",            # GitHub refresh token
-    r"xox[baprs]-[A-Za-z0-9-]{10,}",    # Slack tokens
-    r"AIza[A-Za-z0-9_-]{30,}",          # Google API keys
-    r"pplx-[A-Za-z0-9]{10,}",           # Perplexity
-    r"fal_[A-Za-z0-9_-]{10,}",          # Fal.ai
-    r"fc-[A-Za-z0-9]{10,}",             # Firecrawl
-    r"bb_live_[A-Za-z0-9_-]{10,}",      # BrowserBase
-    r"gAAAA[A-Za-z0-9_=-]{20,}",        # Codex encrypted tokens
-    r"AKIA[A-Z0-9]{16}",                # AWS Access Key ID
-    r"sk_live_[A-Za-z0-9]{10,}",        # Stripe secret key (live)
-    r"sk_test_[A-Za-z0-9]{10,}",        # Stripe secret key (test)
-    r"rk_live_[A-Za-z0-9]{10,}",        # Stripe restricted key
-    r"SG\.[A-Za-z0-9_-]{10,}",          # SendGrid API key
-    r"hf_[A-Za-z0-9]{10,}",             # HuggingFace token
-    r"r8_[A-Za-z0-9]{10,}",             # Replicate API token
-    r"npm_[A-Za-z0-9]{10,}",            # npm access token
-    r"pypi-[A-Za-z0-9_-]{10,}",         # PyPI API token
-    r"dop_v1_[A-Za-z0-9]{10,}",         # DigitalOcean PAT
-    r"doo_v1_[A-Za-z0-9]{10,}",         # DigitalOcean OAuth
-    r"am_[A-Za-z0-9_-]{10,}",           # AgentMail API key
-    r"sk_[A-Za-z0-9_]{10,}",            # ElevenLabs TTS key (sk_ underscore, not sk- dash)
-    r"tvly-[A-Za-z0-9]{10,}",           # Tavily search API key
-    r"exa_[A-Za-z0-9]{10,}",            # Exa search API key
-    r"gsk_[A-Za-z0-9]{10,}",            # Groq Cloud API key
-    r"syt_[A-Za-z0-9]{10,}",            # Matrix access token
-    r"retaindb_[A-Za-z0-9]{10,}",       # RetainDB API key
-    r"hsk-[A-Za-z0-9]{10,}",            # Hindsight API key
-    r"mem0_[A-Za-z0-9]{10,}",           # Mem0 Platform API key
-    r"brv_[A-Za-z0-9]{10,}",            # ByteRover API key
+    r"sk-[A-Za-z0-9_-]{10,}",  # OpenAI / OpenRouter / Anthropic (sk-ant-*)
+    r"ghp_[A-Za-z0-9]{10,}",  # GitHub PAT (classic)
+    r"github_pat_[A-Za-z0-9_]{10,}",  # GitHub PAT (fine-grained)
+    r"gho_[A-Za-z0-9]{10,}",  # GitHub OAuth access token
+    r"ghu_[A-Za-z0-9]{10,}",  # GitHub user-to-server token
+    r"ghs_[A-Za-z0-9]{10,}",  # GitHub server-to-server token
+    r"ghr_[A-Za-z0-9]{10,}",  # GitHub refresh token
+    r"xox[baprs]-[A-Za-z0-9-]{10,}",  # Slack tokens
+    r"AIza[A-Za-z0-9_-]{30,}",  # Google API keys
+    r"pplx-[A-Za-z0-9]{10,}",  # Perplexity
+    r"fal_[A-Za-z0-9_-]{10,}",  # Fal.ai
+    r"fc-[A-Za-z0-9]{10,}",  # Firecrawl
+    r"bb_live_[A-Za-z0-9_-]{10,}",  # BrowserBase
+    r"gAAAA[A-Za-z0-9_=-]{20,}",  # Codex encrypted tokens
+    r"AKIA[A-Z0-9]{16}",  # AWS Access Key ID
+    r"sk_live_[A-Za-z0-9]{10,}",  # Stripe secret key (live)
+    r"sk_test_[A-Za-z0-9]{10,}",  # Stripe secret key (test)
+    r"rk_live_[A-Za-z0-9]{10,}",  # Stripe restricted key
+    r"SG\.[A-Za-z0-9_-]{10,}",  # SendGrid API key
+    r"hf_[A-Za-z0-9]{10,}",  # HuggingFace token
+    r"r8_[A-Za-z0-9]{10,}",  # Replicate API token
+    r"npm_[A-Za-z0-9]{10,}",  # npm access token
+    r"pypi-[A-Za-z0-9_-]{10,}",  # PyPI API token
+    r"dop_v1_[A-Za-z0-9]{10,}",  # DigitalOcean PAT
+    r"doo_v1_[A-Za-z0-9]{10,}",  # DigitalOcean OAuth
+    r"am_[A-Za-z0-9_-]{10,}",  # AgentMail API key
+    r"sk_[A-Za-z0-9_]{10,}",  # ElevenLabs TTS key (sk_ underscore, not sk- dash)
+    r"tvly-[A-Za-z0-9]{10,}",  # Tavily search API key
+    r"exa_[A-Za-z0-9]{10,}",  # Exa search API key
+    r"gsk_[A-Za-z0-9]{10,}",  # Groq Cloud API key
+    r"syt_[A-Za-z0-9]{10,}",  # Matrix access token
+    r"retaindb_[A-Za-z0-9]{10,}",  # RetainDB API key
+    r"hsk-[A-Za-z0-9]{10,}",  # Hindsight API key
+    r"mem0_[A-Za-z0-9]{10,}",  # Mem0 Platform API key
+    r"brv_[A-Za-z0-9]{10,}",  # ByteRover API key
 ]
 
 # ENV assignment patterns: KEY=value where KEY contains a secret-like name
@@ -145,8 +150,8 @@ _DB_CONNSTR_RE = re.compile(
 # JWT tokens: header.payload[.signature] — always start with "eyJ" (base64 for "{")
 # Matches 1-part (header only), 2-part (header.payload), and full 3-part JWTs.
 _JWT_RE = re.compile(
-    r"eyJ[A-Za-z0-9_-]{10,}"           # Header (always starts with eyJ)
-    r"(?:\.[A-Za-z0-9_=-]{4,}){0,2}"   # Optional payload and/or signature
+    r"eyJ[A-Za-z0-9_-]{10,}"  # Header (always starts with eyJ)
+    r"(?:\.[A-Za-z0-9_=-]{4,}){0,2}"  # Optional payload and/or signature
 )
 
 # Discord user/role mentions: <@123456789012345678> or <@!123456789012345678>
@@ -161,11 +166,11 @@ _SIGNAL_PHONE_RE = re.compile(r"(\+[1-9]\d{6,14})(?![A-Za-z0-9])")
 # Used to scan text for URLs whose query params may contain secrets.
 # Ported from nearai/ironclaw#2529.
 _URL_WITH_QUERY_RE = re.compile(
-    r"(https?|wss?|ftp)://"          # scheme
-    r"([^\s/?#]+)"                    # authority (may include userinfo)
-    r"([^\s?#]*)"                     # path
-    r"\?([^\s#]+)"                    # query (required)
-    r"(#\S*)?",                       # optional fragment
+    r"(https?|wss?|ftp)://"  # scheme
+    r"([^\s/?#]+)"  # authority (may include userinfo)
+    r"([^\s?#]*)"  # path
+    r"\?([^\s#]+)"  # query (required)
+    r"(#\S*)?",  # optional fragment
 )
 
 # URLs containing userinfo — `scheme://user:password@host` for ANY scheme
@@ -270,6 +275,7 @@ def _redact_url_query_params(text: str) -> str:
     Catches opaque tokens that don't match vendor prefix regexes, e.g.
     `https://example.com/cb?code=ABC123&state=xyz` → `...?code=***&state=xyz`.
     """
+
     def _sub(m: re.Match) -> str:
         scheme = m.group(1)
         authority = m.group(2)
@@ -277,6 +283,7 @@ def _redact_url_query_params(text: str) -> str:
         query = _redact_query_string(m.group(4))
         fragment = m.group(5) or ""
         return f"{scheme}://{authority}{path}?{query}{fragment}"
+
     return _URL_WITH_QUERY_RE.sub(_sub, text)
 
 
@@ -308,7 +315,9 @@ def _redact_form_body(text: str) -> str:
     return _redact_query_string(text.strip())
 
 
-def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = False) -> str:
+def redact_sensitive_text(
+    text: str, *, force: bool = False, code_file: bool = False
+) -> str:
     """Apply all redaction patterns to a block of text.
 
     Safe to call on any string -- non-matching text passes through unchanged.
@@ -335,15 +344,18 @@ def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = F
 
     # ENV assignments: OPENAI_API_KEY=***  (skip for code files — false positives)
     if not code_file:
+
         def _redact_env(m):
             name, quote, value = m.group(1), m.group(2), m.group(3)
             return f"{name}={quote}{_mask_token(value)}{quote}"
+
         text = _ENV_ASSIGN_RE.sub(_redact_env, text)
 
         # JSON fields: "apiKey": "***"  (skip for code files — false positives)
         def _redact_json(m):
             key, value = m.group(1), m.group(2)
             return f'{key}: "{_mask_token(value)}"'
+
         text = _JSON_FIELD_RE.sub(_redact_json, text)
 
     # Authorization headers
@@ -357,6 +369,7 @@ def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = F
         prefix = m.group(1) or ""
         digits = m.group(2)
         return f"{prefix}{digits}:***"
+
     text = _TELEGRAM_RE.sub(_redact_telegram, text)
 
     # Private key blocks
@@ -379,7 +392,9 @@ def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = F
     text = _redact_form_body(text)
 
     # Discord user/role mentions (<@snowflake_id>)
-    text = _DISCORD_MENTION_RE.sub(lambda m: f"<@{'!' if '!' in m.group(0) else ''}***>", text)
+    text = _DISCORD_MENTION_RE.sub(
+        lambda m: f"<@{'!' if '!' in m.group(0) else ''}***>", text
+    )
 
     # E.164 phone numbers (Signal, WhatsApp)
     def _redact_phone(m):
@@ -387,6 +402,7 @@ def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = F
         if len(phone) <= 8:
             return phone[:2] + "****" + phone[-2:]
         return phone[:4] + "****" + phone[-4:]
+
     text = _SIGNAL_PHONE_RE.sub(_redact_phone, text)
 
     return text
@@ -395,7 +411,7 @@ def redact_sensitive_text(text: str, *, force: bool = False, code_file: bool = F
 class RedactingFormatter(logging.Formatter):
     """Log formatter that redacts secrets from all log messages."""
 
-    def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
+    def __init__(self, fmt=None, datefmt=None, style="%", **kwargs):
         super().__init__(fmt, datefmt, style, **kwargs)
 
     def format(self, record: logging.LogRecord) -> str:

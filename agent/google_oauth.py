@@ -98,13 +98,16 @@ _DEFAULT_CLIENT_SECRET = f"GOCSPX-{_PUBLIC_CLIENT_SECRET_SUFFIX}"
 # Regex patterns for fallback scraping from an installed gemini-cli.
 import re as _re
 from utils import atomic_replace
+
 _CLIENT_ID_PATTERN = _re.compile(
     r"OAUTH_CLIENT_ID\s*=\s*['\"]([0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com)['\"]"
 )
 _CLIENT_SECRET_PATTERN = _re.compile(
     r"OAUTH_CLIENT_SECRET\s*=\s*['\"](GOCSPX-[A-Za-z0-9_-]+)['\"]"
 )
-_CLIENT_ID_SHAPE = _re.compile(r"([0-9]{8,}-[a-z0-9]{20,}\.apps\.googleusercontent\.com)")
+_CLIENT_ID_SHAPE = _re.compile(
+    r"([0-9]{8,}-[a-z0-9]{20,}\.apps\.googleusercontent\.com)"
+)
 _CLIENT_SECRET_SHAPE = _re.compile(r"(GOCSPX-[A-Za-z0-9_-]{20,})")
 
 
@@ -141,6 +144,7 @@ _HEADLESS_ENV_VARS = ("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY", "HERMES_HEADLES
 # Error type
 # =============================================================================
 
+
 class GoogleOAuthError(RuntimeError):
     """Raised for any failure in the Google OAuth flow."""
 
@@ -152,6 +156,7 @@ class GoogleOAuthError(RuntimeError):
 # =============================================================================
 # File paths & cross-process locking
 # =============================================================================
+
 
 def _credentials_path() -> Path:
     return get_hermes_home() / "auth" / "google_oauth.json"
@@ -304,7 +309,9 @@ def _locate_gemini_cli_oauth_js() -> Optional[Path]:
 def _scrape_client_credentials() -> Tuple[str, str]:
     """Extract client_id + client_secret from the local gemini-cli install."""
     if _scraped_creds_cache.get("resolved"):
-        return _scraped_creds_cache.get("client_id", ""), _scraped_creds_cache.get("client_secret", "")
+        return _scraped_creds_cache.get("client_id", ""), _scraped_creds_cache.get(
+            "client_secret", ""
+        )
 
     oauth_js = _locate_gemini_cli_oauth_js()
     if oauth_js is None:
@@ -320,7 +327,9 @@ def _scrape_client_credentials() -> Tuple[str, str]:
 
     # Precise pattern first, then fallback shape match
     cid_match = _CLIENT_ID_PATTERN.search(content) or _CLIENT_ID_SHAPE.search(content)
-    cs_match = _CLIENT_SECRET_PATTERN.search(content) or _CLIENT_SECRET_SHAPE.search(content)
+    cs_match = _CLIENT_SECRET_PATTERN.search(content) or _CLIENT_SECRET_SHAPE.search(
+        content
+    )
 
     client_id = cid_match.group(1) if cid_match else ""
     client_secret = cs_match.group(1) if cs_match else ""
@@ -377,6 +386,7 @@ def _require_client_id() -> str:
 # PKCE
 # =============================================================================
 
+
 def _generate_pkce_pair() -> Tuple[str, str]:
     """Generate a (verifier, challenge) pair using S256."""
     verifier = secrets.token_urlsafe(64)
@@ -388,6 +398,7 @@ def _generate_pkce_pair() -> Tuple[str, str]:
 # =============================================================================
 # Packed refresh format:  refresh_token[|project_id[|managed_project_id]]
 # =============================================================================
+
 
 @dataclass
 class RefreshParts:
@@ -417,6 +428,7 @@ class RefreshParts:
 # =============================================================================
 # Credentials (dataclass wrapping the on-disk format)
 # =============================================================================
+
 
 @dataclass
 class GoogleCredentials:
@@ -464,6 +476,7 @@ class GoogleCredentials:
 # =============================================================================
 # Credential I/O (atomic + locked)
 # =============================================================================
+
 
 def load_credentials() -> Optional[GoogleCredentials]:
     """Load credentials from disk. Returns None if missing or corrupt."""
@@ -531,12 +544,15 @@ def clear_credentials() -> None:
         except FileNotFoundError:
             pass
         except OSError as exc:
-            logger.warning("Failed to remove Google OAuth credentials at %s: %s", path, exc)
+            logger.warning(
+                "Failed to remove Google OAuth credentials at %s: %s", path, exc
+            )
 
 
 # =============================================================================
 # HTTP helpers
 # =============================================================================
+
 
 def _post_form(url: str, data: Dict[str, str], timeout: float) -> Dict[str, Any]:
     """POST x-www-form-urlencoded and return parsed JSON response."""
@@ -624,7 +640,9 @@ def refresh_access_token(
     return _post_form(TOKEN_ENDPOINT, data, timeout)
 
 
-def _fetch_user_email(access_token: str, timeout: float = TOKEN_REQUEST_TIMEOUT_SECONDS) -> str:
+def _fetch_user_email(
+    access_token: str, timeout: float = TOKEN_REQUEST_TIMEOUT_SECONDS
+) -> str:
     """Best-effort userinfo fetch for display. Failures return empty string."""
     try:
         request = urllib.request.Request(
@@ -704,7 +722,9 @@ def get_valid_access_token(*, force_refresh: bool = False) -> str:
                 code="google_oauth_refresh_empty",
             )
         # Google sometimes rotates refresh_token; preserve existing if omitted.
-        new_refresh = str(resp.get("refresh_token", "") or "").strip() or creds.refresh_token
+        new_refresh = (
+            str(resp.get("refresh_token", "") or "").strip() or creds.refresh_token
+        )
         expires_in = int(resp.get("expires_in", 0) or 0)
 
         creds.access_token = new_access
@@ -723,6 +743,7 @@ def get_valid_access_token(*, force_refresh: bool = False) -> str:
 # Update project IDs on stored creds
 # =============================================================================
 
+
 def update_project_ids(project_id: str = "", managed_project_id: str = "") -> None:
     """Persist resolved/discovered project IDs back into the credential file."""
     creds = load_credentials()
@@ -738,6 +759,7 @@ def update_project_ids(project_id: str = "", managed_project_id: str = "") -> No
 # =============================================================================
 # Callback server
 # =============================================================================
+
 
 class _OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
     expected_state: str = ""
@@ -762,7 +784,9 @@ class _OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
 
         if state != type(self).expected_state:
             type(self).captured_error = "state_mismatch"
-            self._respond_html(400, _ERROR_PAGE.format(message="State mismatch — aborting for safety."))
+            self._respond_html(
+                400, _ERROR_PAGE.format(message="State mismatch — aborting for safety.")
+            )
         elif error:
             type(self).captured_error = error
             # Simple HTML-escape of the error value
@@ -772,13 +796,18 @@ class _OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
             )
-            self._respond_html(400, _ERROR_PAGE.format(message=f"Authorization denied: {safe_err}"))
+            self._respond_html(
+                400, _ERROR_PAGE.format(message=f"Authorization denied: {safe_err}")
+            )
         elif code:
             type(self).captured_code = code
             self._respond_html(200, _SUCCESS_PAGE)
         else:
             type(self).captured_error = "no_code"
-            self._respond_html(400, _ERROR_PAGE.format(message="Callback received no authorization code."))
+            self._respond_html(
+                400,
+                _ERROR_PAGE.format(message="Callback received no authorization code."),
+            )
 
         if type(self).ready is not None:
             type(self).ready.set()
@@ -813,14 +842,19 @@ h1 {{ color: #b42318; }} p {{ color: #555; }}
 """
 
 
-def _bind_callback_server(preferred_port: int = DEFAULT_REDIRECT_PORT) -> Tuple[http.server.HTTPServer, int]:
+def _bind_callback_server(
+    preferred_port: int = DEFAULT_REDIRECT_PORT,
+) -> Tuple[http.server.HTTPServer, int]:
     try:
-        server = http.server.HTTPServer((REDIRECT_HOST, preferred_port), _OAuthCallbackHandler)
+        server = http.server.HTTPServer(
+            (REDIRECT_HOST, preferred_port), _OAuthCallbackHandler
+        )
         return server, preferred_port
     except OSError as exc:
         logger.info(
             "Preferred OAuth callback port %d unavailable (%s); requesting ephemeral port",
-            preferred_port, exc,
+            preferred_port,
+            exc,
         )
     server = http.server.HTTPServer((REDIRECT_HOST, 0), _OAuthCallbackHandler)
     return server, server.server_address[1]
@@ -833,6 +867,7 @@ def _is_headless() -> bool:
 # =============================================================================
 # Main login flow
 # =============================================================================
+
 
 def start_oauth_flow(
     *,
@@ -865,7 +900,9 @@ def start_oauth_flow(
     # If headless, skip the listener and go straight to paste mode
     if _is_headless() and open_browser:
         logger.info("Headless environment detected; using paste-mode OAuth fallback.")
-        return _paste_mode_login(verifier, challenge, state, client_id, client_secret, project_id)
+        return _paste_mode_login(
+            verifier, challenge, state, client_id, client_secret, project_id
+        )
 
     server, port = _bind_callback_server(DEFAULT_REDIRECT_PORT)
     redirect_uri = f"http://{REDIRECT_HOST}:{port}{CALLBACK_PATH}"
@@ -936,8 +973,11 @@ def start_oauth_flow(
         )
 
     token_resp = exchange_code(
-        code, verifier, redirect_uri,
-        client_id=client_id, client_secret=client_secret,
+        code,
+        verifier,
+        redirect_uri,
+        client_id=client_id,
+        client_secret=client_secret,
     )
     return _persist_token_response(token_resp, project_id=project_id)
 
@@ -976,18 +1016,25 @@ def _paste_mode_login(
 
     code = _prompt_paste_fallback()
     if not code:
-        raise GoogleOAuthError("No authorization code provided.", code="google_oauth_no_code")
+        raise GoogleOAuthError(
+            "No authorization code provided.", code="google_oauth_no_code"
+        )
 
     token_resp = exchange_code(
-        code, verifier, redirect_uri,
-        client_id=client_id, client_secret=client_secret,
+        code,
+        verifier,
+        redirect_uri,
+        client_id=client_id,
+        client_secret=client_secret,
     )
     return _persist_token_response(token_resp, project_id=project_id)
 
 
 def _prompt_paste_fallback() -> Optional[str]:
     print()
-    print("Paste the full redirect URL Google showed you, OR just the 'code=' parameter value.")
+    print(
+        "Paste the full redirect URL Google showed you, OR just the 'code=' parameter value."
+    )
     raw = input("Callback URL or code: ").strip()
     if not raw:
         return None
@@ -1032,6 +1079,7 @@ def _persist_token_response(
 # Pool-compatible variant
 # =============================================================================
 
+
 def run_gemini_oauth_login_pure() -> Dict[str, Any]:
     """Run the login flow and return a dict matching the credential pool shape."""
     creds = start_oauth_flow(force_relogin=True)
@@ -1047,6 +1095,7 @@ def run_gemini_oauth_login_pure() -> Dict[str, Any]:
 # =============================================================================
 # Project ID resolution
 # =============================================================================
+
 
 def resolve_project_id_from_env() -> str:
     """Return a GCP project ID from env vars, in priority order."""

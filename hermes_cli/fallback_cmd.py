@@ -16,6 +16,7 @@ Storage: ``fallback_providers`` in ``~/.hermes/config.yaml`` (top-level, list of
 ``{provider, model, base_url?, api_mode?}`` dicts).  The legacy single-dict
 ``fallback_model`` format is migrated to the new list format on first add.
 """
+
 from __future__ import annotations
 
 import copy
@@ -26,6 +27,7 @@ from typing import Any, Dict, List, Optional
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _read_chain(config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Return the normalized fallback chain as a list of dicts.
 
@@ -35,14 +37,22 @@ def _read_chain(config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     chain = config.get("fallback_providers") or []
     if isinstance(chain, list):
-        result = [dict(e) for e in chain if isinstance(e, dict) and e.get("provider") and e.get("model")]
+        result = [
+            dict(e)
+            for e in chain
+            if isinstance(e, dict) and e.get("provider") and e.get("model")
+        ]
         if result:
             return result
     legacy = config.get("fallback_model")
     if isinstance(legacy, dict) and legacy.get("provider") and legacy.get("model"):
         return [dict(legacy)]
     if isinstance(legacy, list):
-        return [dict(e) for e in legacy if isinstance(e, dict) and e.get("provider") and e.get("model")]
+        return [
+            dict(e)
+            for e in legacy
+            if isinstance(e, dict) and e.get("provider") and e.get("model")
+        ]
     return []
 
 
@@ -86,6 +96,7 @@ def _snapshot_auth_active_provider() -> Any:
     """Return the current ``active_provider`` in auth.json, or a sentinel if unavailable."""
     try:
         from hermes_cli.auth import _load_auth_store
+
         store = _load_auth_store()
         return store.get("active_provider")
     except Exception:
@@ -96,6 +107,7 @@ def _restore_auth_active_provider(value: Any) -> None:
     """Write back a previously snapshotted ``active_provider`` value."""
     try:
         from hermes_cli.auth import _auth_store_lock, _load_auth_store, _save_auth_store
+
         with _auth_store_lock():
             store = _load_auth_store()
             store["active_provider"] = value
@@ -110,6 +122,7 @@ def _restore_auth_active_provider(value: Any) -> None:
 # ---------------------------------------------------------------------------
 # Subcommand handlers
 # ---------------------------------------------------------------------------
+
 
 def cmd_fallback_list(args) -> None:  # noqa: ARG001
     """Print the current fallback chain."""
@@ -130,12 +143,18 @@ def cmd_fallback_list(args) -> None:  # noqa: ARG001
     if primary:
         print(f"  Primary:   {primary}")
         print()
-    print(f"  Fallback chain ({len(chain)} {'entry' if len(chain) == 1 else 'entries'}):")
+    print(
+        f"  Fallback chain ({len(chain)} {'entry' if len(chain) == 1 else 'entries'}):"
+    )
     for i, entry in enumerate(chain, 1):
         print(f"    {i}. {_format_entry(entry)}")
     print()
-    print("  Tried in order when the primary fails (rate-limit, 5xx, connection errors).")
-    print("  Docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers")
+    print(
+        "  Tried in order when the primary fails (rate-limit, 5xx, connection errors)."
+    )
+    print(
+        "  Docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers"
+    )
     print()
 
 
@@ -144,7 +163,9 @@ def _describe_primary(config: Dict[str, Any]) -> Optional[str]:
     model_cfg = config.get("model")
     if isinstance(model_cfg, dict):
         provider = (model_cfg.get("provider") or "?").strip() or "?"
-        model = (model_cfg.get("default") or model_cfg.get("model") or "?").strip() or "?"
+        model = (
+            model_cfg.get("default") or model_cfg.get("model") or "?"
+        ).strip() or "?"
         return f"{model}  (via {provider})"
     if isinstance(model_cfg, str) and model_cfg.strip():
         return model_cfg.strip()
@@ -193,12 +214,17 @@ def cmd_fallback_add(args) -> None:
     # Picker picked the same thing that's already the primary → nothing changed,
     # and there's nothing useful to add as a fallback to itself.
     primary_entry = _extract_fallback_from_model_cfg(model_before)
-    if primary_entry and primary_entry["provider"] == new_entry["provider"] \
-            and primary_entry["model"] == new_entry["model"]:
+    if (
+        primary_entry
+        and primary_entry["provider"] == new_entry["provider"]
+        and primary_entry["model"] == new_entry["model"]
+    ):
         _restore_model_cfg(model_before)
         _restore_auth_active_provider(active_provider_before)
         print()
-        print(f"  Selected model matches the current primary ({_format_entry(new_entry)}).")
+        print(
+            f"  Selected model matches the current primary ({_format_entry(new_entry)})."
+        )
         print("  A provider cannot be a fallback for itself — no change.")
         return
 
@@ -214,10 +240,14 @@ def cmd_fallback_add(args) -> None:
 
     # Reject exact-duplicate fallback entries.
     for existing in chain:
-        if existing.get("provider") == new_entry["provider"] \
-                and existing.get("model") == new_entry["model"]:
+        if (
+            existing.get("provider") == new_entry["provider"]
+            and existing.get("model") == new_entry["model"]
+        ):
             print()
-            print(f"  {_format_entry(new_entry)} is already in the fallback chain — skipped.")
+            print(
+                f"  {_format_entry(new_entry)} is already in the fallback chain — skipped."
+            )
             return
 
     chain.append(new_entry)
@@ -226,9 +256,13 @@ def cmd_fallback_add(args) -> None:
 
     print()
     print(f"  Added fallback: {_format_entry(new_entry)}")
-    print(f"  Chain is now {len(chain)} {'entry' if len(chain) == 1 else 'entries'} long.")
+    print(
+        f"  Chain is now {len(chain)} {'entry' if len(chain) == 1 else 'entries'} long."
+    )
     print()
-    print("  Run `hermes fallback list` to view, or `hermes fallback remove` to delete.")
+    print(
+        "  Run `hermes fallback list` to view, or `hermes fallback remove` to delete."
+    )
 
 
 def _restore_model_cfg(model_before: Any) -> None:
@@ -261,6 +295,7 @@ def cmd_fallback_remove(args) -> None:  # noqa: ARG001
 
     try:
         from hermes_cli.setup import _curses_prompt_choice
+
         idx = _curses_prompt_choice("Select a fallback to remove:", choices, 0)
     except Exception:
         idx = _numbered_pick("Select a fallback to remove:", choices)
@@ -277,7 +312,9 @@ def cmd_fallback_remove(args) -> None:  # noqa: ARG001
     print()
     print(f"  Removed fallback: {_format_entry(removed)}")
     if chain:
-        print(f"  Chain is now {len(chain)} {'entry' if len(chain) == 1 else 'entries'} long.")
+        print(
+            f"  Chain is now {len(chain)} {'entry' if len(chain) == 1 else 'entries'} long."
+        )
     else:
         print("  Fallback chain is now empty.")
     print()
@@ -297,7 +334,9 @@ def cmd_fallback_clear(args) -> None:  # noqa: ARG001
         return
 
     print()
-    print(f"  Current fallback chain ({len(chain)} {'entry' if len(chain) == 1 else 'entries'}):")
+    print(
+        f"  Current fallback chain ({len(chain)} {'entry' if len(chain) == 1 else 'entries'}):"
+    )
     for i, entry in enumerate(chain, 1):
         print(f"    {i}. {_format_entry(entry)}")
     print()
@@ -343,6 +382,7 @@ def _numbered_pick(question: str, choices: List[str]) -> Optional[int]:
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
+
 
 def cmd_fallback(args) -> None:
     """Top-level dispatcher for ``hermes fallback [subcommand]``."""

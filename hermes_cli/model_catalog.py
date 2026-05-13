@@ -86,6 +86,7 @@ def _load_catalog_config() -> dict[str, Any]:
     """Load the ``model_catalog`` config block with defaults filled in."""
     try:
         from hermes_cli.config import load_config
+
         cfg = load_config() or {}
     except Exception:
         cfg = {}
@@ -98,13 +99,16 @@ def _load_catalog_config() -> dict[str, Any]:
         "enabled": bool(raw.get("enabled", True)),
         "url": str(raw.get("url") or DEFAULT_CATALOG_URL),
         "ttl_hours": float(raw.get("ttl_hours") or DEFAULT_TTL_HOURS),
-        "providers": raw.get("providers") if isinstance(raw.get("providers"), dict) else {},
+        "providers": raw.get("providers")
+        if isinstance(raw.get("providers"), dict)
+        else {},
     }
 
 
 def _cache_path() -> Path:
     """Return the disk cache path. Import lazily so tests can monkeypatch home."""
     from hermes_constants import get_hermes_home
+
     return get_hermes_home() / "cache" / "model_catalog.json"
 
 

@@ -24,7 +24,9 @@ def test_get_nous_subscription_features_recognizes_direct_exa_backend(monkeypatc
 
 
 def test_get_nous_subscription_features_prefers_managed_modal_in_auto_mode(monkeypatch):
-    monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
+    monkeypatch.setattr(
+        "tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True
+    )
     monkeypatch.setattr(ns, "get_env_value", lambda name: "")
     monkeypatch.setattr(ns, "get_nous_auth_status", lambda: {"logged_in": True})
     monkeypatch.setattr(ns, "managed_nous_tools_enabled", lambda: True)
@@ -32,11 +34,13 @@ def test_get_nous_subscription_features_prefers_managed_modal_in_auto_mode(monke
     monkeypatch.setattr(ns, "_has_agent_browser", lambda: False)
     monkeypatch.setattr(ns, "resolve_openai_audio_api_key", lambda: "")
     monkeypatch.setattr(ns, "has_direct_modal_credentials", lambda: True)
-    monkeypatch.setattr(ns, "is_managed_tool_gateway_ready", lambda vendor: vendor == "modal")
-
-    features = ns.get_nous_subscription_features(
-        {"terminal": {"backend": "modal", "modal_mode": "auto"}}
+    monkeypatch.setattr(
+        ns, "is_managed_tool_gateway_ready", lambda vendor: vendor == "modal"
     )
+
+    features = ns.get_nous_subscription_features({
+        "terminal": {"backend": "modal", "modal_mode": "auto"}
+    })
 
     assert features.modal.available is True
     assert features.modal.active is True
@@ -44,7 +48,9 @@ def test_get_nous_subscription_features_prefers_managed_modal_in_auto_mode(monke
     assert features.modal.direct_override is False
 
 
-def test_get_nous_subscription_features_marks_browser_use_as_managed_when_gateway_ready(monkeypatch):
+def test_get_nous_subscription_features_marks_browser_use_as_managed_when_gateway_ready(
+    monkeypatch,
+):
     monkeypatch.setattr(ns, "get_env_value", lambda name: "")
     monkeypatch.setattr(ns, "get_nous_auth_status", lambda: {"logged_in": True})
     monkeypatch.setattr(ns, "managed_nous_tools_enabled", lambda: True)
@@ -58,9 +64,9 @@ def test_get_nous_subscription_features_marks_browser_use_as_managed_when_gatewa
         lambda vendor: vendor == "browser-use",
     )
 
-    features = ns.get_nous_subscription_features(
-        {"browser": {"cloud_provider": "browser-use"}}
-    )
+    features = ns.get_nous_subscription_features({
+        "browser": {"cloud_provider": "browser-use"}
+    })
 
     assert features.browser.available is True
     assert features.browser.active is True
@@ -69,7 +75,9 @@ def test_get_nous_subscription_features_marks_browser_use_as_managed_when_gatewa
     assert features.browser.current_provider == "Browser Use"
 
 
-def test_get_nous_subscription_features_uses_direct_browserbase_when_no_managed_gateway(monkeypatch):
+def test_get_nous_subscription_features_uses_direct_browserbase_when_no_managed_gateway(
+    monkeypatch,
+):
     """When direct Browserbase keys are set and no managed gateway is available,
     the unconfigured fallback should pick Browserbase as a direct provider."""
     env = {
@@ -99,7 +107,9 @@ def test_get_nous_subscription_features_uses_direct_browserbase_when_no_managed_
     assert features.browser.current_provider == "Browserbase"
 
 
-def test_get_nous_subscription_features_prefers_camofox_over_managed_browser_use(monkeypatch):
+def test_get_nous_subscription_features_prefers_camofox_over_managed_browser_use(
+    monkeypatch,
+):
     env = {"CAMOFOX_URL": "http://localhost:9377"}
 
     monkeypatch.setattr(ns, "get_env_value", lambda name: env.get(name, ""))
@@ -115,9 +125,9 @@ def test_get_nous_subscription_features_prefers_camofox_over_managed_browser_use
         lambda vendor: vendor == "browser-use",
     )
 
-    features = ns.get_nous_subscription_features(
-        {"browser": {"cloud_provider": "browser-use"}}
-    )
+    features = ns.get_nous_subscription_features({
+        "browser": {"cloud_provider": "browser-use"}
+    })
 
     assert features.browser.available is True
     assert features.browser.active is True
@@ -126,7 +136,9 @@ def test_get_nous_subscription_features_prefers_camofox_over_managed_browser_use
     assert features.browser.current_provider == "Camofox"
 
 
-def test_get_nous_subscription_features_requires_agent_browser_for_browserbase(monkeypatch):
+def test_get_nous_subscription_features_requires_agent_browser_for_browserbase(
+    monkeypatch,
+):
     env = {
         "BROWSERBASE_API_KEY": "bb-key",
         "BROWSERBASE_PROJECT_ID": "bb-project",
@@ -141,9 +153,9 @@ def test_get_nous_subscription_features_requires_agent_browser_for_browserbase(m
     monkeypatch.setattr(ns, "has_direct_modal_credentials", lambda: False)
     monkeypatch.setattr(ns, "is_managed_tool_gateway_ready", lambda vendor: False)
 
-    features = ns.get_nous_subscription_features(
-        {"browser": {"cloud_provider": "browserbase"}}
-    )
+    features = ns.get_nous_subscription_features({
+        "browser": {"cloud_provider": "browserbase"}
+    })
 
     assert features.browser.available is False
     assert features.browser.active is False
@@ -151,7 +163,9 @@ def test_get_nous_subscription_features_requires_agent_browser_for_browserbase(m
     assert features.browser.current_provider == "Browserbase"
 
 
-def test_get_nous_subscription_features_does_not_treat_quoted_false_as_gateway_opt_in(monkeypatch):
+def test_get_nous_subscription_features_does_not_treat_quoted_false_as_gateway_opt_in(
+    monkeypatch,
+):
     env = {"EXA_API_KEY": "exa-test"}
 
     monkeypatch.setattr(ns, "get_env_value", lambda name: env.get(name, ""))
@@ -161,11 +175,13 @@ def test_get_nous_subscription_features_does_not_treat_quoted_false_as_gateway_o
     monkeypatch.setattr(ns, "_has_agent_browser", lambda: False)
     monkeypatch.setattr(ns, "resolve_openai_audio_api_key", lambda: "")
     monkeypatch.setattr(ns, "has_direct_modal_credentials", lambda: False)
-    monkeypatch.setattr(ns, "is_managed_tool_gateway_ready", lambda vendor: vendor == "firecrawl")
-
-    features = ns.get_nous_subscription_features(
-        {"web": {"backend": "exa", "use_gateway": "false"}}
+    monkeypatch.setattr(
+        ns, "is_managed_tool_gateway_ready", lambda vendor: vendor == "firecrawl"
     )
+
+    features = ns.get_nous_subscription_features({
+        "web": {"backend": "exa", "use_gateway": "false"}
+    })
 
     assert features.web.available is True
     assert features.web.active is True
@@ -182,12 +198,10 @@ def test_get_gateway_eligible_tools_ignores_quoted_false_opt_in(monkeypatch):
         lambda: {"web": True, "image_gen": False, "tts": False, "browser": False},
     )
 
-    unconfigured, has_direct, already_managed = ns.get_gateway_eligible_tools(
-        {
-            "model": {"provider": "nous"},
-            "web": {"use_gateway": "false"},
-        }
-    )
+    unconfigured, has_direct, already_managed = ns.get_gateway_eligible_tools({
+        "model": {"provider": "nous"},
+        "web": {"use_gateway": "false"},
+    })
 
     assert "web" in has_direct
     assert "web" not in already_managed

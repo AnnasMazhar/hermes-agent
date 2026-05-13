@@ -112,6 +112,7 @@ class Diagnostic:
 # Rule helpers
 # ---------------------------------------------------------------------------
 
+
 def _task_field(task, name, default=None):
     """Read a field from a task regardless of representation.
 
@@ -206,16 +207,20 @@ def _latest_clean_event_ts(events: Iterable[Any]) -> int:
 def _generic_recovery_actions(task: Any, *, running: bool) -> list[DiagnosticAction]:
     out: list[DiagnosticAction] = []
     if running:
-        out.append(DiagnosticAction(
-            kind="reclaim",
-            label="Reclaim task",
-            payload={},
-        ))
-    out.append(DiagnosticAction(
-        kind="reassign",
-        label="Reassign to different profile",
-        payload={"reclaim_first": running},
-    ))
+        out.append(
+            DiagnosticAction(
+                kind="reclaim",
+                label="Reclaim task",
+                payload={},
+            )
+        )
+    out.append(
+        DiagnosticAction(
+            kind="reassign",
+            label="Reassign to different profile",
+            payload={"reclaim_first": running},
+        )
+    )
     return out
 
 
@@ -253,29 +258,33 @@ def _rule_hallucinated_cards(task, events, runs, now, cfg) -> list[Diagnostic]:
                 phantom_ids.append(pid)
     running = _task_field(task, "status") == "running"
     actions: list[DiagnosticAction] = []
-    actions.append(DiagnosticAction(
-        kind="comment",
-        label="Add a comment explaining what to do",
-        suggested=False,
-    ))
+    actions.append(
+        DiagnosticAction(
+            kind="comment",
+            label="Add a comment explaining what to do",
+            suggested=False,
+        )
+    )
     actions.extend(_generic_recovery_actions(task, running=running))
-    return [Diagnostic(
-        kind="hallucinated_cards",
-        severity="error",
-        title="Worker claimed cards that don't exist",
-        detail=(
-            f"The completing worker declared created_cards that either didn't "
-            f"exist or weren't created by its profile. The completion was "
-            f"blocked and the task stayed in its prior state. "
-            f"Usually means the worker hallucinated ids instead of capturing "
-            f"return values from kanban_create."
-        ),
-        actions=actions,
-        first_seen_at=first,
-        last_seen_at=last,
-        count=len(hits),
-        data={"phantom_ids": phantom_ids},
-    )]
+    return [
+        Diagnostic(
+            kind="hallucinated_cards",
+            severity="error",
+            title="Worker claimed cards that don't exist",
+            detail=(
+                f"The completing worker declared created_cards that either didn't "
+                f"exist or weren't created by its profile. The completion was "
+                f"blocked and the task stayed in its prior state. "
+                f"Usually means the worker hallucinated ids instead of capturing "
+                f"return values from kanban_create."
+            ),
+            actions=actions,
+            first_seen_at=first,
+            last_seen_at=last,
+            count=len(hits),
+            data={"phantom_ids": phantom_ids},
+        )
+    ]
 
 
 def _rule_prose_phantom_refs(task, events, runs, now, cfg) -> list[Diagnostic]:
@@ -294,22 +303,24 @@ def _rule_prose_phantom_refs(task, events, runs, now, cfg) -> list[Diagnostic]:
             if pid not in phantom_refs:
                 phantom_refs.append(pid)
     running = _task_field(task, "status") == "running"
-    return [Diagnostic(
-        kind="prose_phantom_refs",
-        severity="warning",
-        title="Completion summary references unknown task ids",
-        detail=(
-            "The completion summary mentions task ids that don't resolve "
-            "in this board's database. The completion itself succeeded, "
-            "but downstream consumers parsing the summary may be pointed "
-            "at cards that never existed."
-        ),
-        actions=_generic_recovery_actions(task, running=running),
-        first_seen_at=_event_ts(hits[0]),
-        last_seen_at=_event_ts(hits[-1]),
-        count=len(hits),
-        data={"phantom_refs": phantom_refs},
-    )]
+    return [
+        Diagnostic(
+            kind="prose_phantom_refs",
+            severity="warning",
+            title="Completion summary references unknown task ids",
+            detail=(
+                "The completion summary mentions task ids that don't resolve "
+                "in this board's database. The completion itself succeeded, "
+                "but downstream consumers parsing the summary may be pointed "
+                "at cards that never existed."
+            ),
+            actions=_generic_recovery_actions(task, running=running),
+            first_seen_at=_event_ts(hits[0]),
+            last_seen_at=_event_ts(hits[-1]),
+            count=len(hits),
+            data={"phantom_refs": phantom_refs},
+        )
+    ]
 
 
 def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
@@ -328,10 +339,12 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
     Accepts the legacy ``spawn_failure_threshold`` config key for
     back-compat.
     """
-    threshold = int(cfg.get(
-        "failure_threshold",
-        cfg.get("spawn_failure_threshold", 3),
-    ))
+    threshold = int(
+        cfg.get(
+            "failure_threshold",
+            cfg.get("spawn_failure_threshold", 3),
+        )
+    )
     # Read the new unified counter name, with a fallback to the legacy
     # column name so this rule keeps working against old DB rows the
     # caller somehow materialised without running the migration.
@@ -363,42 +376,55 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
     actions: list[DiagnosticAction] = []
     if most_recent_outcome == "spawn_failed" and assignee and assignee != "default":
         # Spawn is failing specifically — profile setup issue.
-        actions.append(DiagnosticAction(
-            kind="cli_hint",
-            label=f"Verify profile: hermes -p {assignee} doctor",
-            payload={"command": f"hermes -p {assignee} doctor"},
-            suggested=True,
-        ))
-        actions.append(DiagnosticAction(
-            kind="cli_hint",
-            label=f"Fix profile auth: hermes -p {assignee} auth",
-            payload={"command": f"hermes -p {assignee} auth"},
-        ))
+        actions.append(
+            DiagnosticAction(
+                kind="cli_hint",
+                label=f"Verify profile: hermes -p {assignee} doctor",
+                payload={"command": f"hermes -p {assignee} doctor"},
+                suggested=True,
+            )
+        )
+        actions.append(
+            DiagnosticAction(
+                kind="cli_hint",
+                label=f"Fix profile auth: hermes -p {assignee} auth",
+                payload={"command": f"hermes -p {assignee} auth"},
+            )
+        )
     elif most_recent_outcome in ("timed_out", "crashed"):
         # Worker got off the ground but died. Logs are the right place
         # to diagnose; reclaim/reassign are the recovery levers.
         task_id = _task_field(task, "id")
         if task_id:
-            actions.append(DiagnosticAction(
-                kind="cli_hint",
-                label=f"Check logs: hermes kanban log {task_id}",
-                payload={"command": f"hermes kanban log {task_id}"},
-                suggested=True,
-            ))
-    actions.extend(_generic_recovery_actions(
-        task, running=_task_field(task, "status") == "running",
-    ))
+            actions.append(
+                DiagnosticAction(
+                    kind="cli_hint",
+                    label=f"Check logs: hermes kanban log {task_id}",
+                    payload={"command": f"hermes kanban log {task_id}"},
+                    suggested=True,
+                )
+            )
+    actions.extend(
+        _generic_recovery_actions(
+            task,
+            running=_task_field(task, "status") == "running",
+        )
+    )
 
     severity = "critical" if failures >= threshold * 2 else "error"
     err_text = (last_err or "").strip() if last_err else ""
-    err_snippet = err_text[:500] + ("…" if len(err_text) > 500 else "") if err_text else ""
+    err_snippet = (
+        err_text[:500] + ("…" if len(err_text) > 500 else "") if err_text else ""
+    )
     outcome_label = {
         "spawn_failed": "spawn",
         "timed_out": "timeout",
         "crashed": "crash",
     }.get(most_recent_outcome or "", "failure")
     if err_snippet:
-        title = f"Agent {outcome_label} x{failures}: {err_snippet.splitlines()[0][:160]}"
+        title = (
+            f"Agent {outcome_label} x{failures}: {err_snippet.splitlines()[0][:160]}"
+        )
         detail = (
             f"This task has failed {failures} times in a row "
             f"(most recent: {outcome_label}). Full last error:\n\n"
@@ -415,21 +441,23 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
             f"(most recent: {outcome_label}) but no error text was "
             f"captured. Check the suggested command or the worker log."
         )
-    return [Diagnostic(
-        kind="repeated_failures",
-        severity=severity,
-        title=title,
-        detail=detail,
-        actions=actions,
-        first_seen_at=now,
-        last_seen_at=now,
-        count=failures,
-        data={
-            "consecutive_failures": failures,
-            "most_recent_outcome": most_recent_outcome,
-            "last_error": last_err,
-        },
-    )]
+    return [
+        Diagnostic(
+            kind="repeated_failures",
+            severity=severity,
+            title=title,
+            detail=detail,
+            actions=actions,
+            first_seen_at=now,
+            last_seen_at=now,
+            count=failures,
+            data={
+                "consecutive_failures": failures,
+                "most_recent_outcome": most_recent_outcome,
+                "last_error": last_err,
+            },
+        )
+    ]
 
 
 def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
@@ -445,13 +473,13 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
     before the unified rule kicks in. Suppresses itself when the
     unified rule is also about to fire, to avoid double-flagging.
     """
-    failure_threshold = int(cfg.get(
-        "failure_threshold",
-        cfg.get("spawn_failure_threshold", 3),
-    ))
-    unified_counter = (
-        _task_field(task, "consecutive_failures", 0) or 0
+    failure_threshold = int(
+        cfg.get(
+            "failure_threshold",
+            cfg.get("spawn_failure_threshold", 3),
+        )
     )
+    unified_counter = _task_field(task, "consecutive_failures", 0) or 0
     # Unified rule will catch this — let it handle to avoid double fire.
     if unified_counter >= failure_threshold:
         return []
@@ -480,12 +508,14 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
     task_id = _task_field(task, "id")
     actions: list[DiagnosticAction] = []
     if task_id:
-        actions.append(DiagnosticAction(
-            kind="cli_hint",
-            label=f"Check logs: hermes kanban log {task_id}",
-            payload={"command": f"hermes kanban log {task_id}"},
-            suggested=True,
-        ))
+        actions.append(
+            DiagnosticAction(
+                kind="cli_hint",
+                label=f"Check logs: hermes kanban log {task_id}",
+                payload={"command": f"hermes kanban log {task_id}"},
+                suggested=True,
+            )
+        )
     running = _task_field(task, "status") == "running"
     actions.extend(_generic_recovery_actions(task, running=running))
     severity = "critical" if consecutive >= threshold * 2 else "error"
@@ -493,7 +523,9 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
     # having to open the logs. Truncate defensively — these can be huge
     # (full tracebacks).
     err_text = (last_err or "").strip() if last_err else ""
-    err_snippet = err_text[:500] + ("…" if len(err_text) > 500 else "") if err_text else ""
+    err_snippet = (
+        err_text[:500] + ("…" if len(err_text) > 500 else "") if err_text else ""
+    )
     if err_snippet:
         title = f"Agent crashed {consecutive}x: {err_snippet.splitlines()[0][:160]}"
         detail = (
@@ -506,17 +538,19 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
             f"The last {consecutive} runs ended with outcome=crashed but "
             f"no error text was captured. Check the worker log for more."
         )
-    return [Diagnostic(
-        kind="repeated_crashes",
-        severity=severity,
-        title=title,
-        detail=detail,
-        actions=actions,
-        first_seen_at=now,
-        last_seen_at=now,
-        count=consecutive,
-        data={"consecutive_crashes": consecutive, "last_error": last_err},
-    )]
+    return [
+        Diagnostic(
+            kind="repeated_crashes",
+            severity=severity,
+            title=title,
+            detail=detail,
+            actions=actions,
+            first_seen_at=now,
+            last_seen_at=now,
+            count=consecutive,
+            data={"consecutive_crashes": consecutive, "last_error": last_err},
+        )
+    ]
 
 
 def _rule_stuck_in_blocked(task, events, runs, now, cfg) -> list[Diagnostic]:
@@ -543,7 +577,10 @@ def _rule_stuck_in_blocked(task, events, runs, now, cfg) -> list[Diagnostic]:
         return []
     # Any comment / unblock after the block breaks the "stale" signal.
     for ev in events:
-        if _event_kind(ev) in ("commented", "unblocked") and _event_ts(ev) > last_blocked_ts:
+        if (
+            _event_kind(ev) in ("commented", "unblocked")
+            and _event_ts(ev) > last_blocked_ts
+        ):
             return []
     actions: list[DiagnosticAction] = [
         DiagnosticAction(
@@ -552,22 +589,24 @@ def _rule_stuck_in_blocked(task, events, runs, now, cfg) -> list[Diagnostic]:
             suggested=True,
         ),
     ]
-    return [Diagnostic(
-        kind="stuck_in_blocked",
-        severity="warning",
-        title=f"Task has been blocked for {int(age_hours)}h",
-        detail=(
-            f"This task transitioned to blocked {int(age_hours)}h ago and "
-            f"has had no comments or unblock attempts since. Blocked tasks "
-            f"are waiting for human input — check the block reason and "
-            f"either unblock with feedback or answer with a comment."
-        ),
-        actions=actions,
-        first_seen_at=last_blocked_ts,
-        last_seen_at=last_blocked_ts,
-        count=1,
-        data={"blocked_at": last_blocked_ts, "age_hours": round(age_hours, 1)},
-    )]
+    return [
+        Diagnostic(
+            kind="stuck_in_blocked",
+            severity="warning",
+            title=f"Task has been blocked for {int(age_hours)}h",
+            detail=(
+                f"This task transitioned to blocked {int(age_hours)}h ago and "
+                f"has had no comments or unblock attempts since. Blocked tasks "
+                f"are waiting for human input — check the block reason and "
+                f"either unblock with feedback or answer with a comment."
+            ),
+            actions=actions,
+            first_seen_at=last_blocked_ts,
+            last_seen_at=last_blocked_ts,
+            count=1,
+            data={"blocked_at": last_blocked_ts, "age_hours": round(age_hours, 1)},
+        )
+    ]
 
 
 # Registry — order matters: rules higher on the list render first when

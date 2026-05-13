@@ -23,6 +23,7 @@ from gateway.config import Platform, PlatformConfig
 # Telegram
 # ---------------------------------------------------------------------------
 
+
 def _make_telegram_adapter(*, allowed_chats=None, require_mention=None):
     from gateway.platforms.telegram import TelegramAdapter
 
@@ -93,7 +94,8 @@ class TestTelegramAllowedChats:
 
     def test_permits_whitelisted_group(self):
         adapter = _make_telegram_adapter(
-            allowed_chats=["-100"], require_mention=False,
+            allowed_chats=["-100"],
+            require_mention=False,
         )
         assert adapter._should_process_message(_tg_group_message(-100)) is True
 
@@ -101,9 +103,13 @@ class TestTelegramAllowedChats:
         """@mention in a non-allowed chat is still ignored."""
         adapter = _make_telegram_adapter(allowed_chats=["-100"])
         msg = _tg_group_message(-999, text="@hermes_bot hello")
-        msg.entities = [SimpleNamespace(
-            type="mention", offset=0, length=len("@hermes_bot"),
-        )]
+        msg.entities = [
+            SimpleNamespace(
+                type="mention",
+                offset=0,
+                length=len("@hermes_bot"),
+            )
+        ]
         assert adapter._should_process_message(msg) is False
 
     def test_dms_unaffected(self):
@@ -118,10 +124,7 @@ class TestTelegramAllowedChats:
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text(
-            "telegram:\n"
-            "  allowed_chats:\n"
-            "    - -100\n"
-            "    - -200\n",
+            "telegram:\n  allowed_chats:\n    - -100\n    - -200\n",
             encoding="utf-8",
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -131,6 +134,7 @@ class TestTelegramAllowedChats:
         load_gateway_config()
 
         import os as _os
+
         assert _os.environ["TELEGRAM_ALLOWED_CHATS"] == "-100,-200"
 
     def test_config_bridge_env_takes_precedence(self, monkeypatch, tmp_path):
@@ -139,8 +143,7 @@ class TestTelegramAllowedChats:
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text(
-            "telegram:\n"
-            "  allowed_chats: -100\n",
+            "telegram:\n  allowed_chats: -100\n",
             encoding="utf-8",
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -149,6 +152,7 @@ class TestTelegramAllowedChats:
         load_gateway_config()
 
         import os as _os
+
         assert _os.environ["TELEGRAM_ALLOWED_CHATS"] == "-999"
 
 
@@ -156,9 +160,12 @@ class TestTelegramAllowedChats:
 # DingTalk
 # ---------------------------------------------------------------------------
 
+
 def _make_dingtalk_adapter(*, allowed_chats=None, require_mention=None):
     # Import lazily — DingTalk SDK may not be installed.
-    pytest.importorskip("gateway.platforms.dingtalk", reason="DingTalk adapter not importable")
+    pytest.importorskip(
+        "gateway.platforms.dingtalk", reason="DingTalk adapter not importable"
+    )
     from gateway.platforms.dingtalk import DingTalkAdapter
 
     extra = {}
@@ -194,16 +201,28 @@ class TestDingTalkAllowedChats:
 
     def test_blocks_non_whitelisted_group(self):
         adapter = _make_dingtalk_adapter(allowed_chats=["cidABC"])
-        assert adapter._should_process_message(
-            message=None, text="hello", is_group=True, chat_id="cidXYZ",
-        ) is False
+        assert (
+            adapter._should_process_message(
+                message=None,
+                text="hello",
+                is_group=True,
+                chat_id="cidXYZ",
+            )
+            is False
+        )
 
     def test_dm_unaffected(self):
         """DMs (is_group=False) bypass the whitelist."""
         adapter = _make_dingtalk_adapter(allowed_chats=["cidABC"])
-        assert adapter._should_process_message(
-            message=None, text="hello", is_group=False, chat_id="cidXYZ",
-        ) is True
+        assert (
+            adapter._should_process_message(
+                message=None,
+                text="hello",
+                is_group=False,
+                chat_id="cidXYZ",
+            )
+            is True
+        )
 
     def test_config_bridge(self, monkeypatch, tmp_path):
         from gateway.config import load_gateway_config
@@ -211,10 +230,7 @@ class TestDingTalkAllowedChats:
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text(
-            "dingtalk:\n"
-            "  allowed_chats:\n"
-            "    - cidABC\n"
-            "    - cidDEF\n",
+            "dingtalk:\n  allowed_chats:\n    - cidABC\n    - cidDEF\n",
             encoding="utf-8",
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -224,12 +240,14 @@ class TestDingTalkAllowedChats:
         load_gateway_config()
 
         import os as _os
+
         assert _os.environ["DINGTALK_ALLOWED_CHATS"] == "cidABC,cidDEF"
 
 
 # ---------------------------------------------------------------------------
 # Mattermost (env-var only — no config.yaml bridge)
 # ---------------------------------------------------------------------------
+
 
 class TestMattermostAllowedChannels:
     """Mattermost whitelist logic — replicated since the adapter reads config
@@ -240,6 +258,7 @@ class TestMattermostAllowedChannels:
     def _would_process(channel_id, channel_type="O", allowed_cfg=None, allowed_env=""):
         """Replicate the whitelist gate from gateway/platforms/mattermost.py."""
         import os as _os
+
         if channel_type == "D":
             return True
         # config-first, env-var fallback (matching the adapter)
@@ -258,24 +277,42 @@ class TestMattermostAllowedChannels:
         assert self._would_process("chan123", allowed_cfg=None, allowed_env="") is True
 
     def test_config_list_blocks_non_whitelisted_channel(self):
-        assert self._would_process(
-            "chanXYZ", allowed_cfg=["chanABC", "chanDEF"],
-        ) is False
+        assert (
+            self._would_process(
+                "chanXYZ",
+                allowed_cfg=["chanABC", "chanDEF"],
+            )
+            is False
+        )
 
     def test_config_list_permits_whitelisted_channel(self):
-        assert self._would_process(
-            "chanABC", allowed_cfg=["chanABC", "chanDEF"],
-        ) is True
+        assert (
+            self._would_process(
+                "chanABC",
+                allowed_cfg=["chanABC", "chanDEF"],
+            )
+            is True
+        )
 
     def test_env_var_fallback_when_no_config(self):
-        assert self._would_process(
-            "chanXYZ", allowed_cfg=None, allowed_env="chanABC,chanDEF",
-        ) is False
+        assert (
+            self._would_process(
+                "chanXYZ",
+                allowed_cfg=None,
+                allowed_env="chanABC,chanDEF",
+            )
+            is False
+        )
 
     def test_dm_unaffected(self):
-        assert self._would_process(
-            "chanXYZ", channel_type="D", allowed_cfg=["chanABC"],
-        ) is True
+        assert (
+            self._would_process(
+                "chanXYZ",
+                channel_type="D",
+                allowed_cfg=["chanABC"],
+            )
+            is True
+        )
 
     def test_config_bridge(self, monkeypatch, tmp_path):
         from gateway.config import load_gateway_config
@@ -283,10 +320,7 @@ class TestMattermostAllowedChannels:
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text(
-            "mattermost:\n"
-            "  allowed_channels:\n"
-            "    - chanABC\n"
-            "    - chanDEF\n",
+            "mattermost:\n  allowed_channels:\n    - chanABC\n    - chanDEF\n",
             encoding="utf-8",
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -300,12 +334,14 @@ class TestMattermostAllowedChannels:
         load_gateway_config()
 
         import os as _os
+
         assert _os.environ["MATTERMOST_ALLOWED_CHANNELS"] == "chanABC,chanDEF"
 
 
 # ---------------------------------------------------------------------------
 # Matrix
 # ---------------------------------------------------------------------------
+
 
 class TestMatrixAllowedRooms:
     """Matrix whitelist behavior — tested via the env-var-initialized
@@ -321,6 +357,7 @@ class TestMatrixAllowedRooms:
     def test_env_var_parsed_to_set(self, monkeypatch):
         monkeypatch.setenv("MATRIX_ALLOWED_ROOMS", "!room1:srv,!room2:srv")
         import os as _os
+
         raw = _os.environ["MATRIX_ALLOWED_ROOMS"]
         allowed = {r.strip() for r in raw.split(",") if r.strip()}
         assert allowed == {"!room1:srv", "!room2:srv"}
@@ -348,10 +385,7 @@ class TestMatrixAllowedRooms:
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text(
-            "matrix:\n"
-            "  allowed_rooms:\n"
-            "    - '!room1:srv'\n"
-            "    - '!room2:srv'\n",
+            "matrix:\n  allowed_rooms:\n    - '!room1:srv'\n    - '!room2:srv'\n",
             encoding="utf-8",
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -361,4 +395,5 @@ class TestMatrixAllowedRooms:
         load_gateway_config()
 
         import os as _os
+
         assert _os.environ["MATRIX_ALLOWED_ROOMS"] == "!room1:srv,!room2:srv"

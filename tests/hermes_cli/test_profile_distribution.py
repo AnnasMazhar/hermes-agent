@@ -49,7 +49,9 @@ def profile_env(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _make_staging_dir(root: Path, name: str = "src", *, manifest: DistributionManifest = None) -> Path:
+def _make_staging_dir(
+    root: Path, name: str = "src", *, manifest: DistributionManifest = None
+) -> Path:
     """Build a local distribution staging directory (what a git clone would
     contain after .git is removed).
 
@@ -80,7 +82,6 @@ def _make_staging_dir(root: Path, name: str = "src", *, manifest: DistributionMa
 
 
 class TestManifestParsing:
-
     def test_minimal_manifest(self, tmp_path):
         (tmp_path / MANIFEST_FILENAME).write_text("name: minimal\n")
         m = read_manifest(tmp_path)
@@ -161,22 +162,24 @@ class TestManifestParsing:
 
 
 class TestVersionRequires:
-
-    @pytest.mark.parametrize("spec,cur,ok", [
-        ("", "0.1.0", True),
-        (">=0.12.0", "0.12.0", True),
-        (">=0.12.0", "0.13.0", True),
-        (">=0.12.0", "0.11.9", False),
-        ("==0.12.0", "0.12.0", True),
-        ("==0.12.0", "0.13.0", False),
-        ("!=0.12.0", "0.13.0", True),
-        (">0.12.0", "0.12.1", True),
-        (">0.12.0", "0.12.0", False),
-        ("<0.13.0", "0.12.9", True),
-        ("<=0.12.0", "0.12.0", True),
-        ("0.12.0", "0.13.0", True),     # Bare = >=
-        ("0.12.0", "0.11.0", False),    # Bare = >=
-    ])
+    @pytest.mark.parametrize(
+        "spec,cur,ok",
+        [
+            ("", "0.1.0", True),
+            (">=0.12.0", "0.12.0", True),
+            (">=0.12.0", "0.13.0", True),
+            (">=0.12.0", "0.11.9", False),
+            ("==0.12.0", "0.12.0", True),
+            ("==0.12.0", "0.13.0", False),
+            ("!=0.12.0", "0.13.0", True),
+            (">0.12.0", "0.12.1", True),
+            (">0.12.0", "0.12.0", False),
+            ("<0.13.0", "0.12.9", True),
+            ("<=0.12.0", "0.12.0", True),
+            ("0.12.0", "0.13.0", True),  # Bare = >=
+            ("0.12.0", "0.11.0", False),  # Bare = >=
+        ],
+    )
     def test_check_matrix(self, spec, cur, ok):
         if ok:
             check_hermes_requires(spec, cur)
@@ -203,7 +206,6 @@ class TestVersionRequires:
 
 
 class TestEnvTemplate:
-
     def test_required_is_uncommented(self):
         m = DistributionManifest(
             name="x",
@@ -214,12 +216,19 @@ class TestEnvTemplate:
         assert "# (required)" in out
         assert "FOO=" in out
         # No leading `# ` before FOO=
-        assert "\nFOO=" in out or out.startswith("FOO=") or "\nFOO=\n" in out or "FOO=\n" in out
+        assert (
+            "\nFOO=" in out
+            or out.startswith("FOO=")
+            or "\nFOO=\n" in out
+            or "FOO=\n" in out
+        )
 
     def test_optional_is_commented(self):
         m = DistributionManifest(
             name="x",
-            env_requires=[EnvRequirement(name="BAR", required=False, default="http://x")],
+            env_requires=[
+                EnvRequirement(name="BAR", required=False, default="http://x")
+            ],
         )
         out = _env_template_from_manifest(m)
         assert "# (optional)" in out
@@ -238,25 +247,30 @@ class TestEnvTemplate:
 
 
 class TestLooksLikeGitUrl:
-
-    @pytest.mark.parametrize("src", [
-        "github.com/user/repo",
-        "https://github.com/user/repo",
-        "https://github.com/user/repo.git",
-        "http://example.com/repo",
-        "git@github.com:user/repo.git",
-        "ssh://git@example.com/repo.git",
-        "git://example.com/repo.git",
-    ])
+    @pytest.mark.parametrize(
+        "src",
+        [
+            "github.com/user/repo",
+            "https://github.com/user/repo",
+            "https://github.com/user/repo.git",
+            "http://example.com/repo",
+            "git@github.com:user/repo.git",
+            "ssh://git@example.com/repo.git",
+            "git://example.com/repo.git",
+        ],
+    )
     def test_accepts_git_sources(self, src):
         assert _looks_like_git_url(src)
 
-    @pytest.mark.parametrize("src", [
-        "/tmp/local/path",
-        "./relative/dir",
-        "~/profile",
-        "some-random-string",
-    ])
+    @pytest.mark.parametrize(
+        "src",
+        [
+            "/tmp/local/path",
+            "./relative/dir",
+            "~/profile",
+            "some-random-string",
+        ],
+    )
     def test_rejects_non_git(self, src):
         assert not _looks_like_git_url(src)
 
@@ -267,7 +281,6 @@ class TestLooksLikeGitUrl:
 
 
 class TestInstall:
-
     def test_install_from_directory(self, profile_env):
         staged = _make_staging_dir(profile_env, "src")
         plan = install_distribution(str(staged), name="installed")
@@ -331,6 +344,7 @@ class TestInstall:
     def test_install_enforces_hermes_requires(self, profile_env, monkeypatch):
         # Pin current Hermes version to something well below the requirement
         import hermes_cli
+
         monkeypatch.setattr(hermes_cli, "__version__", "0.1.0", raising=False)
 
         mf = DistributionManifest(
@@ -349,7 +363,6 @@ class TestInstall:
 
 
 class TestUpdate:
-
     def test_update_preserves_user_data(self, profile_env):
         # 1. Build staging dir, install
         staged = _make_staging_dir(profile_env, "src")
@@ -372,7 +385,9 @@ class TestUpdate:
         # 5. Dist-owned changed
         assert (plan.target_dir / "SOUL.md").read_text() == "I am Source v2.\n"
         # 6. User-owned preserved
-        assert (plan.target_dir / "memories" / "MEMORY.md").read_text() == "# USER MEMORY\n"
+        assert (
+            plan.target_dir / "memories" / "MEMORY.md"
+        ).read_text() == "# USER MEMORY\n"
         assert (plan.target_dir / ".env").read_text() == "OPENAI_API_KEY=sk-user\n"
         assert (plan.target_dir / "auth.json").read_text() == '{"user": "auth"}'
         assert (plan.target_dir / "sessions" / "chat.json").read_text() == '{"s": 1}'
@@ -408,6 +423,7 @@ class TestUpdate:
     def test_update_missing_manifest_errors(self, profile_env):
         # Make a profile without a manifest; update must refuse
         from hermes_cli.profiles import create_profile
+
         create_profile(name="plain", no_alias=True)
         with pytest.raises(DistributionError, match="not a distribution"):
             update_distribution("plain")
@@ -419,7 +435,6 @@ class TestUpdate:
 
 
 class TestDescribe:
-
     def test_describe_existing_distribution(self, profile_env):
         mf = DistributionManifest(
             name="telem",
@@ -436,6 +451,7 @@ class TestDescribe:
 
     def test_describe_non_distribution_returns_empty(self, profile_env):
         from hermes_cli.profiles import create_profile
+
         create_profile(name="plain", no_alias=True)
         assert describe_distribution("plain") == {}
 
@@ -450,7 +466,6 @@ class TestDescribe:
 
 
 class TestSecurity:
-
     def test_user_owned_exclude_covers_credentials(self):
         assert "auth.json" in USER_OWNED_EXCLUDE
         assert ".env" in USER_OWNED_EXCLUDE
@@ -480,7 +495,6 @@ class TestSecurity:
 
 
 class TestInstalledAtStamp:
-
     def test_install_stamps_installed_at(self, profile_env):
         staged = _make_staging_dir(profile_env, "src")
         plan = install_distribution(str(staged), name="stamped")
@@ -495,21 +509,25 @@ class TestInstalledAtStamp:
         staged = _make_staging_dir(profile_env, "src")
         install_distribution(str(staged), name="demo")
         from hermes_cli.profiles import get_profile_dir
+
         first = read_manifest(get_profile_dir("demo")).installed_at
 
         # Freeze `datetime.now()` to a fixed future time so we can observe that
         # update writes a NEW stamp (installs within the same second otherwise
         # collide at iso-8601 seconds resolution).
         import datetime as _dt
+
         class _FakeDT(_dt.datetime):
             @classmethod
             def now(cls, tz=None):
                 return _dt.datetime(2099, 1, 1, 0, 0, 0, tzinfo=tz or _dt.timezone.utc)
+
         monkeypatch.setattr(
             "hermes_cli.profile_distribution.datetime", _FakeDT, raising=True
         )
 
         from hermes_cli.profile_distribution import update_distribution
+
         update_distribution("demo")
         refreshed = read_manifest(get_profile_dir("demo")).installed_at
         assert refreshed != first, "installed_at should change on update"
@@ -522,15 +540,16 @@ class TestInstalledAtStamp:
 
 
 class TestProfileInfoDistribution:
-
     def test_installed_distribution_shows_in_list(self, profile_env):
         staged = _make_staging_dir(
-            profile_env, "src",
+            profile_env,
+            "src",
             manifest=DistributionManifest(name="telem", version="1.2.3"),
         )
         install_distribution(str(staged), name="telem")
 
         from hermes_cli.profiles import list_profiles
+
         rows = {p.name: p for p in list_profiles()}
         assert "telem" in rows
         row = rows["telem"]
@@ -540,6 +559,7 @@ class TestProfileInfoDistribution:
 
     def test_plain_profile_has_no_distribution_fields(self, profile_env):
         from hermes_cli.profiles import create_profile, list_profiles
+
         create_profile(name="plain", no_alias=True)
         rows = {p.name: p for p in list_profiles()}
         assert rows["plain"].distribution_name is None
@@ -547,6 +567,7 @@ class TestProfileInfoDistribution:
 
     def test_malformed_manifest_does_not_break_list(self, profile_env):
         from hermes_cli.profiles import create_profile, list_profiles, get_profile_dir
+
         create_profile(name="brokenmeta", no_alias=True)
         # Write a distribution.yaml that isn't a valid mapping
         (get_profile_dir("brokenmeta") / "distribution.yaml").write_text(
@@ -564,8 +585,9 @@ class TestProfileInfoDistribution:
 
 
 class TestErrorSurfaces:
-
-    def test_bad_profile_name_raises_valueerror_not_traceback(self, profile_env, tmp_path):
+    def test_bad_profile_name_raises_valueerror_not_traceback(
+        self, profile_env, tmp_path
+    ):
         """A manifest whose 'name' can't be used as a profile identifier
         should raise ValueError from validate_profile_name — the CLI handler
         catches both DistributionError and ValueError so users see a clean
@@ -581,4 +603,3 @@ class TestErrorSurfaces:
         staged = _make_staging_dir(profile_env, "bad", manifest=mf)
         with pytest.raises((ValueError, DistributionError)):
             plan_install(str(staged), tmp_path / "work")
-

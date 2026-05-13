@@ -23,10 +23,13 @@ def test_matrix_extra_linux_only_in_all():
     assert "hermes-agent[matrix]" not in optional_dependencies["all"]
     # Must be present with a Linux platform marker.
     linux_gated = [
-        dep for dep in optional_dependencies["all"]
+        dep
+        for dep in optional_dependencies["all"]
         if "matrix" in dep and "linux" in dep
     ]
-    assert linux_gated, "expected hermes-agent[matrix] with sys_platform=='linux' marker in [all]"
+    assert linux_gated, (
+        "expected hermes-agent[matrix] with sys_platform=='linux' marker in [all]"
+    )
 
 
 def test_messaging_extra_includes_qrcode_for_weixin_setup():

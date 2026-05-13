@@ -47,7 +47,9 @@ class TestParseJudgeResponse:
     def test_clean_json_continue(self):
         from hermes_cli.goals import _parse_judge_response
 
-        done, reason, _ = _parse_judge_response('{"done": false, "reason": "more work needed"}')
+        done, reason, _ = _parse_judge_response(
+            '{"done": false, "reason": "more work needed"}'
+        )
         assert done is False
         assert reason == "more work needed"
 
@@ -276,7 +278,9 @@ class TestGoalManager:
         mgr = GoalManager(session_id="eval-sid-2", default_max_turns=5)
         mgr.set("a long goal")
 
-        with patch.object(goals, "judge_goal", return_value=("continue", "more work", False)):
+        with patch.object(
+            goals, "judge_goal", return_value=("continue", "more work", False)
+        ):
             decision = mgr.evaluate_after_turn("made some progress")
 
         assert decision["verdict"] == "continue"
@@ -294,7 +298,9 @@ class TestGoalManager:
         mgr = GoalManager(session_id="eval-sid-3", default_max_turns=2)
         mgr.set("hard goal")
 
-        with patch.object(goals, "judge_goal", return_value=("continue", "not yet", False)):
+        with patch.object(
+            goals, "judge_goal", return_value=("continue", "not yet", False)
+        ):
             d1 = mgr.evaluate_after_turn("step 1")
             assert d1["should_continue"] is True
             assert mgr.state.turns_used == 1
@@ -400,7 +406,9 @@ class TestJudgeParseFailureAutoPause:
         from hermes_cli import goals
 
         fake_client = MagicMock()
-        fake_client.chat.completions.create.side_effect = RuntimeError("connection reset")
+        fake_client.chat.completions.create.side_effect = RuntimeError(
+            "connection reset"
+        )
         with patch(
             "agent.auxiliary_client.get_text_auxiliary_client",
             return_value=(fake_client, "judge-model"),
@@ -435,7 +443,9 @@ class TestJudgeParseFailureAutoPause:
         mgr.set("do a thing")
 
         with patch.object(
-            goals, "judge_goal", return_value=("continue", "judge returned empty response", True)
+            goals,
+            "judge_goal",
+            return_value=("continue", "judge returned empty response", True),
         ):
             d1 = mgr.evaluate_after_turn("step 1")
             assert d1["should_continue"] is True
@@ -487,7 +497,9 @@ class TestJudgeParseFailureAutoPause:
         mgr.set("goal")
 
         with patch.object(
-            goals, "judge_goal", return_value=("continue", "judge error: RuntimeError", False)
+            goals,
+            "judge_goal",
+            return_value=("continue", "judge error: RuntimeError", False),
         ):
             for _ in range(5):
                 d = mgr.evaluate_after_turn("still going")

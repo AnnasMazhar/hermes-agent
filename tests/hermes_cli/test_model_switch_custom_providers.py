@@ -75,9 +75,13 @@ def test_switch_model_accepts_explicit_named_custom_provider(monkeypatch):
             "api_mode": "chat_completions",
         },
     )
-    monkeypatch.setattr("hermes_cli.models.validate_requested_model", lambda *a, **k: _MOCK_VALIDATION)
+    monkeypatch.setattr(
+        "hermes_cli.models.validate_requested_model", lambda *a, **k: _MOCK_VALIDATION
+    )
     monkeypatch.setattr("hermes_cli.model_switch.get_model_info", lambda *a, **k: None)
-    monkeypatch.setattr("hermes_cli.model_switch.get_model_capabilities", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "hermes_cli.model_switch.get_model_capabilities", lambda *a, **k: None
+    )
 
     result = switch_model(
         raw_input="rotator-openrouter-coding",
@@ -114,11 +118,31 @@ def test_list_groups_same_name_custom_providers_into_one_row(monkeypatch):
         current_provider="openrouter",
         user_providers={},
         custom_providers=[
-            {"name": "Ollama Cloud", "base_url": "https://ollama.com/v1", "model": "qwen3-coder:480b-cloud"},
-            {"name": "Ollama Cloud", "base_url": "https://ollama.com/v1", "model": "glm-5.1:cloud"},
-            {"name": "Ollama Cloud", "base_url": "https://ollama.com/v1", "model": "kimi-k2.5"},
-            {"name": "Ollama Cloud", "base_url": "https://ollama.com/v1", "model": "minimax-m2.7:cloud"},
-            {"name": "Moonshot", "base_url": "https://api.moonshot.ai/v1", "model": "kimi-k2-thinking"},
+            {
+                "name": "Ollama Cloud",
+                "base_url": "https://ollama.com/v1",
+                "model": "qwen3-coder:480b-cloud",
+            },
+            {
+                "name": "Ollama Cloud",
+                "base_url": "https://ollama.com/v1",
+                "model": "glm-5.1:cloud",
+            },
+            {
+                "name": "Ollama Cloud",
+                "base_url": "https://ollama.com/v1",
+                "model": "kimi-k2.5",
+            },
+            {
+                "name": "Ollama Cloud",
+                "base_url": "https://ollama.com/v1",
+                "model": "minimax-m2.7:cloud",
+            },
+            {
+                "name": "Moonshot",
+                "base_url": "https://api.moonshot.ai/v1",
+                "model": "kimi-k2-thinking",
+            },
         ],
         max_models=50,
     )
@@ -126,7 +150,10 @@ def test_list_groups_same_name_custom_providers_into_one_row(monkeypatch):
     ollama_rows = [p for p in providers if p["name"] == "Ollama Cloud"]
     assert len(ollama_rows) == 1, f"Expected 1 Ollama Cloud row, got {len(ollama_rows)}"
     assert ollama_rows[0]["models"] == [
-        "qwen3-coder:480b-cloud", "glm-5.1:cloud", "kimi-k2.5", "minimax-m2.7:cloud"
+        "qwen3-coder:480b-cloud",
+        "glm-5.1:cloud",
+        "kimi-k2.5",
+        "minimax-m2.7:cloud",
     ]
     assert ollama_rows[0]["total_models"] == 4
 
@@ -145,9 +172,21 @@ def test_list_deduplicates_same_model_in_group(monkeypatch):
         current_provider="openrouter",
         user_providers={},
         custom_providers=[
-            {"name": "MyProvider", "base_url": "http://localhost:11434/v1", "model": "llama3"},
-            {"name": "MyProvider", "base_url": "http://localhost:11434/v1", "model": "llama3"},
-            {"name": "MyProvider", "base_url": "http://localhost:11434/v1", "model": "mistral"},
+            {
+                "name": "MyProvider",
+                "base_url": "http://localhost:11434/v1",
+                "model": "llama3",
+            },
+            {
+                "name": "MyProvider",
+                "base_url": "http://localhost:11434/v1",
+                "model": "llama3",
+            },
+            {
+                "name": "MyProvider",
+                "base_url": "http://localhost:11434/v1",
+                "model": "mistral",
+            },
         ],
         max_models=50,
     )
@@ -255,10 +294,10 @@ def test_list_dedupes_dict_model_matching_singular_default(monkeypatch):
     assert ds_rows[0]["models"] == ["deepseek-chat", "deepseek-reasoner"]
 
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # #9210: group custom_providers by (base_url, api_key) in /model picker
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_list_authenticated_providers_groups_same_endpoint(monkeypatch):
     """Multiple custom_providers entries sharing a base_url+api_key must be
@@ -271,12 +310,24 @@ def test_list_authenticated_providers_groups_same_endpoint(monkeypatch):
         current_base_url="http://localhost:11434/v1",
         user_providers={},
         custom_providers=[
-            {"name": "Ollama — MiniMax M2.7", "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "minimax-m2.7"},
-            {"name": "Ollama — GLM 5.1",      "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "glm-5.1"},
-            {"name": "Ollama — Qwen3-coder", "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "qwen3-coder"},
+            {
+                "name": "Ollama — MiniMax M2.7",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "minimax-m2.7",
+            },
+            {
+                "name": "Ollama — GLM 5.1",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "glm-5.1",
+            },
+            {
+                "name": "Ollama — Qwen3-coder",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "qwen3-coder",
+            },
         ],
         max_models=50,
     )
@@ -306,8 +357,12 @@ def test_list_authenticated_providers_current_endpoint_uses_current_slug(monkeyp
         current_base_url="http://localhost:11434/v1",
         user_providers={},
         custom_providers=[
-            {"name": "Ollama — GLM 5.1", "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "glm-5.1"},
+            {
+                "name": "Ollama — GLM 5.1",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "glm-5.1",
+            },
         ],
         max_models=50,
     )
@@ -332,8 +387,12 @@ def test_list_authenticated_providers_bare_custom_slug_recovers(monkeypatch):
         current_base_url="http://localhost:11434/v1",
         user_providers={},
         custom_providers=[
-            {"name": "Ollama — GLM 5.1", "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "glm-5.1"},
+            {
+                "name": "Ollama — GLM 5.1",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "glm-5.1",
+            },
         ],
         max_models=50,
     )
@@ -354,12 +413,24 @@ def test_list_authenticated_providers_distinct_endpoints_stay_separate(monkeypat
     providers = list_authenticated_providers(
         user_providers={},
         custom_providers=[
-            {"name": "Ollama — GLM 5.1", "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "glm-5.1"},
-            {"name": "Moonshot", "base_url": "https://api.moonshot.cn/v1",
-             "api_key": "sk-m", "model": "moonshot-v1"},
-            {"name": "Ollama — Qwen3-coder", "base_url": "http://localhost:11434/v1",
-             "api_key": "ollama", "model": "qwen3-coder"},
+            {
+                "name": "Ollama — GLM 5.1",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "glm-5.1",
+            },
+            {
+                "name": "Moonshot",
+                "base_url": "https://api.moonshot.cn/v1",
+                "api_key": "sk-m",
+                "model": "moonshot-v1",
+            },
+            {
+                "name": "Ollama — Qwen3-coder",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": "ollama",
+                "model": "qwen3-coder",
+            },
         ],
         max_models=50,
     )
@@ -373,7 +444,9 @@ def test_list_authenticated_providers_distinct_endpoints_stay_separate(monkeypat
     assert moonshot["models"] == ["moonshot-v1"]
 
 
-def test_list_authenticated_providers_same_url_different_keys_disambiguated(monkeypatch):
+def test_list_authenticated_providers_same_url_different_keys_disambiguated(
+    monkeypatch,
+):
     """Two custom_providers entries with the same base_url but different
     api_keys (and identical cleaned names) must both stay visible in the
     picker — slug is suffixed to disambiguate."""
@@ -383,10 +456,18 @@ def test_list_authenticated_providers_same_url_different_keys_disambiguated(monk
     providers = list_authenticated_providers(
         user_providers={},
         custom_providers=[
-            {"name": "OpenAI — key A", "base_url": "https://api.openai.com/v1",
-             "api_key": "sk-AAA", "model": "gpt-5.4"},
-            {"name": "OpenAI — key B", "base_url": "https://api.openai.com/v1",
-             "api_key": "sk-BBB", "model": "gpt-4.6"},
+            {
+                "name": "OpenAI — key A",
+                "base_url": "https://api.openai.com/v1",
+                "api_key": "sk-AAA",
+                "model": "gpt-5.4",
+            },
+            {
+                "name": "OpenAI — key B",
+                "base_url": "https://api.openai.com/v1",
+                "api_key": "sk-BBB",
+                "model": "gpt-4.6",
+            },
         ],
         max_models=50,
     )
@@ -409,8 +490,12 @@ def test_list_authenticated_providers_total_models_reflects_grouped_count(monkey
     monkeypatch.setattr(providers_mod, "HERMES_OVERLAYS", {})
 
     entries = [
-        {"name": f"Ollama \u2014 Model {i}", "base_url": "http://localhost:11434/v1",
-         "api_key": "ollama", "model": f"model-{i}"}
+        {
+            "name": f"Ollama \u2014 Model {i}",
+            "base_url": "http://localhost:11434/v1",
+            "api_key": "ollama",
+            "model": f"model-{i}",
+        }
         for i in range(6)
     ]
     providers = list_authenticated_providers(
@@ -549,11 +634,7 @@ def test_custom_providers_uses_live_models_for_multi_model_endpoint(monkeypatch)
     )
 
     gateway_prov = next(
-        (
-            p
-            for p in providers
-            if p.get("api_url") == "https://gateway.example.com/v1"
-        ),
+        (p for p in providers if p.get("api_url") == "https://gateway.example.com/v1"),
         None,
     )
 

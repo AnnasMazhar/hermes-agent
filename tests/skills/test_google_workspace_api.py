@@ -140,7 +140,11 @@ def test_api_calendar_list_uses_events_list(api_module):
         return MagicMock(returncode=0, stdout="{}", stderr="")
 
     args = api_module.argparse.Namespace(
-        start="", end="", max=25, calendar="primary", func=api_module.calendar_list,
+        start="",
+        end="",
+        max=25,
+        calendar="primary",
+        func=api_module.calendar_list,
     )
 
     with patch.object(api_module.subprocess, "run", side_effect=capture_run):
@@ -185,7 +189,9 @@ def test_api_calendar_list_respects_date_range(api_module):
     assert params["timeMax"] == "2026-04-07T23:59:59Z"
 
 
-def test_api_get_credentials_refresh_persists_authorized_user_type(api_module, monkeypatch):
+def test_api_get_credentials_refresh_persists_authorized_user_type(
+    api_module, monkeypatch
+):
     token_path = api_module.TOKEN_PATH
     _write_token(token_path, token="ya29.old")
 

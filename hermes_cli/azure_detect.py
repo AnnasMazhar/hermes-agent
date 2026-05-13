@@ -79,7 +79,9 @@ class DetectionResult:
     is_anthropic: bool = False
 
 
-def _http_get_json(url: str, api_key: str, timeout: float = 6.0) -> tuple[int, Optional[dict]]:
+def _http_get_json(
+    url: str, api_key: str, timeout: float = 6.0
+) -> tuple[int, Optional[dict]]:
     """GET a URL with ``api-key`` + ``Authorization`` headers.  Return
     ``(status_code, parsed_json_or_None)``.  Never raises."""
     req = urllib_request.Request(url, method="GET")
@@ -162,7 +164,8 @@ def _probe_openai_models(base_url: str, api_key: str) -> tuple[bool, list[str]]:
             if ids:
                 logger.info(
                     "azure_detect: /models probe OK at %s (%d models)",
-                    url, len(ids),
+                    url,
+                    len(ids),
                 )
                 return True, ids
             # 200 + empty list still counts as "OpenAI shape, no models

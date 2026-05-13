@@ -25,7 +25,9 @@ from hermes_cli.auth import (
 )
 
 
-def _setup_hermes_auth(hermes_home: Path, *, access_token: str = "access", refresh_token: str = "refresh"):
+def _setup_hermes_auth(
+    hermes_home: Path, *, access_token: str = "access", refresh_token: str = "refresh"
+):
     """Write Codex tokens into the Hermes auth store."""
     hermes_home.mkdir(parents=True, exist_ok=True)
     auth_store = {
@@ -49,7 +51,11 @@ def _setup_hermes_auth(hermes_home: Path, *, access_token: str = "access", refre
 
 def _jwt_with_exp(exp_epoch: int) -> str:
     payload = {"exp": exp_epoch}
-    encoded = base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).rstrip(b"=").decode("utf-8")
+    encoded = (
+        base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8"))
+        .rstrip(b"=")
+        .decode("utf-8")
+    )
     return f"h.{encoded}.s"
 
 
@@ -86,10 +92,14 @@ def test_resolve_codex_runtime_credentials_missing_access_token(tmp_path, monkey
     assert exc.value.relogin_required is True
 
 
-def test_resolve_codex_runtime_credentials_refreshes_expiring_token(tmp_path, monkeypatch):
+def test_resolve_codex_runtime_credentials_refreshes_expiring_token(
+    tmp_path, monkeypatch
+):
     hermes_home = tmp_path / "hermes"
     expiring_token = _jwt_with_exp(int(time.time()) - 10)
-    _setup_hermes_auth(hermes_home, access_token=expiring_token, refresh_token="refresh-old")
+    _setup_hermes_auth(
+        hermes_home, access_token=expiring_token, refresh_token="refresh-old"
+    )
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
     called = {"count": 0}
@@ -108,7 +118,9 @@ def test_resolve_codex_runtime_credentials_refreshes_expiring_token(tmp_path, mo
 
 def test_resolve_codex_runtime_credentials_force_refresh(tmp_path, monkeypatch):
     hermes_home = tmp_path / "hermes"
-    _setup_hermes_auth(hermes_home, access_token="access-current", refresh_token="refresh-old")
+    _setup_hermes_auth(
+        hermes_home, access_token="access-current", refresh_token="refresh-old"
+    )
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
     called = {"count": 0}
@@ -119,7 +131,9 @@ def test_resolve_codex_runtime_credentials_force_refresh(tmp_path, monkeypatch):
 
     monkeypatch.setattr("hermes_cli.auth._refresh_codex_auth_tokens", _fake_refresh)
 
-    resolved = resolve_codex_runtime_credentials(force_refresh=True, refresh_if_expiring=False)
+    resolved = resolve_codex_runtime_credentials(
+        force_refresh=True, refresh_if_expiring=False
+    )
 
     assert called["count"] == 1
     assert resolved["api_key"] == "access-forced"
@@ -147,9 +161,11 @@ def test_save_codex_tokens_roundtrip(tmp_path, monkeypatch):
 def test_import_codex_cli_tokens(tmp_path, monkeypatch):
     codex_home = tmp_path / "codex-cli"
     codex_home.mkdir(parents=True, exist_ok=True)
-    (codex_home / "auth.json").write_text(json.dumps({
-        "tokens": {"access_token": "cli-at", "refresh_token": "cli-rt"},
-    }))
+    (codex_home / "auth.json").write_text(
+        json.dumps({
+            "tokens": {"access_token": "cli-at", "refresh_token": "cli-rt"},
+        })
+    )
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
 
     tokens = _import_codex_cli_tokens()
@@ -199,7 +215,9 @@ class _StubHTTPResponse:
     def __init__(self, status_code: int, payload):
         self.status_code = status_code
         self._payload = payload
-        self.text = json.dumps(payload) if isinstance(payload, (dict, list)) else str(payload)
+        self.text = (
+            json.dumps(payload) if isinstance(payload, (dict, list)) else str(payload)
+        )
 
     def json(self):
         if isinstance(self._payload, Exception):
@@ -341,13 +359,20 @@ def test_login_openai_codex_force_new_login_skips_existing_reuse_prompt(monkeypa
         called["last_refresh"] = last_refresh
 
     monkeypatch.setattr("hermes_cli.auth._save_codex_tokens", _fake_save)
-    monkeypatch.setattr("hermes_cli.auth._update_config_for_provider", lambda *args, **kwargs: "/tmp/config.yaml")
+    monkeypatch.setattr(
+        "hermes_cli.auth._update_config_for_provider",
+        lambda *args, **kwargs: "/tmp/config.yaml",
+    )
     monkeypatch.setattr(
         "builtins.input",
-        lambda prompt="": (_ for _ in ()).throw(AssertionError("force_new_login should not prompt for reuse/import")),
+        lambda prompt="": (_ for _ in ()).throw(
+            AssertionError("force_new_login should not prompt for reuse/import")
+        ),
     )
 
-    _login_openai_codex(SimpleNamespace(), PROVIDER_REGISTRY["openai-codex"], force_new_login=True)
+    _login_openai_codex(
+        SimpleNamespace(), PROVIDER_REGISTRY["openai-codex"], force_new_login=True
+    )
 
     assert called["device_login"] == 1
     assert called["tokens"]["access_token"] == "fresh-at"

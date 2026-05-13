@@ -42,12 +42,15 @@ def _validate(model, provider="openrouter", api_models=FAKE_API_MODELS, **kw):
         "suggested_base_url": None,
         "used_fallback": False,
     }
-    with patch("hermes_cli.models.fetch_api_models", return_value=api_models), \
-         patch("hermes_cli.models.probe_api_models", return_value=probe_payload):
+    with (
+        patch("hermes_cli.models.fetch_api_models", return_value=api_models),
+        patch("hermes_cli.models.probe_api_models", return_value=probe_payload),
+    ):
         return validate_requested_model(model, provider, **kw)
 
 
 # -- parse_model_input -------------------------------------------------------
+
 
 class TestParseModelInput:
     def test_plain_model_keeps_current_provider(self):
@@ -56,7 +59,9 @@ class TestParseModelInput:
         assert model == "anthropic/claude-sonnet-4.5"
 
     def test_provider_colon_model_switches_provider(self):
-        provider, model = parse_model_input("openrouter:anthropic/claude-sonnet-4.5", "nous")
+        provider, model = parse_model_input(
+            "openrouter:anthropic/claude-sonnet-4.5", "nous"
+        )
         assert provider == "openrouter"
         assert model == "anthropic/claude-sonnet-4.5"
 
@@ -92,7 +97,9 @@ class TestParseModelInput:
 
     def test_unknown_prefix_colon_not_treated_as_provider(self):
         """Colons are only provider delimiters if the left side is a known provider."""
-        provider, model = parse_model_input("anthropic/claude-3.5-sonnet:beta", "openrouter")
+        provider, model = parse_model_input(
+            "anthropic/claude-3.5-sonnet:beta", "openrouter"
+        )
         assert provider == "openrouter"
         assert model == "anthropic/claude-3.5-sonnet:beta"
 
@@ -109,13 +116,17 @@ class TestParseModelInput:
 
     def test_custom_triple_syntax(self):
         """custom:name:model → named custom provider."""
-        provider, model = parse_model_input("custom:local-server:qwen-2.5", "openrouter")
+        provider, model = parse_model_input(
+            "custom:local-server:qwen-2.5", "openrouter"
+        )
         assert provider == "custom:local-server"
         assert model == "qwen-2.5"
 
     def test_custom_triple_spaces(self):
         """Triple syntax should handle whitespace."""
-        provider, model = parse_model_input("custom: my-server : my-model ", "openrouter")
+        provider, model = parse_model_input(
+            "custom: my-server : my-model ", "openrouter"
+        )
         assert provider == "custom:my-server"
         assert model == "my-model"
 
@@ -128,6 +139,7 @@ class TestParseModelInput:
 
 
 # -- curated_models_for_provider ---------------------------------------------
+
 
 class TestCuratedModelsForProvider:
     def test_openrouter_returns_curated_list(self):
@@ -151,6 +163,7 @@ class TestCuratedModelsForProvider:
 
 
 # -- normalize_provider ------------------------------------------------------
+
 
 class TestNormalizeProvider:
     def test_defaults_to_openrouter(self):
@@ -183,6 +196,7 @@ class TestProviderLabel:
 
 # -- provider_model_ids ------------------------------------------------------
 
+
 class TestProviderModelIds:
     def test_openrouter_returns_curated_list(self):
         with patch(
@@ -203,28 +217,58 @@ class TestProviderModelIds:
         assert "glm-5" in provider_model_ids("zai")
 
     def test_stepfun_prefers_live_catalog(self):
-        with patch(
-            "hermes_cli.auth.resolve_api_key_provider_credentials",
-            return_value={"api_key": "***", "base_url": "https://api.stepfun.com/step_plan/v1"},
-        ), patch(
-            "hermes_cli.models.fetch_api_models",
-            return_value=["step-3.5-flash", "step-3-agent-lite"],
+        with (
+            patch(
+                "hermes_cli.auth.resolve_api_key_provider_credentials",
+                return_value={
+                    "api_key": "***",
+                    "base_url": "https://api.stepfun.com/step_plan/v1",
+                },
+            ),
+            patch(
+                "hermes_cli.models.fetch_api_models",
+                return_value=["step-3.5-flash", "step-3-agent-lite"],
+            ),
         ):
-            assert provider_model_ids("stepfun") == ["step-3.5-flash", "step-3-agent-lite"]
+            assert provider_model_ids("stepfun") == [
+                "step-3.5-flash",
+                "step-3-agent-lite",
+            ]
 
     def test_copilot_prefers_live_catalog(self):
-        with patch("hermes_cli.auth.resolve_api_key_provider_credentials", return_value={"api_key": "gh-token"}), \
-             patch("hermes_cli.models._fetch_github_models", return_value=["gpt-5.4", "claude-sonnet-4.6"]):
+        with (
+            patch(
+                "hermes_cli.auth.resolve_api_key_provider_credentials",
+                return_value={"api_key": "gh-token"},
+            ),
+            patch(
+                "hermes_cli.models._fetch_github_models",
+                return_value=["gpt-5.4", "claude-sonnet-4.6"],
+            ),
+        ):
             assert provider_model_ids("copilot") == ["gpt-5.4", "claude-sonnet-4.6"]
 
     def test_copilot_acp_reuses_copilot_catalog(self):
-        with patch("hermes_cli.auth.resolve_api_key_provider_credentials", return_value={"api_key": "gh-token"}), \
-             patch("hermes_cli.models._fetch_github_models", return_value=["gpt-5.4", "claude-sonnet-4.6"]):
+        with (
+            patch(
+                "hermes_cli.auth.resolve_api_key_provider_credentials",
+                return_value={"api_key": "gh-token"},
+            ),
+            patch(
+                "hermes_cli.models._fetch_github_models",
+                return_value=["gpt-5.4", "claude-sonnet-4.6"],
+            ),
+        ):
             assert provider_model_ids("copilot-acp") == ["gpt-5.4", "claude-sonnet-4.6"]
 
     def test_copilot_falls_back_to_curated_defaults_without_stale_opus(self):
-        with patch("hermes_cli.models._resolve_copilot_catalog_api_key", return_value="gh-token"), \
-             patch("hermes_cli.models._fetch_github_models", return_value=None):
+        with (
+            patch(
+                "hermes_cli.models._resolve_copilot_catalog_api_key",
+                return_value="gh-token",
+            ),
+            patch("hermes_cli.models._fetch_github_models", return_value=None),
+        ):
             ids = provider_model_ids("copilot")
 
         assert "gpt-5.4" in ids
@@ -236,8 +280,13 @@ class TestProviderModelIds:
         assert "claude-opus-4.6" not in ids
 
     def test_copilot_acp_falls_back_to_copilot_defaults(self):
-        with patch("hermes_cli.models._resolve_copilot_catalog_api_key", return_value="gh-token"), \
-             patch("hermes_cli.models._fetch_github_models", return_value=None):
+        with (
+            patch(
+                "hermes_cli.models._resolve_copilot_catalog_api_key",
+                return_value="gh-token",
+            ),
+            patch("hermes_cli.models._fetch_github_models", return_value=None),
+        ):
             ids = provider_model_ids("copilot-acp")
 
         assert "gpt-5.4" in ids
@@ -250,12 +299,15 @@ class TestProviderModelIds:
 
 # -- fetch_api_models --------------------------------------------------------
 
+
 class TestFetchApiModels:
     def test_returns_none_when_no_base_url(self):
         assert fetch_api_models("key", None) is None
 
     def test_returns_none_on_network_error(self):
-        with patch("hermes_cli.models.urllib.request.urlopen", side_effect=Exception("timeout")):
+        with patch(
+            "hermes_cli.models.urllib.request.urlopen", side_effect=Exception("timeout")
+        ):
             assert fetch_api_models("key", "https://example.com/v1") is None
 
     def test_probe_api_models_tries_v1_fallback(self):
@@ -277,10 +329,15 @@ class TestFetchApiModels:
                 return _Resp()
             raise Exception("404")
 
-        with patch("hermes_cli.models.urllib.request.urlopen", side_effect=_fake_urlopen):
+        with patch(
+            "hermes_cli.models.urllib.request.urlopen", side_effect=_fake_urlopen
+        ):
             probe = probe_api_models("key", "http://localhost:8000")
 
-        assert calls == ["http://localhost:8000/models", "http://localhost:8000/v1/models"]
+        assert calls == [
+            "http://localhost:8000/models",
+            "http://localhost:8000/v1/models",
+        ]
         assert probe["models"] == ["local-model"]
         assert probe["resolved_base_url"] == "http://localhost:8000/v1"
         assert probe["used_fallback"] is True
@@ -296,10 +353,15 @@ class TestFetchApiModels:
             def read(self):
                 return b'{"data": [{"id": "gpt-5.4", "model_picker_enabled": true, "supported_endpoints": ["/responses"], "capabilities": {"type": "chat", "supports": {"reasoning_effort": ["low", "medium", "high"]}}}, {"id": "claude-sonnet-4.6", "model_picker_enabled": true, "supported_endpoints": ["/chat/completions"], "capabilities": {"type": "chat", "supports": {"reasoning_effort": ["low", "medium", "high"]}}}, {"id": "text-embedding-3-small", "model_picker_enabled": true, "capabilities": {"type": "embedding"}}]}'
 
-        with patch("hermes_cli.models.urllib.request.urlopen", return_value=_Resp()) as mock_urlopen:
+        with patch(
+            "hermes_cli.models.urllib.request.urlopen", return_value=_Resp()
+        ) as mock_urlopen:
             probe = probe_api_models("gh-token", "https://api.githubcopilot.com")
 
-        assert mock_urlopen.call_args[0][0].full_url == "https://api.githubcopilot.com/models"
+        assert (
+            mock_urlopen.call_args[0][0].full_url
+            == "https://api.githubcopilot.com/models"
+        )
         assert probe["models"] == ["gpt-5.4", "claude-sonnet-4.6"]
         assert probe["resolved_base_url"] == "https://api.githubcopilot.com"
         assert probe["used_fallback"] is False
@@ -324,11 +386,16 @@ class TestFetchApiModels:
 
 class TestGithubReasoningEfforts:
     def test_gpt5_supports_minimal_to_high(self):
-        catalog = [{
-            "id": "gpt-5.4",
-            "capabilities": {"type": "chat", "supports": {"reasoning_effort": ["low", "medium", "high"]}},
-            "supported_endpoints": ["/responses"],
-        }]
+        catalog = [
+            {
+                "id": "gpt-5.4",
+                "capabilities": {
+                    "type": "chat",
+                    "supports": {"reasoning_effort": ["low", "medium", "high"]},
+                },
+                "supported_endpoints": ["/responses"],
+            }
+        ]
         assert github_model_reasoning_efforts("gpt-5.4", catalog=catalog) == [
             "low",
             "medium",
@@ -351,7 +418,10 @@ class TestGithubReasoningEfforts:
 class TestCopilotNormalization:
     def test_normalize_old_github_models_slug(self):
         catalog = [{"id": "gpt-4.1"}, {"id": "gpt-5.4"}]
-        assert normalize_copilot_model_id("openai/gpt-4.1-mini", catalog=catalog) == "gpt-4.1"
+        assert (
+            normalize_copilot_model_id("openai/gpt-4.1-mini", catalog=catalog)
+            == "gpt-4.1"
+        )
 
     def test_copilot_api_mode_gpt5_uses_responses(self):
         """GPT-5+ models should use Responses API (matching opencode)."""
@@ -376,44 +446,89 @@ class TestCopilotNormalization:
 
     def test_copilot_api_mode_with_catalog_both_endpoints(self):
         """When catalog shows both endpoints, model ID pattern wins."""
-        catalog = [{
-            "id": "gpt-5.4",
-            "supported_endpoints": ["/chat/completions", "/responses"],
-        }]
+        catalog = [
+            {
+                "id": "gpt-5.4",
+                "supported_endpoints": ["/chat/completions", "/responses"],
+            }
+        ]
         # GPT-5.4 should use responses even though chat/completions is listed
         assert copilot_model_api_mode("gpt-5.4", catalog=catalog) == "codex_responses"
 
     def test_copilot_api_mode_with_catalog_only_responses(self):
-        catalog = [{
-            "id": "gpt-5.4",
-            "supported_endpoints": ["/responses"],
-            "capabilities": {"type": "chat"},
-        }]
+        catalog = [
+            {
+                "id": "gpt-5.4",
+                "supported_endpoints": ["/responses"],
+                "capabilities": {"type": "chat"},
+            }
+        ]
         assert copilot_model_api_mode("gpt-5.4", catalog=catalog) == "codex_responses"
 
     def test_normalize_opencode_model_id_strips_provider_prefix(self):
-        assert normalize_opencode_model_id("opencode-go", "opencode-go/kimi-k2.5") == "kimi-k2.5"
-        assert normalize_opencode_model_id("opencode-zen", "opencode-zen/claude-sonnet-4-6") == "claude-sonnet-4-6"
+        assert (
+            normalize_opencode_model_id("opencode-go", "opencode-go/kimi-k2.5")
+            == "kimi-k2.5"
+        )
+        assert (
+            normalize_opencode_model_id(
+                "opencode-zen", "opencode-zen/claude-sonnet-4-6"
+            )
+            == "claude-sonnet-4-6"
+        )
         assert normalize_opencode_model_id("opencode-go", "glm-5") == "glm-5"
 
     def test_opencode_zen_api_modes_match_docs(self):
         assert opencode_model_api_mode("opencode-zen", "gpt-5.4") == "codex_responses"
-        assert opencode_model_api_mode("opencode-zen", "gpt-5.3-codex") == "codex_responses"
-        assert opencode_model_api_mode("opencode-zen", "opencode-zen/gpt-5.4") == "codex_responses"
-        assert opencode_model_api_mode("opencode-zen", "claude-sonnet-4-6") == "anthropic_messages"
-        assert opencode_model_api_mode("opencode-zen", "opencode-zen/claude-sonnet-4-6") == "anthropic_messages"
-        assert opencode_model_api_mode("opencode-zen", "gemini-3-flash") == "chat_completions"
-        assert opencode_model_api_mode("opencode-zen", "minimax-m2.5") == "chat_completions"
+        assert (
+            opencode_model_api_mode("opencode-zen", "gpt-5.3-codex")
+            == "codex_responses"
+        )
+        assert (
+            opencode_model_api_mode("opencode-zen", "opencode-zen/gpt-5.4")
+            == "codex_responses"
+        )
+        assert (
+            opencode_model_api_mode("opencode-zen", "claude-sonnet-4-6")
+            == "anthropic_messages"
+        )
+        assert (
+            opencode_model_api_mode("opencode-zen", "opencode-zen/claude-sonnet-4-6")
+            == "anthropic_messages"
+        )
+        assert (
+            opencode_model_api_mode("opencode-zen", "gemini-3-flash")
+            == "chat_completions"
+        )
+        assert (
+            opencode_model_api_mode("opencode-zen", "minimax-m2.5")
+            == "chat_completions"
+        )
 
     def test_opencode_go_api_modes_match_docs(self):
         assert opencode_model_api_mode("opencode-go", "glm-5.1") == "chat_completions"
-        assert opencode_model_api_mode("opencode-go", "opencode-go/glm-5.1") == "chat_completions"
+        assert (
+            opencode_model_api_mode("opencode-go", "opencode-go/glm-5.1")
+            == "chat_completions"
+        )
         assert opencode_model_api_mode("opencode-go", "glm-5") == "chat_completions"
-        assert opencode_model_api_mode("opencode-go", "opencode-go/glm-5") == "chat_completions"
+        assert (
+            opencode_model_api_mode("opencode-go", "opencode-go/glm-5")
+            == "chat_completions"
+        )
         assert opencode_model_api_mode("opencode-go", "kimi-k2.5") == "chat_completions"
-        assert opencode_model_api_mode("opencode-go", "opencode-go/kimi-k2.5") == "chat_completions"
-        assert opencode_model_api_mode("opencode-go", "minimax-m2.5") == "anthropic_messages"
-        assert opencode_model_api_mode("opencode-go", "opencode-go/minimax-m2.5") == "anthropic_messages"
+        assert (
+            opencode_model_api_mode("opencode-go", "opencode-go/kimi-k2.5")
+            == "chat_completions"
+        )
+        assert (
+            opencode_model_api_mode("opencode-go", "minimax-m2.5")
+            == "anthropic_messages"
+        )
+        assert (
+            opencode_model_api_mode("opencode-go", "opencode-go/minimax-m2.5")
+            == "anthropic_messages"
+        )
 
 
 class TestAzureFoundryModelApiMode:
@@ -481,6 +596,7 @@ class TestAzureFoundryModelApiMode:
 
 # -- validate — format checks -----------------------------------------------
 
+
 class TestValidateFormatChecks:
     def test_empty_model_rejected(self):
         result = _validate("")
@@ -509,6 +625,7 @@ class TestValidateFormatChecks:
 
 # -- validate — API found ----------------------------------------------------
 
+
 class TestValidateApiFound:
     def test_model_found_in_api(self):
         result = _validate("anthropic/claude-opus-4.6")
@@ -518,8 +635,10 @@ class TestValidateApiFound:
 
     def test_model_found_for_custom_endpoint(self):
         result = _validate(
-            "my-model", provider="openrouter",
-            api_models=["my-model"], base_url="http://localhost:11434/v1",
+            "my-model",
+            provider="openrouter",
+            api_models=["my-model"],
+            base_url="http://localhost:11434/v1",
         )
         assert result["accepted"] is True
         assert result["persist"] is True
@@ -527,6 +646,7 @@ class TestValidateApiFound:
 
 
 # -- validate — API not found ------------------------------------------------
+
 
 class TestValidateApiNotFound:
     def test_model_not_in_api_rejected_with_guidance(self):
@@ -539,7 +659,10 @@ class TestValidateApiNotFound:
         result = _validate("anthropic/claude-opus-4.5")
         assert result["accepted"] is True
         # Close match auto-corrects; less similar inputs show suggestions
-        assert "Auto-corrected" in result["message"] or "Similar models" in result["message"]
+        assert (
+            "Auto-corrected" in result["message"]
+            or "Similar models" in result["message"]
+        )
 
     def test_auto_correction_returns_corrected_model(self):
         """When a very close match exists, validate returns corrected_model."""
@@ -557,6 +680,7 @@ class TestValidateApiNotFound:
 
 
 # -- validate — API unreachable — soft-accept via catalog or warning --------
+
 
 class TestValidateApiFallback:
     """When /models is unreachable, the validator must accept the model (with
@@ -595,7 +719,10 @@ class TestValidateApiFallback:
         assert result["persist"] is True
         assert result["recognized"] is False
         # Message flags it as unverified against the catalog.
-        assert "not found" in result["message"].lower() or "note" in result["message"].lower()
+        assert (
+            "not found" in result["message"].lower()
+            or "note" in result["message"].lower()
+        )
 
     def test_zai_known_model_accepted_via_catalog_when_api_down(self):
         # glm-5 is in the zai curated catalog (_PROVIDER_MODELS["zai"]).
@@ -607,7 +734,9 @@ class TestValidateApiFallback:
     def test_unknown_provider_soft_accepted_when_api_down(self):
         # No catalog for unknown providers — soft-accept with a Note.
         with patch("hermes_cli.models.provider_model_ids", return_value=[]):
-            result = _validate("some-model", provider="totally-unknown", api_models=None)
+            result = _validate(
+                "some-model", provider="totally-unknown", api_models=None
+            )
         assert result["accepted"] is True
         assert result["persist"] is True
         assert result["recognized"] is False
@@ -647,7 +776,7 @@ class TestValidateApiFallback:
             b'{"models":['
             b'{"key":"publisher/chat-model","id":"publisher/chat-model","type":"llm"},'
             b'{"key":"publisher/embed-model","id":"publisher/embed-model","type":"embedding"}'
-            b']}'
+            b"]}"
         )
 
         with patch("hermes_cli.models.urllib.request.urlopen", return_value=mock_resp):
@@ -663,7 +792,7 @@ class TestValidateApiFallback:
             b'{"models":['
             b'{"key":"publisher/chat-model","id":"publisher/chat-model","type":"llm"},'
             b'{"key":"publisher/embed-model","id":"publisher/embed-model","type":"embedding"}'
-            b']}'
+            b"]}"
         )
 
         with patch("hermes_cli.models.urllib.request.urlopen", return_value=mock_resp):
@@ -746,13 +875,19 @@ class TestValidateApiFallback:
 
 # -- validate — Codex auto-correction ------------------------------------------
 
+
 class TestValidateCodexAutoCorrection:
     """Auto-correction for typos on openai-codex provider."""
 
     def test_missing_dash_auto_corrects(self):
         """gpt5.3-codex (missing dash) auto-corrects to gpt-5.3-codex."""
-        codex_models = ["gpt-5.4-mini", "gpt-5.4", "gpt-5.3-codex",
-                        "gpt-5.2-codex", "gpt-5.1-codex-max"]
+        codex_models = [
+            "gpt-5.4-mini",
+            "gpt-5.4",
+            "gpt-5.3-codex",
+            "gpt-5.2-codex",
+            "gpt-5.1-codex-max",
+        ]
         with patch("hermes_cli.models.provider_model_ids", return_value=codex_models):
             result = validate_requested_model("gpt5.3-codex", "openai-codex")
         assert result["accepted"] is True
@@ -771,8 +906,8 @@ class TestValidateCodexAutoCorrection:
         assert result["message"] is None
 
 
-
 # -- probe_api_models — Cloudflare UA mitigation --------------------------------
+
 
 class TestProbeApiModelsUserAgent:
     """Probing custom /v1/models must send a Hermes User-Agent.
@@ -787,6 +922,7 @@ class TestProbeApiModelsUserAgent:
 
     def _make_mock_response(self, body: bytes):
         from unittest.mock import MagicMock
+
         mock_resp = MagicMock()
         mock_resp.__enter__ = MagicMock(return_value=mock_resp)
         mock_resp.__exit__ = MagicMock(return_value=False)

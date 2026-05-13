@@ -21,9 +21,11 @@ import pytest
 # Helpers
 # ===========================================================================
 
+
 def _make_session_db(tmp_path):
     """Create a real SessionDB for integration-style tests."""
     from hermes_state import SessionDB
+
     db_path = tmp_path / "test_state.db"
     return SessionDB(db_path=db_path)
 
@@ -31,7 +33,9 @@ def _make_session_db(tmp_path):
 def _tui_session(agent=None, session_key="session-key-old", **extra):
     """Minimal TUI gateway session dict matching server._sessions values."""
     return {
-        "agent": agent if agent is not None else types.SimpleNamespace(session_id=session_key),
+        "agent": agent
+        if agent is not None
+        else types.SimpleNamespace(session_id=session_key),
         "session_key": session_key,
         "history": [],
         "history_lock": threading.Lock(),
@@ -51,6 +55,7 @@ def _tui_session(agent=None, session_key="session-key-old", **extra):
 # ===========================================================================
 # Bug #20001: _finalize_session uses stale session_key
 # ===========================================================================
+
 
 class TestFinalizeSessionUsesAgentSessionId:
     """After compression rotates agent.session_id, _finalize_session()
@@ -126,23 +131,29 @@ class TestFinalizeSessionUsesAgentSessionId:
 # Bug #20001: _sync_session_key_after_compress post-run_conversation
 # ===========================================================================
 
+
 class TestSyncSessionKeyAfterAutoCompress:
     """When auto-compression fires inside run_conversation(), the post-turn
     code in _run_prompt_submit must call _sync_session_key_after_compress
     to update session_key for downstream consumers (title, goals, etc.)."""
 
-    def test_session_key_synced_after_run_conversation_with_compression(self, monkeypatch):
+    def test_session_key_synced_after_run_conversation_with_compression(
+        self, monkeypatch
+    ):
         """Simulate: run_conversation() internally compresses and rotates
         agent.session_id. After it returns, session['session_key'] must match."""
         from tui_gateway import server
 
         class _CompressingAgent:
             """Agent that simulates compression-driven session_id rotation."""
+
             def __init__(self):
                 self.session_id = "pre-compress-key"
                 self._cached_system_prompt = ""
 
-            def run_conversation(self, prompt, conversation_history=None, stream_callback=None):
+            def run_conversation(
+                self, prompt, conversation_history=None, stream_callback=None
+            ):
                 # Simulate what _compress_context does: rotate session_id
                 self.session_id = "post-compress-key"
                 return {
@@ -176,6 +187,7 @@ class TestSyncSessionKeyAfterAutoCompress:
         class _ImmediateThread:
             def __init__(self, target=None, daemon=None, **kw):
                 self._target = target
+
             def start(self):
                 self._target()
 
@@ -207,6 +219,7 @@ class TestSyncSessionKeyAfterAutoCompress:
 # Bug #19029: pending_title ValueError wedge
 # ===========================================================================
 
+
 class TestPendingTitleValueError:
     """When set_session_title raises ValueError (duplicate/invalid title),
     pending_title must be cleared — not left wedged forever."""
@@ -221,6 +234,7 @@ class TestPendingTitleValueError:
         class _Agent:
             session_id = "test-session"
             _cached_system_prompt = ""
+
             def run_conversation(self, prompt, **kw):
                 return {
                     "final_response": "ok",
@@ -244,6 +258,7 @@ class TestPendingTitleValueError:
         class _ImmediateThread:
             def __init__(self, target=None, daemon=None, **kw):
                 self._target = target
+
             def start(self):
                 self._target()
 
@@ -275,6 +290,7 @@ class TestPendingTitleValueError:
         class _Agent:
             session_id = "test-session"
             _cached_system_prompt = ""
+
             def run_conversation(self, prompt, **kw):
                 return {
                     "final_response": "ok",
@@ -298,6 +314,7 @@ class TestPendingTitleValueError:
         class _ImmediateThread:
             def __init__(self, target=None, daemon=None, **kw):
                 self._target = target
+
             def start(self):
                 self._target()
 
@@ -324,6 +341,7 @@ class TestPendingTitleValueError:
 # Bug #18765: Gateway surfaces null response
 # ===========================================================================
 
+
 class TestGatewaySurfacesNullResponse:
     """When the agent does work (api_calls > 0) but returns no final_response,
     the gateway must surface an error to the user instead of silently sending
@@ -343,7 +361,9 @@ class TestGatewaySurfacesNullResponse:
 
         response = agent_result.get("final_response") or ""
         response = _normalize_empty_agent_response(
-            agent_result, response, history_len=10,
+            agent_result,
+            response,
+            history_len=10,
         )
 
         assert response != "", "Null response with api_calls>0 must be surfaced"
@@ -362,7 +382,9 @@ class TestGatewaySurfacesNullResponse:
 
         response = agent_result.get("final_response") or ""
         response = _normalize_empty_agent_response(
-            agent_result, response, history_len=10,
+            agent_result,
+            response,
+            history_len=10,
         )
 
         assert response == "", "Interrupted turns should not get synthetic responses"
@@ -380,7 +402,9 @@ class TestGatewaySurfacesNullResponse:
 
         response = agent_result.get("final_response") or ""
         response = _normalize_empty_agent_response(
-            agent_result, response, history_len=60,
+            agent_result,
+            response,
+            history_len=60,
         )
 
         assert "context window" in response
@@ -399,7 +423,9 @@ class TestGatewaySurfacesNullResponse:
 
         response = agent_result.get("final_response") or ""
         response = _normalize_empty_agent_response(
-            agent_result, response, history_len=5,
+            agent_result,
+            response,
+            history_len=5,
         )
 
         assert "500 Internal Server Error" in response
@@ -412,7 +438,9 @@ class TestGatewaySurfacesNullResponse:
         agent_result = {"final_response": "Hello!", "api_calls": 1}
         response = "Hello!"
         result = _normalize_empty_agent_response(
-            agent_result, response, history_len=5,
+            agent_result,
+            response,
+            history_len=5,
         )
 
         assert result == "Hello!"
@@ -421,6 +449,7 @@ class TestGatewaySurfacesNullResponse:
 # ===========================================================================
 # Prune: finalize_orphaned_compression_sessions
 # ===========================================================================
+
 
 class TestFinalizeOrphanedCompressionSessions:
     """The prune migration marks ghost compression continuations as ended."""

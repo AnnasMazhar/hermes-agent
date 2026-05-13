@@ -71,9 +71,12 @@ def test_hallucinated_cards_fires_on_blocked_event():
     task = _task(status="ready")
     events = [
         _event("created", ts=100),
-        _event("completion_blocked_hallucination", ts=200,
-               phantom_cards=["t_bad1", "t_bad2"],
-               verified_cards=["t_good1"]),
+        _event(
+            "completion_blocked_hallucination",
+            ts=200,
+            phantom_cards=["t_bad1", "t_bad2"],
+            verified_cards=["t_good1"],
+        ),
     ]
     diags = kd.compute_task_diagnostics(task, events, [])
     assert len(diags) == 1
@@ -104,8 +107,12 @@ def test_prose_phantom_refs_fires_after_clean_completion():
     task = _task(status="done")
     events = [
         _event("completed", ts=100, summary="referenced t_bad", result_len=0),
-        _event("suspected_hallucinated_references", ts=101,
-               phantom_refs=["t_deadbeef99"], source="completion_summary"),
+        _event(
+            "suspected_hallucinated_references",
+            ts=101,
+            phantom_refs=["t_deadbeef99"],
+            source="completion_summary",
+        ),
     ]
     diags = kd.compute_task_diagnostics(task, events, [])
     assert len(diags) == 1
@@ -118,8 +125,9 @@ def test_prose_phantom_refs_clears_on_later_clean_edit():
     task = _task(status="done")
     events = [
         _event("completed", ts=100, summary="bad"),
-        _event("suspected_hallucinated_references", ts=101,
-               phantom_refs=["t_ffff0000cc"]),
+        _event(
+            "suspected_hallucinated_references", ts=101, phantom_refs=["t_ffff0000cc"]
+        ),
         _event("edited", ts=200, fields=["result", "summary"]),
     ]
     diags = kd.compute_task_diagnostics(task, events, [])
@@ -130,8 +138,11 @@ def test_repeated_failures_fires_at_threshold_on_spawn():
     """A task with multiple spawn_failed runs gets a spawn-flavoured
     diagnostic (title mentions 'spawn', suggested action is ``doctor``).
     """
-    task = _task(status="ready", consecutive_failures=3,
-                 last_failure_error="Profile 'debugger' does not exist")
+    task = _task(
+        status="ready",
+        consecutive_failures=3,
+        last_failure_error="Profile 'debugger' does not exist",
+    )
     runs = [
         _run(outcome="spawn_failed", run_id=1),
         _run(outcome="spawn_failed", run_id=2),
@@ -151,8 +162,11 @@ def test_repeated_failures_fires_on_timeout_loop():
     """The rule surfaces for timeout loops too — that's the point of
     unifying the counter. Suggested action is 'check logs', not
     'fix profile'."""
-    task = _task(status="ready", consecutive_failures=3,
-                 last_failure_error="elapsed 600s > limit 300s")
+    task = _task(
+        status="ready",
+        consecutive_failures=3,
+        last_failure_error="elapsed 600s > limit 300s",
+    )
     runs = [
         _run(outcome="timed_out", run_id=1),
         _run(outcome="timed_out", run_id=2),
@@ -218,7 +232,10 @@ def test_stuck_in_blocked_fires_past_threshold():
         _event("blocked", ts=now - 3600 * 48, reason="needs approval"),
     ]
     diags = kd.compute_task_diagnostics(
-        task, events, [], now=now,
+        task,
+        events,
+        [],
+        now=now,
     )
     assert len(diags) == 1
     d = diags[0]
@@ -272,8 +289,10 @@ def test_repeated_crashes_no_error_fallback_title():
 
 
 def test_repeated_failures_surfaces_actual_error_in_title():
-    task = _task(consecutive_failures=5,
-                 last_failure_error="insufficient_quota: billing limit reached")
+    task = _task(
+        consecutive_failures=5,
+        last_failure_error="insufficient_quota: billing limit reached",
+    )
     diags = kd.compute_task_diagnostics(task, [], [])
     assert len(diags) == 1
     d = diags[0]
@@ -308,12 +327,12 @@ def test_repeated_crashes_truncates_huge_tracebacks():
 def test_diagnostics_sorted_critical_first():
     """A task with both a critical (many spawn failures) and a warning
     (prose phantoms) diagnostic should list the critical one first."""
-    task = _task(status="done", consecutive_failures=10,
-                 last_failure_error="nope")
+    task = _task(status="done", consecutive_failures=10, last_failure_error="nope")
     events = [
         _event("completed", ts=100, summary="referenced t_missing"),
-        _event("suspected_hallucinated_references", ts=101,
-               phantom_refs=["t_missing11"]),
+        _event(
+            "suspected_hallucinated_references", ts=101, phantom_refs=["t_missing11"]
+        ),
     ]
     diags = kd.compute_task_diagnostics(task, events, [])
     kinds = [d.kind for d in diags]
@@ -338,21 +357,28 @@ def test_engine_works_on_sqlite_row_objects(kanban_home):
         real = kb.create_task(conn, title="r", assignee="x", created_by="w")
         with pytest.raises(kb.HallucinatedCardsError):
             kb.complete_task(
-                conn, parent,
-                summary="with phantom", created_cards=[real, "t_deadbeef1"],
+                conn,
+                parent,
+                summary="with phantom",
+                created_cards=[real, "t_deadbeef1"],
             )
         # Pull Row objects the way the API helper does.
         row = conn.execute(
-            "SELECT * FROM tasks WHERE id = ?", (parent,),
+            "SELECT * FROM tasks WHERE id = ?",
+            (parent,),
         ).fetchone()
-        events = list(conn.execute(
-            "SELECT * FROM task_events WHERE task_id = ? ORDER BY id",
-            (parent,),
-        ).fetchall())
-        runs = list(conn.execute(
-            "SELECT * FROM task_runs WHERE task_id = ? ORDER BY id",
-            (parent,),
-        ).fetchall())
+        events = list(
+            conn.execute(
+                "SELECT * FROM task_events WHERE task_id = ? ORDER BY id",
+                (parent,),
+            ).fetchall()
+        )
+        runs = list(
+            conn.execute(
+                "SELECT * FROM task_runs WHERE task_id = ? ORDER BY id",
+                (parent,),
+            ).fetchall()
+        )
         diags = kd.compute_task_diagnostics(row, events, runs)
         assert len(diags) == 1
         assert diags[0].kind == "hallucinated_cards"

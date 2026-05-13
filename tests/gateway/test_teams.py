@@ -21,9 +21,12 @@ from tests.gateway._plugin_adapter_loader import load_plugin_adapter
 # SDK Mock — install in sys.modules before importing the adapter
 # ---------------------------------------------------------------------------
 
+
 def _ensure_teams_mock():
     """Install a teams SDK mock in sys.modules if the real package isn't present."""
-    if "microsoft_teams" in sys.modules and hasattr(sys.modules["microsoft_teams"], "__file__"):
+    if "microsoft_teams" in sys.modules and hasattr(
+        sys.modules["microsoft_teams"], "__file__"
+    ):
         return
 
     # Build the module hierarchy
@@ -31,27 +34,41 @@ def _ensure_teams_mock():
     microsoft_teams_apps = types.ModuleType("microsoft_teams.apps")
     microsoft_teams_api = types.ModuleType("microsoft_teams.api")
     microsoft_teams_api_activities = types.ModuleType("microsoft_teams.api.activities")
-    microsoft_teams_api_activities_typing = types.ModuleType("microsoft_teams.api.activities.typing")
-    microsoft_teams_api_activities_invoke = types.ModuleType("microsoft_teams.api.activities.invoke")
+    microsoft_teams_api_activities_typing = types.ModuleType(
+        "microsoft_teams.api.activities.typing"
+    )
+    microsoft_teams_api_activities_invoke = types.ModuleType(
+        "microsoft_teams.api.activities.invoke"
+    )
     microsoft_teams_api_activities_invoke_adaptive_card = types.ModuleType(
         "microsoft_teams.api.activities.invoke.adaptive_card"
     )
     microsoft_teams_common = types.ModuleType("microsoft_teams.common")
     microsoft_teams_common_http = types.ModuleType("microsoft_teams.common.http")
-    microsoft_teams_common_http_client = types.ModuleType("microsoft_teams.common.http.client")
+    microsoft_teams_common_http_client = types.ModuleType(
+        "microsoft_teams.common.http.client"
+    )
     microsoft_teams_api_models = types.ModuleType("microsoft_teams.api.models")
-    microsoft_teams_api_models_adaptive_card = types.ModuleType("microsoft_teams.api.models.adaptive_card")
-    microsoft_teams_api_models_invoke_response = types.ModuleType("microsoft_teams.api.models.invoke_response")
+    microsoft_teams_api_models_adaptive_card = types.ModuleType(
+        "microsoft_teams.api.models.adaptive_card"
+    )
+    microsoft_teams_api_models_invoke_response = types.ModuleType(
+        "microsoft_teams.api.models.invoke_response"
+    )
     microsoft_teams_cards = types.ModuleType("microsoft_teams.cards")
     microsoft_teams_apps_http = types.ModuleType("microsoft_teams.apps.http")
-    microsoft_teams_apps_http_adapter = types.ModuleType("microsoft_teams.apps.http.adapter")
+    microsoft_teams_apps_http_adapter = types.ModuleType(
+        "microsoft_teams.apps.http.adapter"
+    )
 
     # App class mock
     class MockApp:
         def __init__(self, **kwargs):
             self._client_id = kwargs.get("client_id")
             self.server = MagicMock()
-            self.server.handle_request = AsyncMock(return_value={"status": 200, "body": None})
+            self.server.handle_request = AsyncMock(
+                return_value={"status": 200, "body": None}
+            )
             self.credentials = MagicMock()
             self.credentials.client_id = self._client_id
 
@@ -97,11 +114,15 @@ def _ensure_teams_mock():
     microsoft_teams_api_activities_typing.TypingActivityInput = MockTypingActivityInput
 
     # Adaptive card invoke activity mock
-    microsoft_teams_api_activities_invoke_adaptive_card.AdaptiveCardInvokeActivity = MagicMock
+    microsoft_teams_api_activities_invoke_adaptive_card.AdaptiveCardInvokeActivity = (
+        MagicMock
+    )
 
     # Adaptive card response mocks
     microsoft_teams_api_models_adaptive_card.AdaptiveCardActionCardResponse = MagicMock
-    microsoft_teams_api_models_adaptive_card.AdaptiveCardActionMessageResponse = MagicMock
+    microsoft_teams_api_models_adaptive_card.AdaptiveCardActionMessageResponse = (
+        MagicMock
+    )
 
     # Invoke response mocks
     class MockInvokeResponse:
@@ -135,6 +156,7 @@ def _ensure_teams_mock():
     HttpResponse = dict
     HttpMethod = str
     from typing import Callable
+
     HttpRouteHandler = Callable
 
     microsoft_teams_apps_http_adapter.HttpRequest = HttpRequest
@@ -176,6 +198,7 @@ _teams_mod.AIOHTTP_AVAILABLE = True
 # Ensure SDK symbols that were None (import failed on Python <3.12) are
 # replaced with the mocked versions so runtime calls don't silently no-op.
 import sys as _sys
+
 _mt = _sys.modules.get("microsoft_teams.api.activities.typing")
 if _mt and _teams_mod.TypingActivityInput is None:
     _teams_mod.TypingActivityInput = _mt.TypingActivityInput
@@ -192,6 +215,7 @@ register = _teams_mod.register
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_config(**extra):
     return PlatformConfig(enabled=True, extra=extra)
 
@@ -199,6 +223,7 @@ def _make_config(**extra):
 # ---------------------------------------------------------------------------
 # Tests: Requirements
 # ---------------------------------------------------------------------------
+
 
 class TestTeamsRequirements:
     def test_returns_false_when_sdk_missing(self, monkeypatch):
@@ -249,6 +274,7 @@ class TestTeamsRequirements:
 # Tests: Adapter Init
 # ---------------------------------------------------------------------------
 
+
 class TestTeamsAdapterInit:
     def test_reads_config_from_extra(self):
         config = _make_config(
@@ -271,20 +297,30 @@ class TestTeamsAdapterInit:
         assert adapter._tenant_id == "env-tenant"
 
     def test_default_port(self):
-        adapter = TeamsAdapter(_make_config(client_id="id", client_secret="secret", tenant_id="tenant"))
+        adapter = TeamsAdapter(
+            _make_config(client_id="id", client_secret="secret", tenant_id="tenant")
+        )
         assert adapter._port == 3978
 
     def test_custom_port_from_extra(self):
-        adapter = TeamsAdapter(_make_config(client_id="id", client_secret="secret", tenant_id="tenant", port=4000))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id", client_secret="secret", tenant_id="tenant", port=4000
+            )
+        )
         assert adapter._port == 4000
 
     def test_custom_port_from_env(self, monkeypatch):
         monkeypatch.setenv("TEAMS_PORT", "5000")
-        adapter = TeamsAdapter(_make_config(client_id="id", client_secret="secret", tenant_id="tenant"))
+        adapter = TeamsAdapter(
+            _make_config(client_id="id", client_secret="secret", tenant_id="tenant")
+        )
         assert adapter._port == 5000
 
     def test_platform_value(self):
-        adapter = TeamsAdapter(_make_config(client_id="id", client_secret="secret", tenant_id="tenant"))
+        adapter = TeamsAdapter(
+            _make_config(client_id="id", client_secret="secret", tenant_id="tenant")
+        )
         assert adapter.platform.value == "teams"
 
 
@@ -292,8 +328,8 @@ class TestTeamsAdapterInit:
 # Tests: Plugin registration
 # ---------------------------------------------------------------------------
 
-class TestTeamsPluginRegistration:
 
+class TestTeamsPluginRegistration:
     def test_register_calls_ctx(self):
         ctx = MagicMock()
         register(ctx)
@@ -335,6 +371,7 @@ class TestTeamsPluginRegistration:
 # Tests: Interactive setup (import fix regression — #18325 / #19173)
 # ---------------------------------------------------------------------------
 
+
 class TestTeamsInteractiveSetup:
     def test_interactive_setup_persists_credentials(self, tmp_path, monkeypatch):
         """Regression for #19173: interactive_setup must import prompt helpers
@@ -359,13 +396,18 @@ class TestTeamsInteractiveSetup:
         assert "TEAMS_CLIENT_ID=client-id" in env_text
         assert "TEAMS_TENANT_ID=tenant-id" in env_text
 
+
 class TestTeamsConnect:
     @pytest.mark.anyio
     async def test_connect_fails_without_sdk(self, monkeypatch):
         monkeypatch.setattr(_teams_mod, "TEAMS_SDK_AVAILABLE", False)
-        adapter = TeamsAdapter(_make_config(
-            client_id="id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         result = await adapter.connect()
         assert result is False
 
@@ -380,9 +422,13 @@ class TestTeamsConnect:
 
     @pytest.mark.anyio
     async def test_disconnect_cleans_up(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._running = True
         mock_runner = AsyncMock()
         adapter._runner = mock_runner
@@ -399,12 +445,17 @@ class TestTeamsConnect:
 # Tests: Send
 # ---------------------------------------------------------------------------
 
+
 class TestTeamsSend:
     @pytest.mark.anyio
     async def test_send_returns_error_without_app(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = None
         result = await adapter.send("conv-id", "Hello")
         assert result.success is False
@@ -412,9 +463,13 @@ class TestTeamsSend:
 
     @pytest.mark.anyio
     async def test_send_calls_app_send(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         mock_result = MagicMock()
         mock_result.id = "msg-123"
         mock_app = MagicMock()
@@ -428,9 +483,13 @@ class TestTeamsSend:
 
     @pytest.mark.anyio
     async def test_send_handles_error(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         mock_app = MagicMock()
         mock_app.send = AsyncMock(side_effect=Exception("Network error"))
         adapter._app = mock_app
@@ -441,9 +500,13 @@ class TestTeamsSend:
 
     @pytest.mark.anyio
     async def test_send_typing(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         mock_app = MagicMock()
         mock_app.send = AsyncMock()
         adapter._app = mock_app
@@ -494,7 +557,12 @@ class TestTeamsSummaryWriter:
     @pytest.mark.anyio
     async def test_graph_delivery_posts_to_channel(self):
         graph_client = SimpleNamespace(
-            post_json=AsyncMock(return_value={"id": "msg-123", "webUrl": "https://teams.example/messages/123"})
+            post_json=AsyncMock(
+                return_value={
+                    "id": "msg-123",
+                    "webUrl": "https://teams.example/messages/123",
+                }
+            )
         )
         writer = TeamsSummaryWriter(graph_client=graph_client)
         payload = _make_summary_payload()
@@ -519,7 +587,9 @@ class TestTeamsSummaryWriter:
 
     @pytest.mark.anyio
     async def test_graph_delivery_falls_back_to_platform_home_channel(self):
-        graph_client = SimpleNamespace(post_json=AsyncMock(return_value={"id": "msg-home"}))
+        graph_client = SimpleNamespace(
+            post_json=AsyncMock(return_value={"id": "msg-home"})
+        )
         platform_config = PlatformConfig(
             enabled=True,
             extra={"team_id": "team-home", "delivery_mode": "graph"},
@@ -529,12 +599,17 @@ class TestTeamsSummaryWriter:
                 name="Teams Home",
             ),
         )
-        writer = TeamsSummaryWriter(platform_config=platform_config, graph_client=graph_client)
+        writer = TeamsSummaryWriter(
+            platform_config=platform_config, graph_client=graph_client
+        )
 
         await writer.write_summary(_make_summary_payload(), {})
 
         graph_client.post_json.assert_awaited_once()
-        assert graph_client.post_json.await_args.args[0] == "/teams/team-home/channels/channel-home/messages"
+        assert (
+            graph_client.post_json.await_args.args[0]
+            == "/teams/team-home/channels/channel-home/messages"
+        )
 
     @pytest.mark.anyio
     async def test_existing_record_is_reused_without_force_resend(self):
@@ -559,6 +634,7 @@ class TestTeamsSummaryWriter:
 # ---------------------------------------------------------------------------
 # Tests: Message Handling
 # ---------------------------------------------------------------------------
+
 
 class TestTeamsMessageHandling:
     def _make_activity(
@@ -596,9 +672,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_personal_message_creates_dm_event(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -612,9 +692,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_group_message_creates_group_event(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -627,9 +711,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_channel_message_creates_channel_event(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -642,9 +730,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_user_id_uses_aad_object_id(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -657,9 +749,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_self_message_filtered(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -671,9 +767,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_bot_mention_stripped_from_text(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -689,9 +789,13 @@ class TestTeamsMessageHandling:
 
     @pytest.mark.anyio
     async def test_deduplication(self):
-        adapter = TeamsAdapter(_make_config(
-            client_id="bot-id", client_secret="secret", tenant_id="tenant",
-        ))
+        adapter = TeamsAdapter(
+            _make_config(
+                client_id="bot-id",
+                client_secret="secret",
+                tenant_id="tenant",
+            )
+        )
         adapter._app = MagicMock()
         adapter._app.id = "bot-id"
         adapter.handle_message = AsyncMock()
@@ -759,7 +863,6 @@ def _install_fake_aiohttp(monkeypatch, session):
 
 
 class TestTeamsStandaloneSend:
-
     @pytest.mark.asyncio
     async def test_standalone_send_acquires_token_and_posts_activity(self, monkeypatch):
         monkeypatch.setenv("TEAMS_CLIENT_ID", "client-id")
@@ -855,10 +958,14 @@ class TestTeamsStandaloneSend:
 
         assert "error" in result
         assert "allowlist" in result["error"].lower()
-        assert len(session.calls) == 0, "must not call any HTTP endpoint with a tampered service URL"
+        assert len(session.calls) == 0, (
+            "must not call any HTTP endpoint with a tampered service URL"
+        )
 
     @pytest.mark.asyncio
-    async def test_standalone_send_rejects_chat_id_with_path_traversal(self, monkeypatch):
+    async def test_standalone_send_rejects_chat_id_with_path_traversal(
+        self, monkeypatch
+    ):
         monkeypatch.setenv("TEAMS_CLIENT_ID", "client-id")
         monkeypatch.setenv("TEAMS_CLIENT_SECRET", "secret")
         monkeypatch.setenv("TEAMS_TENANT_ID", "tenant")

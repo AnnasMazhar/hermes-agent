@@ -8,12 +8,14 @@ class TestResolveApiKey:
 
     def test_returns_api_key_from_root(self, monkeypatch):
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         assert honcho_cli._resolve_api_key({"apiKey": "root-key"}) == "root-key"
 
     def test_returns_api_key_from_host_block(self, monkeypatch):
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         cfg = {"hosts": {"hermes": {"apiKey": "host-key"}}, "apiKey": "root-key"}
@@ -21,6 +23,7 @@ class TestResolveApiKey:
 
     def test_returns_local_for_base_url_without_api_key(self, monkeypatch):
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -29,6 +32,7 @@ class TestResolveApiKey:
 
     def test_returns_local_for_base_url_env_var(self, monkeypatch):
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.setenv("HONCHO_BASE_URL", "http://10.0.0.5:8000")
@@ -36,6 +40,7 @@ class TestResolveApiKey:
 
     def test_returns_empty_when_nothing_configured(self, monkeypatch):
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -44,6 +49,7 @@ class TestResolveApiKey:
     def test_rejects_garbage_base_url_without_scheme(self, monkeypatch):
         """Obvious non-URL literals in baseUrl (typos) must not pass the guard."""
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -51,8 +57,9 @@ class TestResolveApiKey:
         # host-like punctuation are rejected.  Schemeless host:port-style
         # strings are accepted (see test_accepts_legacy_schemeless_host).
         for garbage in ("true", "false", "null", "1", "12345", "localhost"):
-            assert honcho_cli._resolve_api_key({"baseUrl": garbage}) == "", \
+            assert honcho_cli._resolve_api_key({"baseUrl": garbage}) == "", (
                 f"expected empty for garbage {garbage!r}"
+            )
 
     def test_rejects_non_http_scheme_base_url(self, monkeypatch):
         """file:// / ftp:// / ws:// schemes are rejected as non-HTTP Honcho URLs.
@@ -64,6 +71,7 @@ class TestResolveApiKey:
         parsed scheme explicitly.
         """
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -77,10 +85,14 @@ class TestResolveApiKey:
 
     def test_accepts_https_base_url(self, monkeypatch):
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
-        assert honcho_cli._resolve_api_key({"baseUrl": "https://honcho.example.com"}) == "local"
+        assert (
+            honcho_cli._resolve_api_key({"baseUrl": "https://honcho.example.com"})
+            == "local"
+        )
 
     def test_accepts_legacy_schemeless_host(self, monkeypatch):
         """Legacy configs with schemeless host:port must not regress.
@@ -92,16 +104,25 @@ class TestResolveApiKey:
         The SDK itself still rejects malformed URLs at connect time.
         """
         import plugins.memory.honcho.cli as honcho_cli
+
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
-        for legacy in ("localhost:8000", "10.0.0.5:8000", "honcho.local:8080", "host.example.com"):
-            assert honcho_cli._resolve_api_key({"baseUrl": legacy}) == "local", \
+        for legacy in (
+            "localhost:8000",
+            "10.0.0.5:8000",
+            "honcho.local:8080",
+            "host.example.com",
+        ):
+            assert honcho_cli._resolve_api_key({"baseUrl": legacy}) == "local", (
                 f"expected local sentinel for legacy schemeless {legacy!r}"
+            )
 
 
 class TestCmdStatus:
-    def test_reports_connection_failure_when_session_setup_fails(self, monkeypatch, capsys, tmp_path):
+    def test_reports_connection_failure_when_session_setup_fails(
+        self, monkeypatch, capsys, tmp_path
+    ):
         import plugins.memory.honcho.cli as honcho_cli
 
         cfg_path = tmp_path / "honcho.json"

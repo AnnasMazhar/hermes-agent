@@ -11,9 +11,9 @@ def _agent_with_stubbed_persistence():
     agent._session_messages = []
     agent.saved_session_logs = []
     agent.flushed_session_db_messages = []
-    agent._save_session_log = lambda messages: agent.saved_session_logs.append(
-        [m.copy() for m in messages]
-    )
+    agent._save_session_log = lambda messages: agent.saved_session_logs.append([
+        m.copy() for m in messages
+    ])
     agent._flush_messages_to_session_db = lambda messages, conversation_history=None: (
         agent.flushed_session_db_messages.append([m.copy() for m in messages])
     )
@@ -33,8 +33,13 @@ def test_persist_session_strips_trailing_empty_recovery_scaffolding():
         {
             "role": "assistant",
             "content": "",
-            "tool_calls": [{"id": "call_1", "type": "function",
-                            "function": {"name": "x", "arguments": "{}"}}],
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {"name": "x", "arguments": "{}"},
+                }
+            ],
         },
         {"role": "tool", "content": "{}", "tool_call_id": "call_1"},
         {

@@ -68,7 +68,10 @@ def _exception_chain(exc: BaseException) -> list[BaseException]:
 
 def _extract_status_code(exc: BaseException) -> int | None:
     response = getattr(exc, "response", None)
-    for value in (getattr(exc, "status_code", None), getattr(response, "status_code", None)):
+    for value in (
+        getattr(exc, "status_code", None),
+        getattr(response, "status_code", None),
+    ):
         if isinstance(value, int):
             return value
     return None
@@ -202,13 +205,11 @@ def _sandbox_status_type() -> type[SandboxStatus]:
 @cache
 def _terminal_sandbox_states() -> frozenset[SandboxStatus]:
     SandboxStatus = _sandbox_status_type()
-    return frozenset(
-        {
-            SandboxStatus.ABORTED,
-            SandboxStatus.FAILED,
-            SandboxStatus.STOPPED,
-        }
-    )
+    return frozenset({
+        SandboxStatus.ABORTED,
+        SandboxStatus.FAILED,
+        SandboxStatus.STOPPED,
+    })
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,14 +247,18 @@ class VercelSandboxEnvironment(BaseEnvironment):
         self._workspace_root = DEFAULT_VERCEL_CWD
         self._remote_home = DEFAULT_VERCEL_CWD
         self._sync_manager: FileSyncManager | None = None
-        self._create_params = self._build_create_params(cpu=cpu, memory=memory, disk=disk)
+        self._create_params = self._build_create_params(
+            cpu=cpu, memory=memory, disk=disk
+        )
 
         self._sandbox = self._create_sandbox()
         self._configure_attached_sandbox(requested_cwd=requested_cwd)
         self._sync_manager.sync(force=True)
         self.init_session()
 
-    def _build_create_params(self, *, cpu: float, memory: int, disk: int) -> _SandboxCreateParams:
+    def _build_create_params(
+        self, *, cpu: float, memory: int, disk: int
+    ) -> _SandboxCreateParams:
         if disk not in (0, _DEFAULT_CONTAINER_DISK_MB):
             raise ValueError(
                 "Vercel Sandbox does not support configurable container_disk. "

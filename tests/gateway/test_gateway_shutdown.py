@@ -75,7 +75,9 @@ async def test_gateway_stop_interrupts_running_agents_and_cancels_adapter_tasks(
     with (
         patch("gateway.status.remove_pid_file"),
         patch("gateway.status.write_runtime_status"),
-        patch("agent.auxiliary_client.shutdown_cached_clients") as shutdown_cached_clients,
+        patch(
+            "agent.auxiliary_client.shutdown_cached_clients"
+        ) as shutdown_cached_clients,
     ):
         await runner.stop()
 
@@ -104,7 +106,10 @@ async def test_gateway_stop_drains_running_agents_before_disconnect():
 
     asyncio.create_task(finish_agent())
 
-    with patch("gateway.status.remove_pid_file"), patch("gateway.status.write_runtime_status"):
+    with (
+        patch("gateway.status.remove_pid_file"),
+        patch("gateway.status.write_runtime_status"),
+    ):
         await runner.stop()
 
     running_agent.interrupt.assert_not_called()
@@ -123,7 +128,10 @@ async def test_gateway_stop_interrupts_after_drain_timeout():
     running_agent = MagicMock()
     runner._running_agents = {"session": running_agent}
 
-    with patch("gateway.status.remove_pid_file"), patch("gateway.status.write_runtime_status"):
+    with (
+        patch("gateway.status.remove_pid_file"),
+        patch("gateway.status.write_runtime_status"),
+    ):
         await runner.stop()
 
     running_agent.interrupt.assert_called_once_with("Gateway shutting down")
@@ -136,7 +144,10 @@ async def test_gateway_stop_service_restart_sets_named_exit_code():
     runner, adapter = make_restart_runner()
     adapter.disconnect = AsyncMock()
 
-    with patch("gateway.status.remove_pid_file"), patch("gateway.status.write_runtime_status"):
+    with (
+        patch("gateway.status.remove_pid_file"),
+        patch("gateway.status.write_runtime_status"),
+    ):
         await runner.stop(restart=True, service_restart=True)
 
     assert runner._exit_code == GATEWAY_SERVICE_RESTART_EXIT_CODE
@@ -165,7 +176,9 @@ async def test_drain_active_agents_throttles_status_updates():
 
 
 @pytest.mark.asyncio
-async def test_gateway_stop_kills_tool_subprocesses_before_adapter_disconnect_on_timeout(monkeypatch):
+async def test_gateway_stop_kills_tool_subprocesses_before_adapter_disconnect_on_timeout(
+    monkeypatch,
+):
     """On drain timeout, tool subprocesses must be killed BEFORE adapter
     disconnect so systemd's TimeoutStopSec doesn't SIGKILL the cgroup with
     bash/sleep children still attached (#8202)."""
@@ -191,6 +204,7 @@ async def test_gateway_stop_kills_tool_subprocesses_before_adapter_disconnect_on
     import tools.process_registry as _pr
     import tools.terminal_tool as _tt
     import tools.browser_tool as _bt
+
     monkeypatch.setattr(_pr.process_registry, "kill_all", _fake_kill_all)
     monkeypatch.setattr(_tt, "cleanup_all_environments", _fake_cleanup_envs)
     monkeypatch.setattr(_bt, "cleanup_all_browsers", _fake_cleanup_browsers)
@@ -199,7 +213,10 @@ async def test_gateway_stop_kills_tool_subprocesses_before_adapter_disconnect_on
 
     runner._running_agents = {"session": MagicMock()}
 
-    with patch("gateway.status.remove_pid_file"), patch("gateway.status.write_runtime_status"):
+    with (
+        patch("gateway.status.remove_pid_file"),
+        patch("gateway.status.write_runtime_status"),
+    ):
         await runner.stop()
 
     # First kill_all must precede the first disconnect.  (Both the eager
@@ -235,12 +252,16 @@ async def test_gateway_stop_kills_tool_subprocesses_on_graceful_path(monkeypatch
     import tools.process_registry as _pr
     import tools.terminal_tool as _tt
     import tools.browser_tool as _bt
+
     monkeypatch.setattr(_pr.process_registry, "kill_all", _fake_kill_all)
     monkeypatch.setattr(_tt, "cleanup_all_environments", lambda: None)
     monkeypatch.setattr(_bt, "cleanup_all_browsers", lambda: None)
 
     # No running agents → drain returns immediately, no timeout, no eager cleanup.
-    with patch("gateway.status.remove_pid_file"), patch("gateway.status.write_runtime_status"):
+    with (
+        patch("gateway.status.remove_pid_file"),
+        patch("gateway.status.write_runtime_status"),
+    ):
         await runner.stop()
 
     # Only the final catch-all fires on the graceful path.

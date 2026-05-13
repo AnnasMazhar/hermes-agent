@@ -6,6 +6,7 @@ Covers:
 - Backward compatibility (web.backend still works as shared fallback)
 - Config keys merge correctly via DEFAULT_CONFIG
 """
+
 from __future__ import annotations
 
 import json
@@ -40,8 +41,10 @@ class TestWebProviderABCs:
         class Dummy(WebSearchProvider):
             def provider_name(self) -> str:
                 return "dummy"
+
             def is_configured(self) -> bool:
                 return True
+
             def search(self, query: str, limit: int = 5) -> Dict[str, Any]:
                 return {"success": True, "data": {"web": []}}
 
@@ -56,8 +59,10 @@ class TestWebProviderABCs:
         class Dummy(WebExtractProvider):
             def provider_name(self) -> str:
                 return "dummy"
+
             def is_configured(self) -> bool:
                 return True
+
             def extract(self, urls: List[str], **kwargs) -> Dict[str, Any]:
                 return {"success": True, "data": [{"url": urls[0], "content": "x"}]}
 
@@ -77,50 +82,72 @@ class TestPerCapabilityBackendSelection:
     def test_search_backend_overrides_generic(self, monkeypatch):
         from tools import web_tools
 
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
-            "backend": "firecrawl",
-            "search_backend": "tavily",
-        })
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {
+                "backend": "firecrawl",
+                "search_backend": "tavily",
+            },
+        )
         monkeypatch.setenv("TAVILY_API_KEY", "test-key")
         assert web_tools._get_search_backend() == "tavily"
 
     def test_extract_backend_overrides_generic(self, monkeypatch):
         from tools import web_tools
 
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
-            "backend": "tavily",
-            "extract_backend": "exa",
-        })
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {
+                "backend": "tavily",
+                "extract_backend": "exa",
+            },
+        )
         monkeypatch.setenv("EXA_API_KEY", "test-key")
         assert web_tools._get_extract_backend() == "exa"
 
     def test_falls_back_to_generic_backend_when_search_backend_empty(self, monkeypatch):
         from tools import web_tools
 
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
-            "backend": "tavily",
-            "search_backend": "",
-        })
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {
+                "backend": "tavily",
+                "search_backend": "",
+            },
+        )
         monkeypatch.setenv("TAVILY_API_KEY", "test-key")
         assert web_tools._get_search_backend() == "tavily"
 
-    def test_falls_back_to_generic_backend_when_extract_backend_empty(self, monkeypatch):
+    def test_falls_back_to_generic_backend_when_extract_backend_empty(
+        self, monkeypatch
+    ):
         from tools import web_tools
 
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
-            "backend": "parallel",
-            "extract_backend": "",
-        })
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {
+                "backend": "parallel",
+                "extract_backend": "",
+            },
+        )
         monkeypatch.setenv("PARALLEL_API_KEY", "test-key")
         assert web_tools._get_extract_backend() == "parallel"
 
     def test_search_backend_ignored_when_not_available(self, monkeypatch):
         from tools import web_tools
 
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
-            "backend": "firecrawl",
-            "search_backend": "exa",  # set but no EXA_API_KEY
-        })
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {
+                "backend": "firecrawl",
+                "search_backend": "exa",  # set but no EXA_API_KEY
+            },
+        )
         monkeypatch.delenv("EXA_API_KEY", raising=False)
         monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-key")
         # Should fall back to firecrawl since exa isn't configured
@@ -129,9 +156,13 @@ class TestPerCapabilityBackendSelection:
     def test_fully_backward_compatible_with_web_backend_only(self, monkeypatch):
         from tools import web_tools
 
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
-            "backend": "tavily",
-        })
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {
+                "backend": "tavily",
+            },
+        )
         monkeypatch.setenv("TAVILY_API_KEY", "test-key")
         # No search_backend or extract_backend set — both fall through
         assert web_tools._get_search_backend() == "tavily"
@@ -180,7 +211,9 @@ class TestWebSearchUsesSearchBackend:
             return result
 
         monkeypatch.setattr(web_tools, "_get_search_backend", tracking_get_search)
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {"backend": "firecrawl"})
+        monkeypatch.setattr(
+            web_tools, "_load_web_config", lambda: {"backend": "firecrawl"}
+        )
         monkeypatch.setenv("FIRECRAWL_API_KEY", "fake")
 
         # The function will fail at Firecrawl client level but we just

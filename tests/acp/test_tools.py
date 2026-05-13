@@ -25,7 +25,14 @@ from acp.schema import (
 # ---------------------------------------------------------------------------
 
 
-COMMON_HERMES_TOOLS = ["read_file", "search_files", "terminal", "patch", "write_file", "process"]
+COMMON_HERMES_TOOLS = [
+    "read_file",
+    "search_files",
+    "terminal",
+    "patch",
+    "write_file",
+    "process",
+]
 
 
 class TestToolKindMap:
@@ -121,17 +128,26 @@ class TestBuildToolTitle:
         assert title == "skill view (github-pitfalls)"
 
     def test_skill_view_title_includes_linked_file(self):
-        title = build_tool_title("skill_view", {"name": "github-pitfalls", "file_path": "references/api.md"})
+        title = build_tool_title(
+            "skill_view", {"name": "github-pitfalls", "file_path": "references/api.md"}
+        )
         assert title == "skill view (github-pitfalls/references/api.md)"
 
     def test_execute_code_title_includes_first_code_line(self):
-        title = build_tool_title("execute_code", {"code": "\nfrom hermes_tools import terminal\nprint('done')"})
+        title = build_tool_title(
+            "execute_code",
+            {"code": "\nfrom hermes_tools import terminal\nprint('done')"},
+        )
         assert title == "python: from hermes_tools import terminal"
 
     def test_skill_manage_title_includes_action_and_target(self):
         title = build_tool_title(
             "skill_manage",
-            {"action": "patch", "name": "hermes-agent-operations", "file_path": "references/acp.md"},
+            {
+                "action": "patch",
+                "name": "hermes-agent-operations",
+                "file_path": "references/acp.md",
+            },
         )
         assert title == "skill patch: hermes-agent-operations/references/acp.md"
 
@@ -217,7 +233,11 @@ class TestBuildToolStart:
         assert result.raw_input is None
 
     def test_build_tool_start_for_todo_is_human_readable(self):
-        args = {"todos": [{"id": "one", "content": "Fix ACP rendering", "status": "in_progress"}]}
+        args = {
+            "todos": [
+                {"id": "one", "content": "Fix ACP rendering", "status": "in_progress"}
+            ]
+        }
         result = build_tool_start("tc-todo", "todo", args)
         assert result.title == "todo (1 item)"
         assert "Fix ACP rendering" in result.content[0].content.text
@@ -252,7 +272,9 @@ class TestBuildToolStart:
         assert result.kind == "edit"
         assert result.title == "skill patch: hermes-agent-operations/references/acp.md"
         assert isinstance(result.content[0], FileEditToolCallContent)
-        assert result.content[0].path == "skills/hermes-agent-operations/references/acp.md"
+        assert (
+            result.content[0].path == "skills/hermes-agent-operations/references/acp.md"
+        )
         assert result.content[0].old_text == "old advice"
         assert result.content[0].new_text == "new advice"
         assert result.raw_input is None
@@ -273,7 +295,9 @@ class TestBuildToolStart:
 class TestBuildToolComplete:
     def test_build_tool_complete_for_terminal(self):
         """Completed terminal call should include output text."""
-        result = build_tool_complete("tc-2", "terminal", "total 42\ndrwxr-xr-x 2 root root 4096 ...")
+        result = build_tool_complete(
+            "tc-2", "terminal", "total 42\ndrwxr-xr-x 2 root root 4096 ..."
+        )
         assert isinstance(result, ToolCallProgress)
         assert result.status == "completed"
         assert len(result.content) >= 1
@@ -294,7 +318,9 @@ class TestBuildToolComplete:
         assert "**Progress:** 1 completed, 1 in progress, 0 pending" in text
         assert result.raw_output is None
 
-    def test_build_tool_complete_for_skill_view_summarizes_content_without_raw_json(self):
+    def test_build_tool_complete_for_skill_view_summarizes_content_without_raw_json(
+        self,
+    ):
         result = build_tool_complete(
             "tc-skill",
             "skill_view",
@@ -310,7 +336,9 @@ class TestBuildToolComplete:
         assert result.raw_output is None
 
     def test_build_tool_complete_for_execute_code_formats_output(self):
-        result = build_tool_complete("tc-code", "execute_code", '{"output":"hello\\n","exit_code":0}')
+        result = build_tool_complete(
+            "tc-code", "execute_code", '{"output":"hello\\n","exit_code":0}'
+        )
         text = result.content[0].content.text
         assert "Exit code: 0" in text
         assert "hello" in text
@@ -332,7 +360,7 @@ class TestBuildToolComplete:
         assert "`patch`" in text
         assert "`hermes-agent-operations`" in text
         assert "references/hermes-acp-zed-rendering.md" in text
-        assert "{\"success\"" not in text
+        assert '{"success"' not in text
         assert result.raw_output is None
 
     def test_build_tool_complete_for_read_file_formats_content(self):
@@ -340,7 +368,7 @@ class TestBuildToolComplete:
             "tc-read",
             "read_file",
             '{"content":"1|hello\\n2|world","total_lines":2}',
-            function_args={"path":"README.md","offset":1,"limit":20},
+            function_args={"path": "README.md", "offset": 1, "limit": 20},
         )
         text = result.content[0].content.text
         assert "Read README.md" in text
@@ -366,7 +394,7 @@ class TestBuildToolComplete:
             "tc-process",
             "process",
             '{"processes":[{"session_id":"p1","status":"running","pid":123,"command":"npm run dev"}]}',
-            function_args={"action":"list"},
+            function_args={"action": "list"},
         )
         text = result.content[0].content.text
         assert "Processes: 1" in text
@@ -404,7 +432,11 @@ class TestBuildToolComplete:
             "tc-memory",
             "memory",
             '{"success":true,"target":"user","entries":["private long memory"],"usage":"1% — 19/2000 chars","entry_count":1,"message":"Entry added."}',
-            function_args={"action":"add","target":"user","content":"User likes concise ACP rendering."},
+            function_args={
+                "action": "add",
+                "target": "user",
+                "content": "User likes concise ACP rendering.",
+            },
         )
         text = result.content[0].content.text
         assert "Memory add saved" in text
@@ -464,7 +496,9 @@ class TestBuildToolComplete:
 
     def test_build_tool_complete_for_write_file_uses_snapshot_diff(self, tmp_path):
         target = tmp_path / "diff-test.txt"
-        snapshot = type("Snapshot", (), {"paths": [target], "before": {str(target): None}})()
+        snapshot = type(
+            "Snapshot", (), {"paths": [target], "before": {str(target): None}}
+        )()
         target.write_text("hello from hermes\n", encoding="utf-8")
 
         result = build_tool_complete(

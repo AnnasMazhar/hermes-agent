@@ -161,7 +161,9 @@ def _build_codex_client():
         return None
 
 
-def _collect_image_b64(client: Any, *, prompt: str, size: str, quality: str) -> Optional[str]:
+def _collect_image_b64(
+    client: Any, *, prompt: str, size: str, quality: str
+) -> Optional[str]:
     """Stream a Codex Responses image_generation call and return the b64 image."""
     image_b64: Optional[str] = None
 
@@ -169,20 +171,24 @@ def _collect_image_b64(client: Any, *, prompt: str, size: str, quality: str) -> 
         model=_CODEX_CHAT_MODEL,
         store=False,
         instructions=_CODEX_INSTRUCTIONS,
-        input=[{
-            "type": "message",
-            "role": "user",
-            "content": [{"type": "input_text", "text": prompt}],
-        }],
-        tools=[{
-            "type": "image_generation",
-            "model": API_MODEL,
-            "size": size,
-            "quality": quality,
-            "output_format": "png",
-            "background": "opaque",
-            "partial_images": 1,
-        }],
+        input=[
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": prompt}],
+            }
+        ],
+        tools=[
+            {
+                "type": "image_generation",
+                "model": API_MODEL,
+                "size": size,
+                "quality": quality,
+                "output_format": "png",
+                "background": "opaque",
+                "partial_images": 1,
+            }
+        ],
         tool_choice={
             "type": "allowed_tools",
             "mode": "required",

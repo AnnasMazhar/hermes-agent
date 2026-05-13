@@ -22,10 +22,12 @@ from hermes_cli.vercel_auth import describe_vercel_auth
 from hermes_constants import OPENROUTER_MODELS_URL
 from tools.tool_backend_helpers import managed_nous_tools_enabled
 
+
 def check_mark(ok: bool) -> str:
     if ok:
         return color("✓", Colors.GREEN)
     return color("✗", Colors.RED)
+
 
 def redact_key(key: str) -> str:
     """Redact an API key for display.
@@ -36,6 +38,7 @@ def redact_key(key: str) -> str:
     consolidated via PR that also introduced ``mask_secret``).
     """
     from agent.redact import mask_secret
+
     return mask_secret(key, empty=color("(not set)", Colors.DIM))
 
 
@@ -44,6 +47,7 @@ def _format_iso_timestamp(value) -> str:
     if not value or not isinstance(value, str):
         return "(unknown)"
     from datetime import datetime, timezone
+
     text = value.strip()
     if not text:
         return "(unknown)"
@@ -89,13 +93,23 @@ from hermes_constants import is_termux as _is_termux
 
 def show_status(args):
     """Show status of all Hermes Agent components."""
-    show_all = getattr(args, 'all', False)
-    deep = getattr(args, 'deep', False)
+    show_all = getattr(args, "all", False)
+    deep = getattr(args, "deep", False)
 
     print()
-    print(color("┌─────────────────────────────────────────────────────────┐", Colors.CYAN))
-    print(color("│                 ⚕ Hermes Agent Status                  │", Colors.CYAN))
-    print(color("└─────────────────────────────────────────────────────────┘", Colors.CYAN))
+    print(
+        color(
+            "┌─────────────────────────────────────────────────────────┐", Colors.CYAN
+        )
+    )
+    print(
+        color("│                 ⚕ Hermes Agent Status                  │", Colors.CYAN)
+    )
+    print(
+        color(
+            "└─────────────────────────────────────────────────────────┘", Colors.CYAN
+        )
+    )
 
     # =========================================================================
     # Environment
@@ -106,7 +120,9 @@ def show_status(args):
     print(f"  Python:       {sys.version.split()[0]}")
 
     env_path = get_env_path()
-    print(f"  .env file:    {check_mark(env_path.exists())} {'exists' if env_path.exists() else 'not found'}")
+    print(
+        f"  .env file:    {check_mark(env_path.exists())} {'exists' if env_path.exists() else 'not found'}"
+    )
 
     try:
         config = load_config()
@@ -169,9 +185,12 @@ def show_status(args):
         print(f"  {name:<12}  {check_mark(has_key)} {display}")
 
     from hermes_cli.auth import get_anthropic_key
+
     anthropic_value = get_anthropic_key()
     anthropic_display = redact_key(anthropic_value) if not show_all else anthropic_value
-    print(f"  {'Anthropic':<12}  {check_mark(bool(anthropic_value))} {anthropic_display}")
+    print(
+        f"  {'Anthropic':<12}  {check_mark(bool(anthropic_value))} {anthropic_display}"
+    )
 
     # =========================================================================
     # Auth Providers (OAuth)
@@ -186,6 +205,7 @@ def show_status(args):
             get_qwen_auth_status,
             get_minimax_oauth_auth_status,
         )
+
         nous_status = get_nous_auth_status()
         codex_status = get_codex_auth_status()
         qwen_status = get_qwen_auth_status()
@@ -198,11 +218,12 @@ def show_status(args):
 
     nous_logged_in = bool(nous_status.get("logged_in"))
     nous_error = nous_status.get("error")
-    nous_label = "logged in" if nous_logged_in else "not logged in (run: hermes auth add nous --type oauth)"
-    print(
-        f"  {'Nous Portal':<12}  {check_mark(nous_logged_in)} "
-        f"{nous_label}"
+    nous_label = (
+        "logged in"
+        if nous_logged_in
+        else "not logged in (run: hermes auth add nous --type oauth)"
     )
+    print(f"  {'Nous Portal':<12}  {check_mark(nous_logged_in)} {nous_label}")
     portal_url = nous_status.get("portal_base_url") or "(unknown)"
     access_exp = _format_iso_timestamp(nous_status.get("access_expires_at"))
     key_exp = _format_iso_timestamp(nous_status.get("agent_key_expires_at"))
@@ -243,7 +264,10 @@ def show_status(args):
     qwen_exp = qwen_status.get("expires_at_ms")
     if qwen_exp:
         from datetime import datetime, timezone
-        print(f"    Access exp: {datetime.fromtimestamp(int(qwen_exp) / 1000, tz=timezone.utc).isoformat()}")
+
+        print(
+            f"    Access exp: {datetime.fromtimestamp(int(qwen_exp) / 1000, tz=timezone.utc).isoformat()}"
+        )
     if qwen_status.get("error") and not qwen_logged_in:
         print(f"    Error:      {qwen_status.get('error')}")
 
@@ -284,13 +308,17 @@ def show_status(args):
                 state = "available via subscription (optional)"
             else:
                 state = "not configured"
-            print(f"  {feature.label:<15} {check_mark(feature.available or feature.active or feature.managed_by_nous)} {state}")
+            print(
+                f"  {feature.label:<15} {check_mark(feature.available or feature.active or feature.managed_by_nous)} {state}"
+            )
     elif nous_logged_in:
         # Logged into Nous but on the free tier — show upgrade nudge
         print()
         print(color("◆ Nous Tool Gateway", Colors.CYAN, Colors.BOLD))
         print("  Your free-tier Nous account does not include Tool Gateway access.")
-        print("  Upgrade your subscription to unlock managed web, image, TTS, and browser tools.")
+        print(
+            "  Upgrade your subscription to unlock managed web, image, TTS, and browser tools."
+        )
         try:
             portal_url = nous_status.get("portal_base_url", "").rstrip("/")
             if portal_url:
@@ -305,11 +333,11 @@ def show_status(args):
     print(color("◆ API-Key Providers", Colors.CYAN, Colors.BOLD))
 
     apikey_providers = {
-        "Z.AI / GLM":       ("GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"),
-        "Kimi / Moonshot":  ("KIMI_API_KEY",),
+        "Z.AI / GLM": ("GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"),
+        "Kimi / Moonshot": ("KIMI_API_KEY",),
         "StepFun Step Plan": ("STEPFUN_API_KEY",),
-        "MiniMax":          ("MINIMAX_API_KEY",),
-        "MiniMax (China)":  ("MINIMAX_CN_API_KEY",),
+        "MiniMax": ("MINIMAX_API_KEY",),
+        "MiniMax (China)": ("MINIMAX_CN_API_KEY",),
     }
     for pname, env_vars in apikey_providers.items():
         key_val = ""
@@ -326,10 +354,17 @@ def show_status(args):
     # empty list is the most common LM Studio support case.
     if _effective_provider_label() == "LM Studio":
         from hermes_cli.models import probe_lmstudio_models
+
         model_cfg = config.get("model")
-        base = (model_cfg.get("base_url") if isinstance(model_cfg, dict) else None) or get_env_value("LM_BASE_URL") or "http://127.0.0.1:1234/v1"
+        base = (
+            (model_cfg.get("base_url") if isinstance(model_cfg, dict) else None)
+            or get_env_value("LM_BASE_URL")
+            or "http://127.0.0.1:1234/v1"
+        )
         try:
-            models = probe_lmstudio_models(api_key=get_env_value("LM_API_KEY") or "", base_url=base, timeout=1.5)
+            models = probe_lmstudio_models(
+                api_key=get_env_value("LM_API_KEY") or "", base_url=base, timeout=1.5
+            )
             if models is None:
                 ok, msg = False, f"unreachable at {base}"
             else:
@@ -344,7 +379,9 @@ def show_status(args):
     print()
     print(color("◆ Terminal Backend", Colors.CYAN, Colors.BOLD))
 
-    terminal_cfg = config.get("terminal", {}) if isinstance(config.get("terminal"), dict) else {}
+    terminal_cfg = (
+        config.get("terminal", {}) if isinstance(config.get("terminal"), dict) else {}
+    )
     terminal_env = os.getenv("TERMINAL_ENV", "")
     if not terminal_env:
         terminal_env = terminal_cfg.get("backend", "local")
@@ -359,10 +396,16 @@ def show_status(args):
         docker_image = os.getenv("TERMINAL_DOCKER_IMAGE", "python:3.11-slim")
         print(f"  Docker Image: {docker_image}")
     elif terminal_env == "daytona":
-        daytona_image = os.getenv("TERMINAL_DAYTONA_IMAGE", "nikolaik/python-nodejs:python3.11-nodejs20")
+        daytona_image = os.getenv(
+            "TERMINAL_DAYTONA_IMAGE", "nikolaik/python-nodejs:python3.11-nodejs20"
+        )
         print(f"  Daytona Image: {daytona_image}")
     elif terminal_env == "vercel_sandbox":
-        runtime = os.getenv("TERMINAL_VERCEL_RUNTIME") or terminal_cfg.get("vercel_runtime") or "node24"
+        runtime = (
+            os.getenv("TERMINAL_VERCEL_RUNTIME")
+            or terminal_cfg.get("vercel_runtime")
+            or "node24"
+        )
         persist = os.getenv("TERMINAL_CONTAINER_PERSISTENT")
         if persist is None:
             persist_enabled = bool(terminal_cfg.get("container_persistent", True))
@@ -370,17 +413,27 @@ def show_status(args):
             persist_enabled = persist.lower() in ("1", "true", "yes", "on")
         auth_status = describe_vercel_auth()
         sdk_ok = importlib.util.find_spec("vercel") is not None
-        sdk_label = "installed" if sdk_ok else "missing (install: pip install 'hermes-agent[vercel]')"
+        sdk_label = (
+            "installed"
+            if sdk_ok
+            else "missing (install: pip install 'hermes-agent[vercel]')"
+        )
         print(f"  Runtime:      {runtime}")
         print(f"  SDK:          {check_mark(sdk_ok)} {sdk_label}")
         print(f"  Auth:         {check_mark(auth_status.ok)} {auth_status.label}")
         for line in auth_status.detail_lines:
             print(f"  Auth detail:  {line}")
-        print(f"  Persistence:  {'snapshot filesystem' if persist_enabled else 'ephemeral filesystem'}")
-        print("  Processes:    live processes do not survive cleanup, snapshots, or sandbox recreation")
+        print(
+            f"  Persistence:  {'snapshot filesystem' if persist_enabled else 'ephemeral filesystem'}"
+        )
+        print(
+            "  Processes:    live processes do not survive cleanup, snapshots, or sandbox recreation"
+        )
 
     sudo_password = os.getenv("SUDO_PASSWORD", "")
-    print(f"  Sudo:         {check_mark(bool(sudo_password))} {'enabled' if sudo_password else 'disabled'}")
+    print(
+        f"  Sudo:         {check_mark(bool(sudo_password))} {'enabled' if sudo_password else 'disabled'}"
+    )
 
     # =========================================================================
     # Messaging Platforms
@@ -409,23 +462,24 @@ def show_status(args):
     for name, (token_var, home_var) in platforms.items():
         token = os.getenv(token_var, "")
         has_token = bool(token)
-        
+
         home_channel = ""
         if home_var:
             home_channel = os.getenv(home_var, "")
         # Back-compat: QQBot home channel was renamed from QQ_HOME_CHANNEL to QQBOT_HOME_CHANNEL
         if not home_channel and home_var == "QQBOT_HOME_CHANNEL":
             home_channel = os.getenv("QQ_HOME_CHANNEL", "")
-        
+
         status = "configured" if has_token else "not configured"
         if home_channel:
             status += f" (home: {home_channel})"
-        
+
         print(f"  {name:<12}  {check_mark(has_token)} {status}")
 
     # Plugin-registered platforms
     try:
         from gateway.platform_registry import platform_registry
+
         for entry in platform_registry.plugin_entries():
             configured = entry.check_fn()
             status_str = "configured" if configured else "not configured"
@@ -441,29 +495,38 @@ def show_status(args):
     print(color("◆ Gateway Service", Colors.CYAN, Colors.BOLD))
 
     try:
-        from hermes_cli.gateway import get_gateway_runtime_snapshot, _format_gateway_pids
+        from hermes_cli.gateway import (
+            get_gateway_runtime_snapshot,
+            _format_gateway_pids,
+        )
 
         snapshot = get_gateway_runtime_snapshot()
         is_running = snapshot.running
-        print(f"  Status:       {check_mark(is_running)} {'running' if is_running else 'stopped'}")
+        print(
+            f"  Status:       {check_mark(is_running)} {'running' if is_running else 'stopped'}"
+        )
         print(f"  Manager:      {snapshot.manager}")
         if snapshot.gateway_pids:
             print(f"  PID(s):       {_format_gateway_pids(snapshot.gateway_pids)}")
         if snapshot.has_process_service_mismatch:
-            print("  Service:      installed but not managing the current running gateway")
+            print(
+                "  Service:      installed but not managing the current running gateway"
+            )
         elif _is_termux() and not snapshot.gateway_pids:
             print("  Start with:   hermes gateway")
-            print("  Note:         Android may stop background jobs when Termux is suspended")
+            print(
+                "  Note:         Android may stop background jobs when Termux is suspended"
+            )
         elif snapshot.service_installed and not snapshot.service_running:
             print("  Service:      installed but stopped")
     except Exception:
         if _is_termux():
             print(f"  Status:       {color('unknown', Colors.DIM)}")
             print("  Manager:      Termux / manual process")
-        elif sys.platform.startswith('linux'):
+        elif sys.platform.startswith("linux"):
             print(f"  Status:       {color('unknown', Colors.DIM)}")
             print("  Manager:      systemd/manual")
-        elif sys.platform == 'darwin':
+        elif sys.platform == "darwin":
             print(f"  Status:       {color('unknown', Colors.DIM)}")
             print("  Manager:      launchd")
         else:
@@ -479,6 +542,7 @@ def show_status(args):
     jobs_file = get_hermes_home() / "cron" / "jobs.json"
     if jobs_file.exists():
         import json
+
         try:
             with open(jobs_file, encoding="utf-8") as f:
                 data = json.load(f)
@@ -499,6 +563,7 @@ def show_status(args):
     sessions_file = get_hermes_home() / "sessions" / "sessions.json"
     if sessions_file.exists():
         import json
+
         try:
             with open(sessions_file, encoding="utf-8") as f:
                 data = json.load(f)
@@ -514,28 +579,32 @@ def show_status(args):
     if deep:
         print()
         print(color("◆ Deep Checks", Colors.CYAN, Colors.BOLD))
-        
+
         # Check OpenRouter connectivity
         openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
         if openrouter_key:
             try:
                 import httpx
+
                 response = httpx.get(
                     OPENROUTER_MODELS_URL,
                     headers={"Authorization": f"Bearer {openrouter_key}"},
-                    timeout=10
+                    timeout=10,
                 )
                 ok = response.status_code == 200
-                print(f"  OpenRouter:   {check_mark(ok)} {'reachable' if ok else f'error ({response.status_code})'}")
+                print(
+                    f"  OpenRouter:   {check_mark(ok)} {'reachable' if ok else f'error ({response.status_code})'}"
+                )
             except Exception as e:
                 print(f"  OpenRouter:   {check_mark(False)} error: {e}")
-        
+
         # Check gateway port
         try:
             import socket
+
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
-            result = sock.connect_ex(('127.0.0.1', 18789))
+            result = sock.connect_ex(("127.0.0.1", 18789))
             sock.close()
             # Port in use = gateway likely running
             port_in_use = result == 0

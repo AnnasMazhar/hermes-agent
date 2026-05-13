@@ -3,6 +3,7 @@
 Tests the unified streaming API call, delta callbacks, tool-call
 suppression, provider fallback, and CLI streaming display.
 """
+
 import json
 import threading
 import uuid
@@ -16,8 +17,12 @@ import pytest
 
 
 def _make_stream_chunk(
-    content=None, tool_calls=None, finish_reason=None,
-    model=None, reasoning_content=None, usage=None,
+    content=None,
+    tool_calls=None,
+    finish_reason=None,
+    model=None,
+    reasoning_content=None,
+    usage=None,
 ):
     """Build a mock streaming chunk matching OpenAI's ChatCompletionChunk shape."""
     delta = SimpleNamespace(
@@ -39,7 +44,9 @@ def _make_stream_chunk(
     return chunk
 
 
-def _make_tool_call_delta(index=0, tc_id=None, name=None, arguments=None, extra_content=None, model_extra=None):
+def _make_tool_call_delta(
+    index=0, tc_id=None, name=None, arguments=None, extra_content=None, model_extra=None
+):
     """Build a mock tool call delta."""
     func = SimpleNamespace(name=name, arguments=arguments)
     delta = SimpleNamespace(index=index, id=tc_id, function=func)
@@ -72,7 +79,9 @@ class TestStreamingAccumulator:
             _make_stream_chunk(content="Hello"),
             _make_stream_chunk(content=" world"),
             _make_stream_chunk(content="!", finish_reason="stop", model="test-model"),
-            _make_empty_chunk(usage=SimpleNamespace(prompt_tokens=10, completion_tokens=3)),
+            _make_empty_chunk(
+                usage=SimpleNamespace(prompt_tokens=10, completion_tokens=3)
+            ),
         ]
 
         mock_client = MagicMock()
@@ -105,15 +114,17 @@ class TestStreamingAccumulator:
         from run_agent import AIAgent
 
         chunks = [
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_123", name="terminal")
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments='{"command":')
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments=' "ls"}')
-            ]),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_123", name="terminal")
+                ]
+            ),
+            _make_stream_chunk(
+                tool_calls=[_make_tool_call_delta(index=0, arguments='{"command":')]
+            ),
+            _make_stream_chunk(
+                tool_calls=[_make_tool_call_delta(index=0, arguments=' "ls"}')]
+            ),
             _make_stream_chunk(finish_reason="tool_calls"),
         ]
 
@@ -143,7 +154,9 @@ class TestStreamingAccumulator:
 
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
-    def test_tool_name_not_duplicated_when_resent_per_chunk(self, mock_close, mock_create):
+    def test_tool_name_not_duplicated_when_resent_per_chunk(
+        self, mock_close, mock_create
+    ):
         """MiniMax M2.7 via NVIDIA NIM resends the full name in every chunk.
 
         Bug #8259: the old += accumulation produced "read_fileread_file".
@@ -152,15 +165,31 @@ class TestStreamingAccumulator:
         from run_agent import AIAgent
 
         chunks = [
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_nim", name="read_file")
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_nim", name="read_file", arguments='{"path":')
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_nim", name="read_file", arguments=' "x.py"}')
-            ]),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_nim", name="read_file")
+                ]
+            ),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(
+                        index=0,
+                        tc_id="call_nim",
+                        name="read_file",
+                        arguments='{"path":',
+                    )
+                ]
+            ),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(
+                        index=0,
+                        tc_id="call_nim",
+                        name="read_file",
+                        arguments=' "x.py"}',
+                    )
+                ]
+            ),
             _make_stream_chunk(finish_reason="tool_calls"),
         ]
 
@@ -194,21 +223,27 @@ class TestStreamingAccumulator:
         from run_agent import AIAgent
 
         chunks = [
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(
-                    index=0,
-                    tc_id="call_gemini",
-                    name="cronjob",
-                    model_extra={
-                        "extra_content": {
-                            "google": {"thought_signature": "sig-123"}
-                        }
-                    },
-                )
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments='{"task": "deep index on ."}')
-            ]),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(
+                        index=0,
+                        tc_id="call_gemini",
+                        name="cronjob",
+                        model_extra={
+                            "extra_content": {
+                                "google": {"thought_signature": "sig-123"}
+                            }
+                        },
+                    )
+                ]
+            ),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(
+                        index=0, arguments='{"task": "deep index on ."}'
+                    )
+                ]
+            ),
             _make_stream_chunk(finish_reason="tool_calls"),
         ]
 
@@ -231,9 +266,7 @@ class TestStreamingAccumulator:
 
         tc = response.choices[0].message.tool_calls
         assert tc is not None
-        assert tc[0].extra_content == {
-            "google": {"thought_signature": "sig-123"}
-        }
+        assert tc[0].extra_content == {"google": {"thought_signature": "sig-123"}}
 
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
@@ -243,12 +276,16 @@ class TestStreamingAccumulator:
 
         chunks = [
             _make_stream_chunk(content="Let me check"),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_456", name="web_search")
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments='{"query": "test"}')
-            ]),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_456", name="web_search")
+                ]
+            ),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, arguments='{"query": "test"}')
+                ]
+            ),
             _make_stream_chunk(finish_reason="tool_calls"),
         ]
 
@@ -351,7 +388,9 @@ class TestStreamingCallbacks:
 
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
-    def test_chat_stream_refreshes_activity_on_every_chunk(self, mock_close, mock_create):
+    def test_chat_stream_refreshes_activity_on_every_chunk(
+        self, mock_close, mock_create
+    ):
         """Each streamed chat chunk should refresh the activity timestamp."""
         from run_agent import AIAgent
 
@@ -390,12 +429,16 @@ class TestStreamingCallbacks:
         from run_agent import AIAgent
 
         chunks = [
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_789", name="terminal")
-            ]),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments='{"command": "ls"}')
-            ]),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_789", name="terminal")
+                ]
+            ),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, arguments='{"command": "ls"}')
+                ]
+            ),
             _make_stream_chunk(finish_reason="tool_calls"),
         ]
 
@@ -429,9 +472,11 @@ class TestStreamingCallbacks:
 
         chunks = [
             _make_stream_chunk(content="thinking..."),
-            _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_abc", name="read_file")
-            ]),
+            _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_abc", name="read_file")
+                ]
+            ),
             _make_stream_chunk(content=" more text"),
             _make_stream_chunk(finish_reason="tool_calls"),
         ]
@@ -566,7 +611,9 @@ class TestStreamingFallback:
         import httpx
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = httpx.ConnectError("socket closed")
+        mock_client.chat.completions.create.side_effect = httpx.ConnectError(
+            "socket closed"
+        )
         mock_create.return_value = mock_client
 
         agent = AIAgent(
@@ -603,9 +650,12 @@ class TestStreamingFallback:
         # Create an APIError that mimics what the OpenAI SDK raises from SSE error events.
         # Key: no status_code attribute (unlike APIStatusError which has one).
         from openai import APIError as OAIAPIError
+
         sse_error = OAIAPIError(
             message="Network connection lost.",
-            request=httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions"),
+            request=httpx.Request(
+                "POST", "https://openrouter.ai/api/v1/chat/completions"
+            ),
             body={"message": "Network connection lost."},
         )
 
@@ -634,15 +684,20 @@ class TestStreamingFallback:
 
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
-    def test_sse_non_connection_error_propagates_immediately(self, mock_close, mock_create):
+    def test_sse_non_connection_error_propagates_immediately(
+        self, mock_close, mock_create
+    ):
         """SSE errors that aren't connection-related propagate immediately (no stream retry)."""
         from run_agent import AIAgent
         import httpx
 
         from openai import APIError as OAIAPIError
+
         sse_error = OAIAPIError(
             message="Invalid model configuration.",
-            request=httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions"),
+            request=httpx.Request(
+                "POST", "https://openrouter.ai/api/v1/chat/completions"
+            ),
             body={"message": "Invalid model configuration."},
         )
 
@@ -711,7 +766,9 @@ class TestReasoningStreaming:
 
         assert reasoning_deltas == ["Let me think", " about this"]
         assert text_deltas == ["The answer is 42"]
-        assert response.choices[0].message.reasoning_content == "Let me think about this"
+        assert (
+            response.choices[0].message.reasoning_content == "Let me think about this"
+        )
         assert response.choices[0].message.content == "The answer is 42"
 
 
@@ -723,6 +780,7 @@ class TestHasStreamConsumers:
 
     def test_no_consumers(self):
         from run_agent import AIAgent
+
         agent = AIAgent(
             api_key="test-key",
             base_url="https://openrouter.ai/api/v1",
@@ -735,6 +793,7 @@ class TestHasStreamConsumers:
 
     def test_delta_callback_set(self):
         from run_agent import AIAgent
+
         agent = AIAgent(
             api_key="test-key",
             base_url="https://openrouter.ai/api/v1",
@@ -748,6 +807,7 @@ class TestHasStreamConsumers:
 
     def test_stream_callback_set(self):
         from run_agent import AIAgent
+
         agent = AIAgent(
             api_key="test-key",
             base_url="https://openrouter.ai/api/v1",
@@ -796,12 +856,18 @@ class TestCodexStreamCallbacks:
         mock_stream = MagicMock()
         mock_stream.__enter__ = MagicMock(return_value=mock_stream)
         mock_stream.__exit__ = MagicMock(return_value=False)
-        mock_stream.__iter__ = MagicMock(return_value=iter([mock_event_text, mock_event_done]))
+        mock_stream.__iter__ = MagicMock(
+            return_value=iter([mock_event_text, mock_event_done])
+        )
         mock_stream.get_final_response.return_value = SimpleNamespace(
-            output=[SimpleNamespace(
-                type="message",
-                content=[SimpleNamespace(type="output_text", text="Hello from Codex!")],
-            )],
+            output=[
+                SimpleNamespace(
+                    type="message",
+                    content=[
+                        SimpleNamespace(type="output_text", text="Hello from Codex!")
+                    ],
+                )
+            ],
             status="completed",
         )
 
@@ -848,10 +914,12 @@ class TestCodexStreamCallbacks:
             return_value=iter([mock_event_text_1, mock_event_text_2, mock_event_done])
         )
         mock_stream.get_final_response.return_value = SimpleNamespace(
-            output=[SimpleNamespace(
-                type="message",
-                content=[SimpleNamespace(type="output_text", text="Hello world")],
-            )],
+            output=[
+                SimpleNamespace(
+                    type="message",
+                    content=[SimpleNamespace(type="output_text", text="Hello world")],
+                )
+            ],
             status="completed",
         )
 
@@ -867,10 +935,16 @@ class TestCodexStreamCallbacks:
         import httpx
 
         fallback_response = SimpleNamespace(
-            output=[SimpleNamespace(
-                type="message",
-                content=[SimpleNamespace(type="output_text", text="fallback from create stream")],
-            )],
+            output=[
+                SimpleNamespace(
+                    type="message",
+                    content=[
+                        SimpleNamespace(
+                            type="output_text", text="fallback from create stream"
+                        )
+                    ],
+                )
+            ],
             status="completed",
         )
 
@@ -890,7 +964,9 @@ class TestCodexStreamCallbacks:
         agent.api_mode = "codex_responses"
         agent._interrupt_requested = False
 
-        with patch.object(agent, "_run_codex_create_stream_fallback", return_value=fallback_response) as mock_fallback:
+        with patch.object(
+            agent, "_run_codex_create_stream_fallback", return_value=fallback_response
+        ) as mock_fallback:
             response = agent._run_codex_stream({}, client=mock_client)
 
         assert response is fallback_response
@@ -914,14 +990,18 @@ class TestCodexStreamCallbacks:
 
         events = [
             SimpleNamespace(type="response.output_text.delta", delta="Hello"),
-            SimpleNamespace(type="response.output_item.done", item=SimpleNamespace(type="message")),
+            SimpleNamespace(
+                type="response.output_item.done", item=SimpleNamespace(type="message")
+            ),
             SimpleNamespace(
                 type="response.completed",
                 response=SimpleNamespace(
-                    output=[SimpleNamespace(
-                        type="message",
-                        content=[SimpleNamespace(type="output_text", text="Hello")],
-                    )]
+                    output=[
+                        SimpleNamespace(
+                            type="message",
+                            content=[SimpleNamespace(type="output_text", text="Hello")],
+                        )
+                    ]
                 ),
             ),
         ]
@@ -1029,16 +1109,22 @@ class TestPartialToolCallWarning:
 
         def _stalling_stream():
             yield _make_stream_chunk(content="Let me write the audit: ")
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
-            ])
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments='{"path": "/tmp/x", '),
-            ])
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
+                ]
+            )
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, arguments='{"path": "/tmp/x", '),
+                ]
+            )
             raise _StallError("simulated upstream stall")
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = lambda *a, **kw: _stalling_stream()
+        mock_client.chat.completions.create.side_effect = (
+            lambda *a, **kw: _stalling_stream()
+        )
         mock_create.return_value = mock_client
 
         agent = AIAgent(
@@ -1057,6 +1143,7 @@ class TestPartialToolCallWarning:
         agent._current_streamed_assistant_text = "Let me write the audit: "
 
         import os as _os
+
         _prev = _os.environ.get("HERMES_STREAM_RETRIES")
         _os.environ["HERMES_STREAM_RETRIES"] = "0"
         try:
@@ -1099,7 +1186,9 @@ class TestPartialToolCallWarning:
             raise _StallError("simulated upstream stall")
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = lambda *a, **kw: _stalling_stream()
+        mock_client.chat.completions.create.side_effect = (
+            lambda *a, **kw: _stalling_stream()
+        )
         mock_create.return_value = mock_client
 
         agent = AIAgent(
@@ -1115,6 +1204,7 @@ class TestPartialToolCallWarning:
         agent._current_streamed_assistant_text = "Here's my answer so far"
 
         import os as _os
+
         _prev = _os.environ.get("HERMES_STREAM_RETRIES")
         _os.environ["HERMES_STREAM_RETRIES"] = "0"
         try:
@@ -1148,7 +1238,10 @@ class TestSilentRetryMidToolCall:
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
     def test_silent_retry_recovers_tool_call(
-        self, mock_close, mock_create, mock_replace,
+        self,
+        mock_close,
+        mock_create,
+        mock_replace,
     ):
         """First attempt: text + partial tool-call + connection drop.
         Second attempt: text + complete tool-call.  Response should contain
@@ -1160,24 +1253,33 @@ class TestSilentRetryMidToolCall:
 
         def _first_stream():
             yield _make_stream_chunk(content="Let me write the audit: ")
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
-            ])
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, arguments='{"path": "/tmp/x", '),
-            ])
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
+                ]
+            )
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, arguments='{"path": "/tmp/x", '),
+                ]
+            )
             raise _httpx.RemoteProtocolError("peer closed connection")
 
         def _second_stream():
             yield _make_stream_chunk(content="Let me write the audit: ")
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
-            ])
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(
-                    index=0, arguments='{"path": "/tmp/x", "content": "hi"}',
-                ),
-            ])
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
+                ]
+            )
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(
+                        index=0,
+                        arguments='{"path": "/tmp/x", "content": "hi"}',
+                    ),
+                ]
+            )
             yield _make_stream_chunk(finish_reason="tool_calls")
 
         def _pick_stream(*a, **kw):
@@ -1203,6 +1305,7 @@ class TestSilentRetryMidToolCall:
         agent._fire_stream_delta = lambda text: fired_deltas.append(text)
 
         import os as _os
+
         _prev = _os.environ.get("HERMES_STREAM_RETRIES")
         _os.environ["HERMES_STREAM_RETRIES"] = "2"
         try:
@@ -1225,8 +1328,7 @@ class TestSilentRetryMidToolCall:
         )
         _tc0 = tool_calls[0]
         _name = (
-            _tc0["function"]["name"] if isinstance(_tc0, dict)
-            else _tc0.function.name
+            _tc0["function"]["name"] if isinstance(_tc0, dict) else _tc0.function.name
         )
         assert _name == "write_file"
         # User saw a reconnect marker between attempts.
@@ -1243,7 +1345,10 @@ class TestSilentRetryMidToolCall:
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
     def test_silent_retry_exhausted_falls_back_to_stub(
-        self, mock_close, mock_create, mock_replace,
+        self,
+        mock_close,
+        mock_create,
+        mock_replace,
     ):
         """When all retry attempts fail with connection errors, fall back
         to the original stub-with-warning behaviour so the user isn't left
@@ -1253,13 +1358,17 @@ class TestSilentRetryMidToolCall:
 
         def _always_fails():
             yield _make_stream_chunk(content="Let me write the audit: ")
-            yield _make_stream_chunk(tool_calls=[
-                _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
-            ])
+            yield _make_stream_chunk(
+                tool_calls=[
+                    _make_tool_call_delta(index=0, tc_id="call_1", name="write_file"),
+                ]
+            )
             raise _httpx.RemoteProtocolError("peer closed connection")
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = lambda *a, **kw: _always_fails()
+        mock_client.chat.completions.create.side_effect = (
+            lambda *a, **kw: _always_fails()
+        )
         mock_create.return_value = mock_client
 
         agent = AIAgent(
@@ -1277,6 +1386,7 @@ class TestSilentRetryMidToolCall:
         agent._fire_stream_delta = lambda text: fired_deltas.append(text)
 
         import os as _os
+
         _prev = _os.environ.get("HERMES_STREAM_RETRIES")
         _os.environ["HERMES_STREAM_RETRIES"] = "1"
         try:
@@ -1298,7 +1408,10 @@ class TestSilentRetryMidToolCall:
     @patch("run_agent.AIAgent._create_request_openai_client")
     @patch("run_agent.AIAgent._close_request_openai_client")
     def test_no_silent_retry_for_text_only_stall(
-        self, mock_close, mock_create, mock_replace,
+        self,
+        mock_close,
+        mock_create,
+        mock_replace,
     ):
         """Text-only stall (no tool call in flight) must NOT trigger silent
         retry — that's the case where the user saw the model's text reply
@@ -1314,6 +1427,7 @@ class TestSilentRetryMidToolCall:
             def _gen():
                 yield _make_stream_chunk(content="Here's my answer so far")
                 raise _httpx.RemoteProtocolError("peer closed connection")
+
             return _gen()
 
         mock_client = MagicMock()
@@ -1333,6 +1447,7 @@ class TestSilentRetryMidToolCall:
         agent._current_streamed_assistant_text = "Here's my answer so far"
 
         import os as _os
+
         _prev = _os.environ.get("HERMES_STREAM_RETRIES")
         _os.environ["HERMES_STREAM_RETRIES"] = "2"
         try:
@@ -1382,6 +1497,7 @@ def _make_acp_agent(provider="copilot-acp", base_url="acp://copilot"):
     so _has_stream_consumers() returns True (ensuring the test exercises the
     ACP exclusion, not the no-consumer branch)."""
     from run_agent import AIAgent
+
     agent = AIAgent(
         api_key="test-acp-key",
         base_url=base_url,
@@ -1416,8 +1532,9 @@ class TestCopilotACPStreamingDecision:
         agent = _make_acp_agent(provider="copilot-acp", base_url="acp://copilot")
 
         with (
-            patch.object(agent, "_interruptible_api_call",
-                         return_value=_valid_acp_response()) as mock_non_stream,
+            patch.object(
+                agent, "_interruptible_api_call", return_value=_valid_acp_response()
+            ) as mock_non_stream,
             patch.object(agent, "_interruptible_streaming_api_call") as mock_stream,
         ):
             # Verify the decision logic correctly disables streaming
@@ -1481,6 +1598,7 @@ class TestCopilotACPStreamingDecision:
     def test_non_acp_provider_allows_streaming(self):
         """Regular providers still get streaming enabled."""
         from run_agent import AIAgent
+
         agent = AIAgent(
             api_key="test-key",
             base_url="https://openrouter.ai/api/v1",
@@ -1504,4 +1622,3 @@ class TestCopilotACPStreamingDecision:
             _use_streaming = False
 
         assert _use_streaming is True
-

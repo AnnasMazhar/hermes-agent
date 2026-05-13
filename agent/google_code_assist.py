@@ -117,6 +117,7 @@ class ProjectIdRequiredError(CodeAssistError):
 # HTTP primitive (auth via Bearer token passed per-call)
 # =============================================================================
 
+
 def _build_headers(access_token: str, *, user_agent_model: str = "") -> Dict[str, str]:
     ua = _GEMINI_CLI_USER_AGENT
     if user_agent_model:
@@ -150,7 +151,9 @@ def _post_json(
 ) -> Dict[str, Any]:
     data = json.dumps(body).encode("utf-8")
     request = urllib.request.Request(
-        url, data=data, method="POST",
+        url,
+        data=data,
+        method="POST",
         headers=_build_headers(access_token, user_agent_model=user_agent_model),
     )
     try:
@@ -207,11 +210,13 @@ def _is_vpc_sc_violation(body: str) -> bool:
 # load_code_assist — discovers current tier + assigned project
 # =============================================================================
 
+
 @dataclass
 class CodeAssistProjectInfo:
     """Result from ``load_code_assist``."""
+
     current_tier_id: str = ""
-    cloudaicompanion_project: str = ""   # Google-managed project (free tier)
+    cloudaicompanion_project: str = ""  # Google-managed project (free tier)
     allowed_tiers: List[str] = field(default_factory=list)
     raw: Dict[str, Any] = field(default_factory=dict)
 
@@ -241,11 +246,15 @@ def load_code_assist(
     for endpoint in endpoints:
         url = f"{endpoint}/v1internal:loadCodeAssist"
         try:
-            resp = _post_json(url, body, access_token, user_agent_model=user_agent_model)
+            resp = _post_json(
+                url, body, access_token, user_agent_model=user_agent_model
+            )
             return _parse_load_response(resp)
         except CodeAssistError as exc:
             if exc.code == "code_assist_vpc_sc":
-                logger.info("VPC-SC violation on %s — defaulting to standard-tier", endpoint)
+                logger.info(
+                    "VPC-SC violation on %s — defaulting to standard-tier", endpoint
+                )
                 return CodeAssistProjectInfo(
                     current_tier_id=STANDARD_TIER_ID,
                     cloudaicompanion_project=project_id,
@@ -260,7 +269,9 @@ def load_code_assist(
 
 def _parse_load_response(resp: Dict[str, Any]) -> CodeAssistProjectInfo:
     current_tier = resp.get("currentTier") or {}
-    tier_id = str(current_tier.get("id") or "") if isinstance(current_tier, dict) else ""
+    tier_id = (
+        str(current_tier.get("id") or "") if isinstance(current_tier, dict) else ""
+    )
     project = str(resp.get("cloudaicompanionProject") or "")
     allowed = resp.get("allowedTiers") or []
     allowed_ids: List[str] = []
@@ -281,6 +292,7 @@ def _parse_load_response(resp: Dict[str, Any]) -> CodeAssistProjectInfo:
 # =============================================================================
 # onboard_user — provisions a new user on a tier (with LRO polling)
 # =============================================================================
+
 
 def onboard_user(
     access_token: str,
@@ -324,19 +336,26 @@ def onboard_user(
             time.sleep(_ONBOARDING_POLL_INTERVAL_SECONDS)
             poll_url = f"{endpoint}/v1internal/{op_name}"
             try:
-                poll_resp = _post_json(poll_url, {}, access_token, user_agent_model=user_agent_model)
+                poll_resp = _post_json(
+                    poll_url, {}, access_token, user_agent_model=user_agent_model
+                )
             except CodeAssistError as exc:
-                logger.warning("Onboarding poll attempt %d failed: %s", attempt + 1, exc)
+                logger.warning(
+                    "Onboarding poll attempt %d failed: %s", attempt + 1, exc
+                )
                 continue
             if poll_resp.get("done"):
                 return poll_resp
-        logger.warning("Onboarding did not complete within %d attempts", _ONBOARDING_POLL_ATTEMPTS)
+        logger.warning(
+            "Onboarding did not complete within %d attempts", _ONBOARDING_POLL_ATTEMPTS
+        )
     return resp
 
 
 # =============================================================================
 # retrieve_user_quota — for /gquota
 # =============================================================================
+
 
 @dataclass
 class QuotaBucket:
@@ -366,13 +385,15 @@ def retrieve_user_quota(
     for b in raw_buckets:
         if not isinstance(b, dict):
             continue
-        buckets.append(QuotaBucket(
-            model_id=str(b.get("modelId") or ""),
-            token_type=str(b.get("tokenType") or ""),
-            remaining_fraction=float(b.get("remainingFraction") or 0.0),
-            reset_time_iso=str(b.get("resetTime") or ""),
-            raw=b,
-        ))
+        buckets.append(
+            QuotaBucket(
+                model_id=str(b.get("modelId") or ""),
+                token_type=str(b.get("tokenType") or ""),
+                remaining_fraction=float(b.get("remainingFraction") or 0.0),
+                reset_time_iso=str(b.get("resetTime") or ""),
+                raw=b,
+            )
+        )
     return buckets
 
 
@@ -380,13 +401,15 @@ def retrieve_user_quota(
 # Project context resolution
 # =============================================================================
 
+
 @dataclass
 class ProjectContext:
     """Resolved state for a given OAuth session."""
-    project_id: str = ""           # effective project id sent on requests
-    managed_project_id: str = ""   # Google-assigned project (free tier)
+
+    project_id: str = ""  # effective project id sent on requests
+    managed_project_id: str = ""  # Google-assigned project (free tier)
     tier_id: str = ""
-    source: str = ""               # "env", "config", "discovered", "onboarded"
+    source: str = ""  # "env", "config", "discovered", "onboarded"
 
 
 def resolve_project_context(
@@ -435,9 +458,8 @@ def resolve_project_context(
         # Re-parse from the onboard response
         response_body = onboard_resp.get("response") or {}
         if isinstance(response_body, dict):
-            effective_project = (
-                effective_project
-                or str(response_body.get("cloudaicompanionProject") or "")
+            effective_project = effective_project or str(
+                response_body.get("cloudaicompanionProject") or ""
             )
         tier = FREE_TIER_ID
         source = "onboarded"

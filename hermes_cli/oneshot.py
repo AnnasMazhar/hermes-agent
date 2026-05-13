@@ -47,7 +47,9 @@ def _normalize_toolsets(toolsets: object = None) -> list[str] | None:
     return [item for item in normalized if item] or None
 
 
-def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | None, str | None]:
+def _validate_explicit_toolsets(
+    toolsets: object = None,
+) -> tuple[list[str] | None, str | None]:
     normalized = _normalize_toolsets(toolsets)
     if normalized is None:
         return None, None
@@ -90,7 +92,11 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
             from hermes_cli.tools_config import _parse_enabled_flag
 
             cfg = read_raw_config()
-            mcp_servers = cfg.get("mcp_servers") if isinstance(cfg.get("mcp_servers"), dict) else {}
+            mcp_servers = (
+                cfg.get("mcp_servers")
+                if isinstance(cfg.get("mcp_servers"), dict)
+                else {}
+            )
             for name, server_cfg in mcp_servers.items():
                 if not isinstance(server_cfg, dict):
                     continue
@@ -104,11 +110,17 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
 
     mcp_valid = [name for name in unresolved if name in mcp_names]
     disabled = [name for name in unresolved if name in mcp_disabled]
-    unknown = [name for name in unresolved if name not in mcp_names and name not in mcp_disabled]
+    unknown = [
+        name
+        for name in unresolved
+        if name not in mcp_names and name not in mcp_disabled
+    ]
     valid = built_in + mcp_valid
 
     if unknown:
-        sys.stderr.write(f"hermes -z: ignoring unknown --toolsets entries: {', '.join(unknown)}\n")
+        sys.stderr.write(
+            f"hermes -z: ignoring unknown --toolsets entries: {', '.join(unknown)}\n"
+        )
     if disabled:
         sys.stderr.write(
             "hermes -z: ignoring disabled MCP servers (set enabled: true in config.yaml to use): "
@@ -249,6 +261,7 @@ def _run_agent(
             # endpoints not in any catalog (local servers, custom proxies, etc.).
             try:
                 from hermes_cli import model_switch as _ms
+
                 _ms._ensure_direct_aliases()
                 direct = _ms.DIRECT_ALIASES.get(explicit_model.strip().lower())
             except Exception:

@@ -18,6 +18,7 @@ from gateway.config import PlatformConfig
 # Mock the telegram package if it's not installed
 # ---------------------------------------------------------------------------
 
+
 def _ensure_telegram_mock():
     if "telegram" in sys.modules and hasattr(sys.modules["telegram"], "__file__"):
         return
@@ -46,6 +47,7 @@ from gateway.platforms.telegram import (  # noqa: E402
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def adapter():
     config = PlatformConfig(enabled=True, token="fake-token")
@@ -59,13 +61,13 @@ def adapter():
 
 class TestEscapeMdv2:
     def test_escapes_all_special_characters(self):
-        special = r'_*[]()~`>#+-=|{}.!\ '
+        special = r"_*[]()~`>#+-=|{}.!\ "
         escaped = _escape_mdv2(special)
         # Every special char should be preceded by backslash
-        for ch in r'_*[]()~`>#+-=|{}.!\  ':
-            if ch == ' ':
+        for ch in r"_*[]()~`>#+-=|{}.!\  ":
+            if ch == " ":
                 continue
-            assert f'\\{ch}' in escaped
+            assert f"\\{ch}" in escaped
 
     def test_empty_string(self):
         assert _escape_mdv2("") == ""
@@ -297,7 +299,11 @@ class TestItalicNewlineBug:
         assert "Item two" in result
         assert "Item three" in result
         # Should NOT contain _ (italic markers) wrapping list items
-        assert "_" not in result or "Item" not in result.split("_")[1] if "_" in result else True
+        assert (
+            "_" not in result or "Item" not in result.split("_")[1]
+            if "_" in result
+            else True
+        )
 
     def test_asterisk_list_items_preserved(self, adapter):
         """Each * list item should remain as a separate line, not become italic."""
@@ -579,26 +585,14 @@ class TestWrapMarkdownTables:
 
     def test_alignment_separators(self):
         """Separator rows with :--- / ---: / :---: alignment markers match."""
-        text = (
-            "| Name | Age | City |\n"
-            "|:-----|----:|:----:|\n"
-            "| Ada  |  30 | NYC  |"
-        )
+        text = "| Name | Age | City |\n|:-----|----:|:----:|\n| Ada  |  30 | NYC  |"
         out = _wrap_markdown_tables(text)
         assert "**Ada**" in out
         assert "• Age: 30" in out
         assert "• City: NYC" in out
 
     def test_two_consecutive_tables_rewritten_separately(self):
-        text = (
-            "| A | B |\n"
-            "|---|---|\n"
-            "| 1 | 2 |\n"
-            "\n"
-            "| X | Y |\n"
-            "|---|---|\n"
-            "| 9 | 8 |"
-        )
+        text = "| A | B |\n|---|---|\n| 1 | 2 |\n\n| X | Y |\n|---|---|\n| 9 | 8 |"
         out = _wrap_markdown_tables(text)
         assert out.count("**1**") == 1
         assert out.count("**9**") == 1
@@ -617,13 +611,7 @@ class TestWrapMarkdownTables:
 
     def test_existing_code_block_with_pipes_left_alone(self):
         """A table already inside a fenced code block must not be re-wrapped."""
-        text = (
-            "```\n"
-            "| a | b |\n"
-            "|---|---|\n"
-            "| 1 | 2 |\n"
-            "```"
-        )
+        text = "```\n| a | b |\n|---|---|\n| 1 | 2 |\n```"
         assert _wrap_markdown_tables(text) == text
 
     def test_no_pipe_character_short_circuits(self):
@@ -647,12 +635,7 @@ class TestFormatMessageTables:
     of escaped pipe syntax or fenced code blocks."""
 
     def test_table_rendered_as_bullets(self, adapter):
-        text = (
-            "Data:\n\n"
-            "| Col1 | Col2 |\n"
-            "|------|------|\n"
-            "| A    | B    |\n"
-        )
+        text = "Data:\n\n| Col1 | Col2 |\n|------|------|\n| A    | B    |\n"
         out = adapter.format_message(text)
         assert "*A*" in out
         assert "• Col1: A" in out
@@ -661,13 +644,7 @@ class TestFormatMessageTables:
         assert "\\|" not in out
 
     def test_text_after_table_still_formatted(self, adapter):
-        text = (
-            "| A | B |\n"
-            "|---|---|\n"
-            "| 1 | 2 |\n"
-            "\n"
-            "Nice **work** team!"
-        )
+        text = "| A | B |\n|---|---|\n| 1 | 2 |\n\nNice **work** team!"
         out = adapter.format_message(text)
         # MarkdownV2 bold conversion still happens outside the table
         assert "*work*" in out
@@ -730,7 +707,9 @@ class TestEditMessageStreamingSafety:
         adapter._bot = MagicMock()
         adapter._bot.edit_message_text = AsyncMock()
 
-        result = await adapter.edit_message("123", "456", "partial **bold", finalize=False)
+        result = await adapter.edit_message(
+            "123", "456", "partial **bold", finalize=False
+        )
 
         assert result.success is True
         adapter._bot.edit_message_text.assert_awaited_once_with(
@@ -743,9 +722,13 @@ class TestEditMessageStreamingSafety:
     async def test_final_edit_uses_markdownv2_with_plain_fallback(self):
         adapter = TelegramAdapter(PlatformConfig(enabled=True, token="fake-token"))
         adapter._bot = MagicMock()
-        adapter._bot.edit_message_text = AsyncMock(side_effect=[Exception("bad markdown"), None])
+        adapter._bot.edit_message_text = AsyncMock(
+            side_effect=[Exception("bad markdown"), None]
+        )
 
-        result = await adapter.edit_message("123", "456", "final **bold**", finalize=True)
+        result = await adapter.edit_message(
+            "123", "456", "final **bold**", finalize=True
+        )
 
         assert result.success is True
         first_call = adapter._bot.edit_message_text.await_args_list[0].kwargs

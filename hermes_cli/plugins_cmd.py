@@ -170,7 +170,9 @@ def _missing_requires_env_names(manifest: dict) -> list[str]:
         elif isinstance(entry, dict) and entry.get("name"):
             env_specs.append(entry)
 
-    return [s["name"] for s in env_specs if s.get("name") and not get_env_value(s["name"])]
+    return [
+        s["name"] for s in env_specs if s.get("name") and not get_env_value(s["name"])
+    ]
 
 
 def _prompt_plugin_env_vars(manifest: dict, console) -> None:
@@ -214,7 +216,9 @@ def _prompt_plugin_env_vars(manifest: dict, console) -> None:
         return
 
     plugin_name = manifest.get("name", "this plugin")
-    console.print(f"\n[bold]{plugin_name}[/bold] requires the following environment variables:\n")
+    console.print(
+        f"\n[bold]{plugin_name}[/bold] requires the following environment variables:\n"
+    )
 
     for spec in missing:
         name = spec["name"]
@@ -232,11 +236,14 @@ def _prompt_plugin_env_vars(manifest: dict, console) -> None:
         try:
             if secret:
                 import getpass
+
                 value = getpass.getpass(f"  {name}: ").strip()
             else:
                 value = input(f"  {name}: ").strip()
         except (EOFError, KeyboardInterrupt):
-            console.print(f"\n[dim]  Skipped (you can set these later in {display_hermes_home()}/.env)[/dim]")
+            console.print(
+                f"\n[dim]  Skipped (you can set these later in {display_hermes_home()}/.env)[/dim]"
+            )
             return
 
         if value:
@@ -244,7 +251,9 @@ def _prompt_plugin_env_vars(manifest: dict, console) -> None:
             os.environ[name] = value
             console.print(f"  [green]✓[/green] Saved to {display_hermes_home()}/.env")
         else:
-            console.print(f"  [dim]  Skipped (set {name} in {display_hermes_home()}/.env later)[/dim]")
+            console.print(
+                f"  [dim]  Skipped (set {name} in {display_hermes_home()}/.env later)[/dim]"
+            )
 
     console.print()
 
@@ -292,7 +301,9 @@ def _require_installed_plugin(name: str, plugins_dir: Path, console) -> Path:
     """Return the plugin path if it exists, or exit with an error listing installed plugins."""
     target = _sanitize_plugin_name(name, plugins_dir)
     if not target.exists():
-        installed = ", ".join(d.name for d in plugins_dir.iterdir() if d.is_dir()) or "(none)"
+        installed = (
+            ", ".join(d.name for d in plugins_dir.iterdir() if d.is_dir()) or "(none)"
+        )
         console.print(
             f"[red]Error:[/red] Plugin '{name}' not found in {plugins_dir}.\n"
             f"Installed plugins: {installed}"
@@ -432,9 +443,11 @@ def cmd_install(
         console.print(f"[red]Error:[/red] {e}")
         sys.exit(1)
 
-    if not (target / "plugin.yaml").exists() and not (target / "plugin.yml").exists() and not (
-        target / "__init__.py"
-    ).exists():
+    if (
+        not (target / "plugin.yaml").exists()
+        and not (target / "plugin.yml").exists()
+        and not (target / "__init__.py").exists()
+    ):
         console.print(
             f"[yellow]Warning:[/yellow] {installed_name} doesn't contain plugin.yaml "
             f"or __init__.py. It may not be a valid Hermes plugin.",
@@ -448,9 +461,13 @@ def cmd_install(
     if should_enable is None:
         if sys.stdin.isatty() and sys.stdout.isatty():
             try:
-                answer = input(
-                    f"  Enable '{installed_name}' now? [y/N]: ",
-                ).strip().lower()
+                answer = (
+                    input(
+                        f"  Enable '{installed_name}' now? [y/N]: ",
+                    )
+                    .strip()
+                    .lower()
+                )
                 should_enable = answer in ("y", "yes")
             except (EOFError, KeyboardInterrupt):
                 should_enable = False
@@ -543,6 +560,7 @@ def _get_disabled_set() -> set:
     """
     try:
         from hermes_cli.config import load_config
+
         config = load_config()
         disabled = cfg_get(config, "plugins", "disabled", default=[])
         return set(disabled) if isinstance(disabled, list) else set()
@@ -553,6 +571,7 @@ def _get_disabled_set() -> set:
 def _save_disabled_set(disabled: set) -> None:
     """Write the disabled plugins list to config.yaml."""
     from hermes_cli.config import load_config, save_config
+
     config = load_config()
     if "plugins" not in config:
         config["plugins"] = {}
@@ -568,6 +587,7 @@ def _get_enabled_set() -> set:
     """
     try:
         from hermes_cli.config import load_config
+
         config = load_config()
         plugins_cfg = config.get("plugins", {})
         if not isinstance(plugins_cfg, dict):
@@ -581,6 +601,7 @@ def _get_enabled_set() -> set:
 def _save_enabled_set(enabled: set) -> None:
     """Write the enabled plugins list to config.yaml."""
     from hermes_cli.config import load_config, save_config
+
     config = load_config()
     if "plugins" not in config:
         config["plugins"] = {}
@@ -656,12 +677,12 @@ def _plugin_exists(name: str) -> bool:
                 return True
     # Bundled: <repo>/plugins/<name>/ (or HERMES_BUNDLED_PLUGINS on Nix).
     from hermes_cli.plugins import get_bundled_plugins_dir
+
     repo_plugins = get_bundled_plugins_dir()
     if repo_plugins.is_dir():
         candidate = repo_plugins / name
         if candidate.is_dir() and (
-            (candidate / "plugin.yaml").exists()
-            or (candidate / "plugin.yml").exists()
+            (candidate / "plugin.yaml").exists() or (candidate / "plugin.yml").exists()
         ):
             return True
     return False
@@ -684,6 +705,7 @@ def _discover_all_plugins() -> list:
 
     # Bundled (<repo>/plugins/<name>/), excluding memory/ and context_engine/
     from hermes_cli.plugins import get_bundled_plugins_dir
+
     repo_plugins = get_bundled_plugins_dir()
     for base, source in ((repo_plugins, "bundled"), (_plugins_dir(), "user")):
         if not base.is_dir():
@@ -756,7 +778,9 @@ def cmd_list() -> None:
     console.print()
     console.print("[dim]Interactive toggle:[/dim] hermes plugins")
     console.print("[dim]Enable/disable:[/dim] hermes plugins enable/disable <name>")
-    console.print("[dim]Plugins are opt-in by default — only 'enabled' plugins load.[/dim]")
+    console.print(
+        "[dim]Plugins are opt-in by default — only 'enabled' plugins load.[/dim]"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -768,6 +792,7 @@ def _discover_memory_providers() -> list[tuple[str, str]]:
     """Return [(name, description), ...] for available memory providers."""
     try:
         from plugins.memory import discover_memory_providers
+
         return [(name, desc) for name, desc, _avail in discover_memory_providers()]
     except Exception:
         return []
@@ -777,6 +802,7 @@ def _discover_context_engines() -> list[tuple[str, str]]:
     """Return [(name, description), ...] for available context engines."""
     try:
         from plugins.context_engine import discover_context_engines
+
         return [(name, desc) for name, desc, _avail in discover_context_engines()]
     except Exception:
         return []
@@ -786,6 +812,7 @@ def _get_current_memory_provider() -> str:
     """Return the current memory.provider from config (empty = built-in)."""
     try:
         from hermes_cli.config import load_config
+
         config = load_config()
         return cfg_get(config, "memory", "provider", default="") or ""
     except Exception:
@@ -796,8 +823,11 @@ def _get_current_context_engine() -> str:
     """Return the current context.engine from config."""
     try:
         from hermes_cli.config import load_config
+
         config = load_config()
-        return cfg_get(config, "context", "engine", default="compressor") or "compressor"
+        return (
+            cfg_get(config, "context", "engine", default="compressor") or "compressor"
+        )
     except Exception:
         return "compressor"
 
@@ -805,6 +835,7 @@ def _get_current_context_engine() -> str:
 def _save_memory_provider(name: str) -> None:
     """Persist memory.provider to config.yaml."""
     from hermes_cli.config import load_config, save_config
+
     config = load_config()
     if "memory" not in config:
         config["memory"] = {}
@@ -815,6 +846,7 @@ def _save_memory_provider(name: str) -> None:
 def _save_context_engine(name: str) -> None:
     """Persist context.engine to config.yaml."""
     from hermes_cli.config import load_config, save_config
+
     config = load_config()
     if "context" not in config:
         config["context"] = {}
@@ -940,7 +972,9 @@ def cmd_toggle() -> None:
     has_categories = bool(categories)
 
     if not has_plugins and not has_categories:
-        console.print("[dim]No plugins installed and no provider categories available.[/dim]")
+        console.print(
+            "[dim]No plugins installed and no provider categories available.[/dim]"
+        )
         console.print("[dim]Install with:[/dim] hermes plugins install owner/repo")
         return
 
@@ -952,15 +986,30 @@ def cmd_toggle() -> None:
     # Launch the composite curses UI
     try:
         import curses
-        _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
-                          disabled_set, categories, console)
+
+        _run_composite_ui(
+            curses,
+            plugin_names,
+            plugin_labels,
+            plugin_selected,
+            disabled_set,
+            categories,
+            console,
+        )
     except ImportError:
-        _run_composite_fallback(plugin_names, plugin_labels, plugin_selected,
-                                disabled_set, categories, console)
+        _run_composite_fallback(
+            plugin_names,
+            plugin_labels,
+            plugin_selected,
+            disabled_set,
+            categories,
+            console,
+        )
 
 
-def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
-                      disabled, categories, console):
+def _run_composite_ui(
+    curses, plugin_names, plugin_labels, plugin_selected, disabled, categories, console
+):
     """Custom curses screen with checkboxes + category action rows."""
     from hermes_cli.curses_ui import flush_stdin
 
@@ -996,9 +1045,11 @@ def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
                     hattr |= curses.color_pair(2)
                 stdscr.addnstr(0, 0, "Plugins", max_x - 1, hattr)
                 stdscr.addnstr(
-                    1, 0,
+                    1,
+                    0,
                     "  \u2191\u2193 navigate  SPACE toggle  ENTER configure/confirm  ESC done",
-                    max_x - 1, curses.A_DIM,
+                    max_x - 1,
+                    curses.A_DIM,
                 )
             except curses.error:
                 pass
@@ -1022,7 +1073,6 @@ def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
             # Determine which items are visible based on scroll
             # We need to map logical cursor positions to screen rows
             # accounting for non-navigable separator/headers
-
 
             # --- General Plugins section ---
             if n_plugins > 0:
@@ -1111,7 +1161,8 @@ def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
                             # Refresh current values
                             categories[ci] = (
                                 _cat_name,
-                                _get_current_memory_provider() or "built-in" if ci == 0
+                                _get_current_memory_provider() or "built-in"
+                                if ci == 0
                                 else _get_current_context_engine(),
                                 cat_fn,
                             )
@@ -1144,7 +1195,8 @@ def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
                             result_holder["providers_changed"] = True
                             categories[ci] = (
                                 _cat_name,
-                                _get_current_memory_provider() or "built-in" if ci == 0
+                                _get_current_memory_provider() or "built-in"
+                                if ci == 0
                                 else _get_current_context_engine(),
                                 cat_fn,
                             )
@@ -1173,7 +1225,9 @@ def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
     # disabled (written to disabled-list) so it remains off even if the
     # plugin code does something clever like auto-enable in the future.
     new_enabled: set = set()
-    new_disabled: set = set(disabled)  # preserve existing disabled state for unseen plugins
+    new_disabled: set = set(
+        disabled
+    )  # preserve existing disabled state for unseen plugins
     for i, name in enumerate(plugin_names):
         if i in chosen:
             new_enabled.add(name)
@@ -1208,8 +1262,9 @@ def _run_composite_ui(curses, plugin_names, plugin_labels, plugin_selected,
     console.print()
 
 
-def _run_composite_fallback(plugin_names, plugin_labels, plugin_selected,
-                            disabled, categories, console):
+def _run_composite_fallback(
+    plugin_names, plugin_labels, plugin_selected, disabled, categories, console
+):
     """Text-based fallback for the composite plugins UI."""
     from hermes_cli.colors import Colors, color
 
@@ -1227,7 +1282,9 @@ def _run_composite_fallback(plugin_names, plugin_labels, plugin_selected,
                 print(f"  {marker} {i + 1:>2}. {label}")
             print()
             try:
-                val = input(color("  Toggle # (or Enter to confirm): ", Colors.DIM)).strip()
+                val = input(
+                    color("  Toggle # (or Enter to confirm): ", Colors.DIM)
+                ).strip()
                 if not val:
                     break
                 idx = int(val) - 1
@@ -1332,6 +1389,7 @@ def _get_plugin_toolset_key(name: str) -> Optional[str]:
     # Check the plugin manager for tools this plugin registered
     try:
         from hermes_cli.plugins import discover_plugins, get_plugin_manager
+
         discover_plugins()  # idempotent — ensures plugins are loaded
         manager = get_plugin_manager()
         for _key, loaded in manager._plugins.items():
@@ -1347,6 +1405,7 @@ def _get_plugin_toolset_key(name: str) -> Optional[str]:
     # Fallback: read provides_tools from manifest on disk and query registry
     try:
         from hermes_cli.plugins import get_bundled_plugins_dir
+
         for base in (get_bundled_plugins_dir(), _plugins_dir()):
             if not base.is_dir():
                 continue
@@ -1496,7 +1555,10 @@ def dashboard_remove_user_plugin(name: str) -> dict[str, Any]:
     plugins_dir = _plugins_dir()
     for n, _ver, _d, src, _path in _discover_all_plugins():
         if n == name and src == "bundled":
-            return {"ok": False, "error": "Bundled plugins cannot be removed from the dashboard."}
+            return {
+                "ok": False,
+                "error": "Bundled plugins cannot be removed from the dashboard.",
+            }
 
     target = _user_installed_plugin_dir(name)
     if target is None:

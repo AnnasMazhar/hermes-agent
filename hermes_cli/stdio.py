@@ -66,7 +66,9 @@ def _flip_console_code_page_to_utf8() -> None:
         pass
 
 
-def _reconfigure_stream(stream, *, encoding: str = "utf-8", errors: str = "replace") -> None:
+def _reconfigure_stream(
+    stream, *, encoding: str = "utf-8", errors: str = "replace"
+) -> None:
     """Reconfigure a text stream to UTF-8 in place.
 
     Uses ``TextIOWrapper.reconfigure`` (Python 3.7+).  If the stream isn't
@@ -124,7 +126,11 @@ def configure_windows_stdio() -> bool:
     # otherwise.  This happens even with full Git for Windows installed,
     # so it's not a MinGit-specific issue.
     _default_editor = _default_windows_editor()
-    if _default_editor and not os.environ.get("EDITOR") and not os.environ.get("VISUAL"):
+    if (
+        _default_editor
+        and not os.environ.get("EDITOR")
+        and not os.environ.get("VISUAL")
+    ):
         os.environ["EDITOR"] = _default_editor
 
     # Augment PATH with the Hermes-managed Git install directories so
@@ -189,7 +195,6 @@ def _default_windows_editor() -> str:
     # On the extreme off-chance notepad is missing (WinPE, Nano Server), fall
     # back to nothing and let prompt_toolkit's silent no-op do its thing.
     return ""
-
 
 
 def _augment_path_with_known_tools() -> None:

@@ -178,7 +178,9 @@ class SmsAdapter(BasePlatformAdapter):
                 form_data.add_field("Body", chunk)
 
                 try:
-                    async with session.post(url, data=form_data, headers=headers) as resp:
+                    async with session.post(
+                        url, data=form_data, headers=headers
+                    ) as resp:
                         body = await resp.json()
                         if resp.status >= 400:
                             error_msg = body.get("message", str(body))
@@ -220,7 +222,10 @@ class SmsAdapter(BasePlatformAdapter):
     # ------------------------------------------------------------------
 
     def _validate_twilio_signature(
-        self, url: str, post_params: dict, signature: str,
+        self,
+        url: str,
+        post_params: dict,
+        signature: str,
     ) -> bool:
         """Validate ``X-Twilio-Signature`` header (HMAC-SHA1, base64).
 
@@ -239,7 +244,10 @@ class SmsAdapter(BasePlatformAdapter):
         return False
 
     def _check_signature(
-        self, url: str, post_params: dict, signature: str,
+        self,
+        url: str,
+        post_params: dict,
+        signature: str,
     ) -> bool:
         """Compute and compare a single Twilio signature."""
         data_to_sign = url
@@ -268,17 +276,25 @@ class SmsAdapter(BasePlatformAdapter):
 
         if parsed.port == default_port:
             # Has explicit default port → strip it
-            return urllib.parse.urlunparse(
-                (parsed.scheme, parsed.hostname, parsed.path,
-                 parsed.params, parsed.query, parsed.fragment)
-            )
+            return urllib.parse.urlunparse((
+                parsed.scheme,
+                parsed.hostname,
+                parsed.path,
+                parsed.params,
+                parsed.query,
+                parsed.fragment,
+            ))
         elif parsed.port is None:
             # No port → add default
             netloc = f"{parsed.hostname}:{default_port}"
-            return urllib.parse.urlunparse(
-                (parsed.scheme, netloc, parsed.path,
-                 parsed.params, parsed.query, parsed.fragment)
-            )
+            return urllib.parse.urlunparse((
+                parsed.scheme,
+                netloc,
+                parsed.path,
+                parsed.params,
+                parsed.query,
+                parsed.fragment,
+            ))
 
         # Non-standard port — no variant
         return None
@@ -337,7 +353,9 @@ class SmsAdapter(BasePlatformAdapter):
 
         # Ignore messages from our own number (echo prevention)
         if from_number == self._from_number:
-            logger.debug("[sms] ignoring echo from own number %s", redact_phone(from_number))
+            logger.debug(
+                "[sms] ignoring echo from own number %s", redact_phone(from_number)
+            )
             return web.Response(
                 text='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
                 content_type="application/xml",

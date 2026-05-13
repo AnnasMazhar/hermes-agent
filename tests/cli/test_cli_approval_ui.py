@@ -36,16 +36,18 @@ def _make_background_cli_stub():
     cli._background_task_counter = 0
     cli._background_tasks = {}
     cli._ensure_runtime_credentials = MagicMock(return_value=True)
-    cli._resolve_turn_agent_config = MagicMock(return_value={
-        "model": "test-model",
-        "runtime": {
-            "api_key": "test-key",
-            "base_url": "https://example.test/v1",
-            "provider": "test",
-            "api_mode": "chat_completions",
-        },
-        "request_overrides": None,
-    })
+    cli._resolve_turn_agent_config = MagicMock(
+        return_value={
+            "model": "test-model",
+            "runtime": {
+                "api_key": "test-key",
+                "base_url": "https://example.test/v1",
+                "provider": "test",
+                "api_mode": "chat_completions",
+            },
+            "request_overrides": None,
+        }
+    )
     cli.max_turns = 90
     cli.enabled_toolsets = []
     cli._session_db = None
@@ -203,8 +205,10 @@ class TestCliApprovalUi:
         # Simulate a compact terminal where the old unbounded panel would overflow.
         import shutil as _shutil
 
-        with patch("cli.shutil.get_terminal_size",
-                   return_value=_shutil.os.terminal_size((100, 20))):
+        with patch(
+            "cli.shutil.get_terminal_size",
+            return_value=_shutil.os.terminal_size((100, 20)),
+        ):
             fragments = cli._get_approval_display_fragments()
 
         rendered = "".join(text for _style, text in fragments)
@@ -242,8 +246,10 @@ class TestCliApprovalUi:
 
         import shutil as _shutil
 
-        with patch("cli.shutil.get_terminal_size",
-                   return_value=_shutil.os.terminal_size((100, 12))):
+        with patch(
+            "cli.shutil.get_terminal_size",
+            return_value=_shutil.os.terminal_size((100, 12)),
+        ):
             fragments = cli._get_approval_display_fragments()
 
         rendered = "".join(text for _style, text in fragments)
@@ -251,8 +257,12 @@ class TestCliApprovalUi:
         # Command visible.
         assert "rm -rf /var/log/apache2/*.log" in rendered
         # All four choices visible.
-        for label in ("Allow once", "Allow for this session",
-                      "Add to permanent allowlist", "Deny"):
+        for label in (
+            "Allow once",
+            "Allow for this session",
+            "Add to permanent allowlist",
+            "Deny",
+        ):
             assert label in rendered, f"choice {label!r} missing"
 
     def test_approval_display_truncates_giant_command_in_view_mode(self):
@@ -275,15 +285,21 @@ class TestCliApprovalUi:
 
         import shutil as _shutil
 
-        with patch("cli.shutil.get_terminal_size",
-                   return_value=_shutil.os.terminal_size((100, 24))):
+        with patch(
+            "cli.shutil.get_terminal_size",
+            return_value=_shutil.os.terminal_size((100, 24)),
+        ):
             fragments = cli._get_approval_display_fragments()
 
         rendered = "".join(text for _style, text in fragments)
 
         # All four choices visible even with a huge command.
-        for label in ("Allow once", "Allow for this session",
-                      "Add to permanent allowlist", "Deny"):
+        for label in (
+            "Allow once",
+            "Allow for this session",
+            "Add to permanent allowlist",
+            "Deny",
+        ):
             assert label in rendered, f"choice {label!r} missing"
 
         # Command got truncated with a marker.
@@ -321,9 +337,11 @@ class TestCliApprovalUi:
                     "failed": False,
                 }
 
-        with patch.object(cli_module, "AIAgent", FakeAgent), \
-             patch.object(cli_module, "_cprint"), \
-             patch.object(cli_module, "ChatConsole") as chat_console:
+        with (
+            patch.object(cli_module, "AIAgent", FakeAgent),
+            patch.object(cli_module, "_cprint"),
+            patch.object(cli_module, "ChatConsole") as chat_console,
+        ):
             chat_console.return_value.print = MagicMock()
             cli._handle_background_command("/btw check weather")
 

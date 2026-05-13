@@ -207,7 +207,8 @@ def load_user_credentials(email: Optional[str] = None) -> Optional[Any]:
     except Exception as exc:
         logger.warning(
             "[google_chat_user_oauth] token at %s is corrupt: %s",
-            token_path, exc,
+            token_path,
+            exc,
         )
         return None
 
@@ -220,7 +221,8 @@ def load_user_credentials(email: Optional[str] = None) -> Optional[Any]:
         except Exception as exc:
             logger.warning(
                 "[google_chat_user_oauth] token refresh failed (user "
-                "should re-run /setup-files): %s", exc,
+                "should re-run /setup-files): %s",
+                exc,
             )
             return None
         # Persist refreshed token so next start picks up the new access
@@ -258,7 +260,8 @@ def refresh_or_none(creds: Any, email: Optional[str] = None) -> Optional[Any]:
             return creds
         except Exception as exc:
             logger.warning(
-                "[google_chat_user_oauth] refresh failed: %s", exc,
+                "[google_chat_user_oauth] refresh failed: %s",
+                exc,
             )
             return None
 
@@ -273,6 +276,7 @@ def build_user_chat_service(creds: Any) -> Any:
     client (``self._chat_api`` in the adapter) is for everything else.
     """
     from googleapiclient.discovery import build as build_service
+
     return build_service("chat", "v1", credentials=creds, cache_discovery=False)
 
 
@@ -308,7 +312,8 @@ def _persist_credentials(creds: Any, token_path: Path) -> None:
     except Exception:
         logger.debug(
             "[google_chat_user_oauth] failed to persist credentials at %s",
-            token_path, exc_info=True,
+            token_path,
+            exc_info=True,
         )
 
 
@@ -339,6 +344,7 @@ def install_deps() -> bool:
     try:
         import googleapiclient  # noqa: F401
         import google_auth_oauthlib  # noqa: F401
+
         print("Dependencies already installed.")
         return True
     except ImportError:
@@ -396,9 +402,7 @@ def store_client_secret(path: str) -> None:
             "ERROR: Not a Google OAuth client secret file (missing "
             "'installed' or 'web' key)."
         )
-        print(
-            "Download from: https://console.cloud.google.com/apis/credentials"
-        )
+        print("Download from: https://console.cloud.google.com/apis/credentials")
         sys.exit(1)
 
     target = _client_secret_path()
@@ -407,8 +411,9 @@ def store_client_secret(path: str) -> None:
     print(f"OK: Client secret saved to {target}")
 
 
-def _save_pending_auth(*, state: str, code_verifier: str,
-                      email: Optional[str] = None) -> None:
+def _save_pending_auth(
+    *, state: str, code_verifier: str, email: Optional[str] = None
+) -> None:
     pending = _pending_auth_path(email)
     pending.parent.mkdir(parents=True, exist_ok=True)
     pending.write_text(
@@ -581,6 +586,7 @@ def revoke(email: Optional[str] = None) -> None:
             creds.refresh(Request())
 
         import urllib.request
+
         urllib.request.urlopen(
             urllib.request.Request(
                 f"https://oauth2.googleapis.com/revoke?token={creds.token}",
@@ -602,21 +608,31 @@ def main() -> None:
         description="Google Chat user-OAuth setup for Hermes (native attachment delivery)"
     )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--check", action="store_true",
-                       help="Check if auth is valid (exit 0=yes, 1=no)")
-    group.add_argument("--client-secret", metavar="PATH",
-                       help="Store OAuth client_secret.json")
-    group.add_argument("--auth-url", action="store_true",
-                       help="Print OAuth URL for user to visit")
-    group.add_argument("--auth-code", metavar="CODE",
-                       help="Exchange auth code for token")
-    group.add_argument("--revoke", action="store_true",
-                       help="Revoke and delete stored token")
-    group.add_argument("--install-deps", action="store_true",
-                       help="Install Python dependencies")
-    parser.add_argument("--email", metavar="EMAIL", default=None,
-                       help="Scope operation to a specific user's token "
-                            "(default: legacy single-user path)")
+    group.add_argument(
+        "--check", action="store_true", help="Check if auth is valid (exit 0=yes, 1=no)"
+    )
+    group.add_argument(
+        "--client-secret", metavar="PATH", help="Store OAuth client_secret.json"
+    )
+    group.add_argument(
+        "--auth-url", action="store_true", help="Print OAuth URL for user to visit"
+    )
+    group.add_argument(
+        "--auth-code", metavar="CODE", help="Exchange auth code for token"
+    )
+    group.add_argument(
+        "--revoke", action="store_true", help="Revoke and delete stored token"
+    )
+    group.add_argument(
+        "--install-deps", action="store_true", help="Install Python dependencies"
+    )
+    parser.add_argument(
+        "--email",
+        metavar="EMAIL",
+        default=None,
+        help="Scope operation to a specific user's token "
+        "(default: legacy single-user path)",
+    )
     args = parser.parse_args()
 
     email = args.email or None

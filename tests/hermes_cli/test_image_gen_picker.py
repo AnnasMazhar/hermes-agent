@@ -25,8 +25,13 @@ class _FakeProvider(ImageGenProvider):
             "env_vars": [{"key": f"{name.upper()}_API_KEY", "prompt": f"{name} key"}],
         }
         self._models = models or [
-            {"id": f"{name}-model-v1", "display": f"{name} v1",
-             "speed": "~5s", "strengths": "test", "price": "$"},
+            {
+                "id": f"{name}-model-v1",
+                "display": f"{name} v1",
+                "speed": "~5s",
+                "strengths": "test",
+                "price": "$",
+            },
         ]
 
     @property
@@ -90,7 +95,11 @@ class TestPluginPickerInjection:
 
         cat = tools_config.TOOL_CATEGORIES["image_gen"]
         visible = tools_config._visible_providers(cat, {})
-        plugin_names = [p.get("image_gen_plugin_name") for p in visible if p.get("image_gen_plugin_name")]
+        plugin_names = [
+            p.get("image_gen_plugin_name")
+            for p in visible
+            if p.get("image_gen_plugin_name")
+        ]
         assert "someimg" in plugin_names
 
     def test_visible_providers_does_not_inject_into_other_categories(self, monkeypatch):
@@ -133,33 +142,46 @@ class TestConfigPrompt:
 
         image_gen_registry.register_provider(_FakeProvider("avail-img", available=True))
 
-        assert tools_config._toolset_needs_configuration_prompt("image_gen", {}) is False
+        assert (
+            tools_config._toolset_needs_configuration_prompt("image_gen", {}) is False
+        )
 
-    def test_image_gen_still_prompts_when_nothing_available(self, monkeypatch, tmp_path):
+    def test_image_gen_still_prompts_when_nothing_available(
+        self, monkeypatch, tmp_path
+    ):
         from hermes_cli import tools_config
 
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
         monkeypatch.delenv("FAL_KEY", raising=False)
 
-        image_gen_registry.register_provider(_FakeProvider("unavail-img", available=False))
+        image_gen_registry.register_provider(
+            _FakeProvider("unavail-img", available=False)
+        )
 
         assert tools_config._toolset_needs_configuration_prompt("image_gen", {}) is True
 
 
 class TestConfigWriting:
-    def test_picking_plugin_provider_writes_provider_and_model(self, monkeypatch, tmp_path):
+    def test_picking_plugin_provider_writes_provider_and_model(
+        self, monkeypatch, tmp_path
+    ):
         """When a user picks a plugin-backed image_gen provider with no
         env vars needed, ``_configure_provider`` should write both
         ``image_gen.provider`` and ``image_gen.model``."""
         from hermes_cli import tools_config
 
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        image_gen_registry.register_provider(_FakeProvider("noenv", schema={
-            "name": "NoEnv",
-            "badge": "free",
-            "tag": "",
-            "env_vars": [],
-        }))
+        image_gen_registry.register_provider(
+            _FakeProvider(
+                "noenv",
+                schema={
+                    "name": "NoEnv",
+                    "badge": "free",
+                    "tag": "",
+                    "env_vars": [],
+                },
+            )
+        )
 
         # Stub out the interactive model picker — no TTY in tests.
         monkeypatch.setattr(tools_config, "_prompt_choice", lambda *a, **kw: 0)
@@ -175,7 +197,9 @@ class TestConfigWriting:
         assert config["image_gen"]["provider"] == "noenv"
         assert config["image_gen"]["model"] == "noenv-model-v1"
 
-    def test_reconfiguring_plugin_provider_writes_provider_and_model(self, monkeypatch, tmp_path):
+    def test_reconfiguring_plugin_provider_writes_provider_and_model(
+        self, monkeypatch, tmp_path
+    ):
         """The reconfigure path should switch image_gen away from managed FAL
         and onto the selected plugin provider."""
         from hermes_cli import tools_config
@@ -203,7 +227,9 @@ class TestConfigWriting:
         assert config["image_gen"]["model"] == "testopenai-model-v1"
         assert config["image_gen"]["use_gateway"] is False
 
-    def test_plugin_provider_active_overrides_managed_nous_active_label(self, monkeypatch):
+    def test_plugin_provider_active_overrides_managed_nous_active_label(
+        self, monkeypatch
+    ):
         from hermes_cli import tools_config
 
         monkeypatch.setattr(

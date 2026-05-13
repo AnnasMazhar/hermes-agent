@@ -22,9 +22,19 @@ def _ensure_discord_mock():
     discord_mod.DMChannel = type("DMChannel", (), {})
     discord_mod.Thread = type("Thread", (), {})
     discord_mod.ForumChannel = type("ForumChannel", (), {})
-    discord_mod.ui = SimpleNamespace(View=object, button=lambda *a, **k: (lambda fn: fn), Button=object)
-    discord_mod.ButtonStyle = SimpleNamespace(success=1, primary=2, secondary=2, danger=3, green=1, grey=2, blurple=2, red=3)
-    discord_mod.Color = SimpleNamespace(orange=lambda: 1, green=lambda: 2, blue=lambda: 3, red=lambda: 4, purple=lambda: 5)
+    discord_mod.ui = SimpleNamespace(
+        View=object, button=lambda *a, **k: (lambda fn: fn), Button=object
+    )
+    discord_mod.ButtonStyle = SimpleNamespace(
+        success=1, primary=2, secondary=2, danger=3, green=1, grey=2, blurple=2, red=3
+    )
+    discord_mod.Color = SimpleNamespace(
+        orange=lambda: 1,
+        green=lambda: 2,
+        blue=lambda: 3,
+        red=lambda: 4,
+        purple=lambda: 5,
+    )
     discord_mod.Interaction = object
     discord_mod.Embed = MagicMock
     discord_mod.app_commands = SimpleNamespace(
@@ -56,7 +66,12 @@ class FakeDMChannel:
 
 
 class FakeTextChannel:
-    def __init__(self, channel_id: int = 1, name: str = "general", guild_name: str = "Hermes Server"):
+    def __init__(
+        self,
+        channel_id: int = 1,
+        name: str = "general",
+        guild_name: str = "Hermes Server",
+    ):
         self.id = channel_id
         self.name = name
         self.guild = SimpleNamespace(name=guild_name)
@@ -64,7 +79,12 @@ class FakeTextChannel:
 
 
 class FakeForumChannel:
-    def __init__(self, channel_id: int = 1, name: str = "support-forum", guild_name: str = "Hermes Server"):
+    def __init__(
+        self,
+        channel_id: int = 1,
+        name: str = "support-forum",
+        guild_name: str = "Hermes Server",
+    ):
         self.id = channel_id
         self.name = name
         self.guild = SimpleNamespace(name=guild_name)
@@ -73,7 +93,13 @@ class FakeForumChannel:
 
 
 class FakeThread:
-    def __init__(self, channel_id: int = 1, name: str = "thread", parent=None, guild_name: str = "Hermes Server"):
+    def __init__(
+        self,
+        channel_id: int = 1,
+        name: str = "thread",
+        parent=None,
+        guild_name: str = "Hermes Server",
+    ):
         self.id = channel_id
         self.name = name
         self.parent = parent
@@ -84,9 +110,13 @@ class FakeThread:
 
 @pytest.fixture
 def adapter(monkeypatch):
-    monkeypatch.setattr(discord_platform.discord, "DMChannel", FakeDMChannel, raising=False)
+    monkeypatch.setattr(
+        discord_platform.discord, "DMChannel", FakeDMChannel, raising=False
+    )
     monkeypatch.setattr(discord_platform.discord, "Thread", FakeThread, raising=False)
-    monkeypatch.setattr(discord_platform.discord, "ForumChannel", FakeForumChannel, raising=False)
+    monkeypatch.setattr(
+        discord_platform.discord, "ForumChannel", FakeForumChannel, raising=False
+    )
 
     config = PlatformConfig(enabled=True, token="fake-token")
     adapter = DiscordAdapter(config)
@@ -107,7 +137,9 @@ def make_message(*, channel, content: str, mentions=None, msg_type=None):
         created_at=datetime.now(timezone.utc),
         channel=channel,
         author=author,
-        type=msg_type if msg_type is not None else discord_platform.discord.MessageType.default,
+        type=msg_type
+        if msg_type is not None
+        else discord_platform.discord.MessageType.default,
     )
 
 
@@ -117,7 +149,9 @@ async def test_discord_defaults_to_require_mention(adapter, monkeypatch):
     monkeypatch.delenv("DISCORD_REQUIRE_MENTION", raising=False)
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
 
-    message = make_message(channel=FakeTextChannel(channel_id=123), content="hello from channel")
+    message = make_message(
+        channel=FakeTextChannel(channel_id=123), content="hello from channel"
+    )
 
     await adapter._handle_message(message)
 
@@ -130,7 +164,9 @@ async def test_discord_free_response_in_server_channels(adapter, monkeypatch):
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "false")
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
 
-    message = make_message(channel=FakeTextChannel(channel_id=123), content="hello from channel")
+    message = make_message(
+        channel=FakeTextChannel(channel_id=123), content="hello from channel"
+    )
 
     await adapter._handle_message(message)
 
@@ -176,7 +212,10 @@ async def test_discord_forum_threads_are_handled_as_threads(adapter, monkeypatch
     assert event.source.chat_id == "456"
     assert event.source.thread_id == "456"
     assert event.source.chat_type == "thread"
-    assert event.source.chat_name == "Hermes Server / support-forum / Can Hermes reply here?"
+    assert (
+        event.source.chat_name
+        == "Hermes Server / support-forum / Can Hermes reply here?"
+    )
 
 
 @pytest.mark.asyncio
@@ -184,7 +223,9 @@ async def test_discord_can_still_require_mentions_when_enabled(adapter, monkeypa
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
 
-    message = make_message(channel=FakeTextChannel(channel_id=789), content="ignored without mention")
+    message = make_message(
+        channel=FakeTextChannel(channel_id=789), content="ignored without mention"
+    )
 
     await adapter._handle_message(message)
 
@@ -192,11 +233,15 @@ async def test_discord_can_still_require_mentions_when_enabled(adapter, monkeypa
 
 
 @pytest.mark.asyncio
-async def test_discord_free_response_channel_overrides_mention_requirement(adapter, monkeypatch):
+async def test_discord_free_response_channel_overrides_mention_requirement(
+    adapter, monkeypatch
+):
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.setenv("DISCORD_FREE_RESPONSE_CHANNELS", "789,999")
 
-    message = make_message(channel=FakeTextChannel(channel_id=789), content="allowed without mention")
+    message = make_message(
+        channel=FakeTextChannel(channel_id=789), content="allowed without mention"
+    )
 
     await adapter._handle_message(message)
 
@@ -206,12 +251,16 @@ async def test_discord_free_response_channel_overrides_mention_requirement(adapt
 
 
 @pytest.mark.asyncio
-async def test_discord_free_response_channel_can_come_from_config_extra(adapter, monkeypatch):
+async def test_discord_free_response_channel_can_come_from_config_extra(
+    adapter, monkeypatch
+):
     monkeypatch.delenv("DISCORD_REQUIRE_MENTION", raising=False)
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
     adapter.config.extra["free_response_channels"] = ["789", "999"]
 
-    message = make_message(channel=FakeTextChannel(channel_id=789), content="allowed from config")
+    message = make_message(
+        channel=FakeTextChannel(channel_id=789), content="allowed from config"
+    )
 
     await adapter._handle_message(message)
 
@@ -241,7 +290,9 @@ def test_discord_free_response_channels_int_list(adapter, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_discord_forum_parent_in_free_response_list_allows_forum_thread(adapter, monkeypatch):
+async def test_discord_forum_parent_in_free_response_list_allows_forum_thread(
+    adapter, monkeypatch
+):
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.setenv("DISCORD_FREE_RESPONSE_CHANNELS", "222")
 
@@ -258,7 +309,9 @@ async def test_discord_forum_parent_in_free_response_list_allows_forum_thread(ad
 
 
 @pytest.mark.asyncio
-async def test_discord_accepts_and_strips_bot_mentions_when_required(adapter, monkeypatch):
+async def test_discord_accepts_and_strips_bot_mentions_when_required(
+    adapter, monkeypatch
+):
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
 
@@ -281,7 +334,9 @@ async def test_discord_dms_ignore_mention_requirement(adapter, monkeypatch):
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
 
-    message = make_message(channel=FakeDMChannel(channel_id=654), content="dm without mention")
+    message = make_message(
+        channel=FakeDMChannel(channel_id=654), content="dm without mention"
+    )
 
     await adapter._handle_message(message)
 
@@ -401,7 +456,9 @@ async def test_discord_auto_thread_tracks_participation(adapter, monkeypatch):
     fake_thread = FakeThread(channel_id=555, name="auto-thread")
     adapter._auto_create_thread = AsyncMock(return_value=fake_thread)
 
-    message = make_message(channel=FakeTextChannel(channel_id=123), content="start a thread")
+    message = make_message(
+        channel=FakeTextChannel(channel_id=123), content="start a thread"
+    )
 
     await adapter._handle_message(message)
 
@@ -423,7 +480,9 @@ async def test_discord_thread_participation_tracked_on_dispatch(adapter, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_discord_voice_linked_channel_skips_mention_requirement_and_auto_thread(adapter, monkeypatch):
+async def test_discord_voice_linked_channel_skips_mention_requirement_and_auto_thread(
+    adapter, monkeypatch
+):
     """Active voice-linked text channels should behave like free-response channels."""
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)
@@ -446,10 +505,10 @@ async def test_discord_voice_linked_channel_skips_mention_requirement_and_auto_t
     assert event.source.chat_type == "group"
 
 
-
-
 @pytest.mark.asyncio
-async def test_discord_voice_linked_parent_thread_still_requires_mention(adapter, monkeypatch):
+async def test_discord_voice_linked_parent_thread_still_requires_mention(
+    adapter, monkeypatch
+):
     """Threads under a voice-linked channel should still require @mention."""
     monkeypatch.setenv("DISCORD_REQUIRE_MENTION", "true")
     monkeypatch.delenv("DISCORD_FREE_RESPONSE_CHANNELS", raising=False)

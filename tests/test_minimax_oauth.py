@@ -8,6 +8,7 @@ Covers:
   re-login required on invalid_grant
 - resolve_minimax_oauth_runtime_credentials: error when not logged in
 """
+
 from __future__ import annotations
 
 import base64
@@ -43,6 +44,7 @@ from hermes_cli.auth import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_httpx_response(status_code: int, body: dict | None = None, text: str = ""):
     """Return a minimal mock that quacks like httpx.Response."""
     resp = MagicMock()
@@ -71,6 +73,7 @@ def _past_iso(seconds_ago: int = 3600) -> str:
 # 1. test_pkce_pair_produces_valid_s256
 # ---------------------------------------------------------------------------
 
+
 def test_pkce_pair_produces_valid_s256():
     verifier, challenge, state = _minimax_pkce_pair()
 
@@ -83,9 +86,11 @@ def test_pkce_pair_produces_valid_s256():
     assert "=" not in challenge
 
     # Re-compute challenge from verifier and verify it matches
-    expected = base64.urlsafe_b64encode(
-        hashlib.sha256(verifier.encode()).digest()
-    ).decode().rstrip("=")
+    expected = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+        .decode()
+        .rstrip("=")
+    )
     assert challenge == expected
 
     # State must be non-empty
@@ -102,14 +107,18 @@ def test_pkce_pair_produces_valid_s256():
 # 2. test_request_user_code_happy_path
 # ---------------------------------------------------------------------------
 
+
 def test_request_user_code_happy_path():
     state = "test-state-abc"
-    mock_response = _make_httpx_response(200, {
-        "user_code": "ABC-123",
-        "verification_uri": "https://minimax.io/verify",
-        "expired_in": int(time.time() * 1000) + 300_000,
-        "state": state,
-    })
+    mock_response = _make_httpx_response(
+        200,
+        {
+            "user_code": "ABC-123",
+            "verification_uri": "https://minimax.io/verify",
+            "expired_in": int(time.time() * 1000) + 300_000,
+            "state": state,
+        },
+    )
 
     client = MagicMock()
     client.post.return_value = mock_response
@@ -137,13 +146,17 @@ def test_request_user_code_happy_path():
 # 3. test_request_user_code_state_mismatch_raises
 # ---------------------------------------------------------------------------
 
+
 def test_request_user_code_state_mismatch_raises():
-    mock_response = _make_httpx_response(200, {
-        "user_code": "XYZ",
-        "verification_uri": "https://minimax.io/verify",
-        "expired_in": 300,
-        "state": "wrong-state",  # Mismatched!
-    })
+    mock_response = _make_httpx_response(
+        200,
+        {
+            "user_code": "XYZ",
+            "verification_uri": "https://minimax.io/verify",
+            "expired_in": 300,
+            "state": "wrong-state",  # Mismatched!
+        },
+    )
 
     client = MagicMock()
     client.post.return_value = mock_response
@@ -164,6 +177,7 @@ def test_request_user_code_state_mismatch_raises():
 # ---------------------------------------------------------------------------
 # 4. test_request_user_code_non_200_raises
 # ---------------------------------------------------------------------------
+
 
 def test_request_user_code_non_200_raises():
     mock_response = _make_httpx_response(400, text="Bad Request")
@@ -188,6 +202,7 @@ def test_request_user_code_non_200_raises():
 # ---------------------------------------------------------------------------
 # 5. test_poll_token_pending_then_success
 # ---------------------------------------------------------------------------
+
 
 def test_poll_token_pending_then_success():
     # Set a deadline far enough in the future for polling
@@ -229,6 +244,7 @@ def test_poll_token_pending_then_success():
 # 6. test_poll_token_error_raises
 # ---------------------------------------------------------------------------
 
+
 def test_poll_token_error_raises():
     deadline_ms = int(time.time() * 1000) + 60_000
     error_body = {"status": "error"}
@@ -255,6 +271,7 @@ def test_poll_token_error_raises():
 # 7. test_poll_token_timeout_raises
 # ---------------------------------------------------------------------------
 
+
 def test_poll_token_timeout_raises():
     # expired_in is a small duration (treated as seconds from now, already expired)
     expired_in = 1  # 1 second from now
@@ -278,6 +295,7 @@ def test_poll_token_timeout_raises():
     client.post.return_value = pending_resp
 
     import hermes_cli.auth as auth_module
+
     with patch.object(auth_module, "time") as mock_time_mod:
         # We need to patch the 'time' module used inside _minimax_poll_token
         # The function imports 'import time as _time' locally.
@@ -305,6 +323,7 @@ def test_poll_token_timeout_raises():
 # 8. test_refresh_skip_when_not_expired
 # ---------------------------------------------------------------------------
 
+
 def test_refresh_skip_when_not_expired():
     """When token is far from expiry, refresh should return the same state."""
     state = {
@@ -324,6 +343,7 @@ def test_refresh_skip_when_not_expired():
 # ---------------------------------------------------------------------------
 # 9. test_refresh_updates_access_token
 # ---------------------------------------------------------------------------
+
 
 def test_refresh_updates_access_token():
     """When token is close to expiry, refresh should update the state."""
@@ -366,6 +386,7 @@ def test_refresh_updates_access_token():
 # 10. test_refresh_reuse_triggers_relogin_required
 # ---------------------------------------------------------------------------
 
+
 def test_refresh_reuse_triggers_relogin_required():
     """On 400 + invalid_grant body, relogin_required should be set."""
     state = {
@@ -400,6 +421,7 @@ def test_refresh_reuse_triggers_relogin_required():
 # 11. test_resolve_credentials_requires_login
 # ---------------------------------------------------------------------------
 
+
 def test_resolve_credentials_requires_login():
     """When no state is stored, resolve_minimax_oauth_runtime_credentials raises."""
     with patch("hermes_cli.auth.get_provider_auth_state", return_value=None):
@@ -413,6 +435,7 @@ def test_resolve_credentials_requires_login():
 # ---------------------------------------------------------------------------
 # 12. test_provider_registry_contains_minimax_oauth
 # ---------------------------------------------------------------------------
+
 
 def test_provider_registry_contains_minimax_oauth():
     assert "minimax-oauth" in PROVIDER_REGISTRY
@@ -429,8 +452,10 @@ def test_provider_registry_contains_minimax_oauth():
 # 13. test_minimax_oauth_alias_resolves
 # ---------------------------------------------------------------------------
 
+
 def test_minimax_oauth_alias_resolves():
     from hermes_cli.auth import resolve_provider
+
     # Only test that minimax-oauth itself resolves (alias resolution is tested in models)
     result = resolve_provider("minimax-oauth")
     assert result == "minimax-oauth"
@@ -439,6 +464,7 @@ def test_minimax_oauth_alias_resolves():
 # ---------------------------------------------------------------------------
 # 14. test_get_minimax_oauth_auth_status_not_logged_in
 # ---------------------------------------------------------------------------
+
 
 def test_get_minimax_oauth_auth_status_not_logged_in():
     with patch("hermes_cli.auth.get_provider_auth_state", return_value=None):
@@ -451,6 +477,7 @@ def test_get_minimax_oauth_auth_status_not_logged_in():
 # ---------------------------------------------------------------------------
 # 15. test_get_minimax_oauth_auth_status_logged_in
 # ---------------------------------------------------------------------------
+
 
 def test_get_minimax_oauth_auth_status_logged_in():
     state = {

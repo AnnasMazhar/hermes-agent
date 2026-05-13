@@ -11,6 +11,7 @@ def _hermes_home_path() -> Path:
     """Resolve the active HERMES_HOME (profile-aware) without circular imports."""
     try:
         from hermes_constants import get_hermes_home  # local import to avoid cycles
+
         return get_hermes_home()
     except Exception:
         return Path(os.path.expanduser("~/.hermes"))
@@ -84,7 +85,9 @@ def is_write_denied(path: str) -> bool:
             return True
 
     safe_root = get_safe_write_root()
-    if safe_root and not (resolved == safe_root or resolved.startswith(safe_root + os.sep)):
+    if safe_root and not (
+        resolved == safe_root or resolved.startswith(safe_root + os.sep)
+    ):
         return True
 
     return False

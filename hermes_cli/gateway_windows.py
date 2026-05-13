@@ -54,6 +54,7 @@ _TASK_DESCRIPTION = "Hermes Agent Gateway - Messaging Platform Integration"
 # Platform guard
 # ---------------------------------------------------------------------------
 
+
 def _assert_windows() -> None:
     if sys.platform != "win32":
         raise RuntimeError("gateway_windows is Windows-only")
@@ -62,6 +63,7 @@ def _assert_windows() -> None:
 # ---------------------------------------------------------------------------
 # Quoting helpers (two DIFFERENT parsers — do not mix)
 # ---------------------------------------------------------------------------
+
 
 def _quote_cmd_script_arg(value: str) -> str:
     """Quote a single argument for use INSIDE a .cmd file, for cmd.exe parsing.
@@ -94,6 +96,7 @@ def _quote_schtasks_arg(value: str) -> str:
 # ---------------------------------------------------------------------------
 # schtasks.exe wrapper
 # ---------------------------------------------------------------------------
+
 
 def _exec_schtasks(args: list[str]) -> tuple[int, str, str]:
     """Run ``schtasks.exe`` with a hard timeout. Return (code, stdout, stderr).
@@ -130,6 +133,7 @@ def _should_fall_back(code: int, detail: str) -> bool:
 # ---------------------------------------------------------------------------
 # Paths: where we stash our task script and where Startup lives
 # ---------------------------------------------------------------------------
+
 
 def get_task_name() -> str:
     """Scheduled Task name, scoped per profile.
@@ -170,10 +174,21 @@ def get_task_script_path() -> Path:
 def _startup_dir() -> Path:
     appdata = os.environ.get("APPDATA", "").strip()
     if appdata:
-        return Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
-    userprofile = os.environ.get("USERPROFILE", "").strip() or os.environ.get("HOME", "").strip()
+        return (
+            Path(appdata)
+            / "Microsoft"
+            / "Windows"
+            / "Start Menu"
+            / "Programs"
+            / "Startup"
+        )
+    userprofile = (
+        os.environ.get("USERPROFILE", "").strip() or os.environ.get("HOME", "").strip()
+    )
     if not userprofile:
-        raise RuntimeError("neither APPDATA nor USERPROFILE is set — cannot resolve Startup folder")
+        raise RuntimeError(
+            "neither APPDATA nor USERPROFILE is set — cannot resolve Startup folder"
+        )
     return (
         Path(userprofile)
         / "AppData"
@@ -194,6 +209,7 @@ def get_startup_entry_path() -> Path:
 # ---------------------------------------------------------------------------
 # Script rendering
 # ---------------------------------------------------------------------------
+
 
 def _build_gateway_cmd_script(
     python_path: str,
@@ -257,7 +273,9 @@ def _write_task_script() -> Path:
     hermes_home = str(Path(get_hermes_home()).resolve())
     profile_arg = _profile_arg(hermes_home)
 
-    content = _build_gateway_cmd_script(python_path, working_dir, hermes_home, profile_arg)
+    content = _build_gateway_cmd_script(
+        python_path, working_dir, hermes_home, profile_arg
+    )
     script_path = get_task_script_path()
     script_path.write_text(content, encoding="utf-8", newline="")
     return script_path
@@ -267,9 +285,14 @@ def _write_task_script() -> Path:
 # Install / uninstall
 # ---------------------------------------------------------------------------
 
+
 def _resolve_task_user() -> str | None:
     """Return ``DOMAIN\\USER`` if available, else bare USERNAME, else None."""
-    username = os.environ.get("USERNAME") or os.environ.get("USER") or os.environ.get("LOGNAME")
+    username = (
+        os.environ.get("USERNAME")
+        or os.environ.get("USER")
+        or os.environ.get("LOGNAME")
+    )
     if not username:
         return None
     if "\\" in username:
@@ -283,9 +306,13 @@ def _install_scheduled_task(task_name: str, script_path: Path) -> tuple[bool, st
     quoted_script = _quote_schtasks_arg(str(script_path))
     # First try /Change in case the task already exists — keeps the existing
     # trigger + settings intact and just repoints /TR.
-    change_code, _out, change_err = _exec_schtasks(
-        ["/Change", "/TN", task_name, "/TR", quoted_script]
-    )
+    change_code, _out, change_err = _exec_schtasks([
+        "/Change",
+        "/TN",
+        task_name,
+        "/TR",
+        quoted_script,
+    ])
     if change_code == 0:
         return (True, f"Updated existing Scheduled Task {task_name!r}")
 
@@ -483,7 +510,9 @@ def install(force: bool = False) -> None:
 
     # schtasks create didn't work. See if it's a "fall back to startup" case.
     if _should_fall_back(1, detail):
-        print(f"↻ Scheduled Task install blocked ({detail.splitlines()[0]}) — using Startup folder fallback")
+        print(
+            f"↻ Scheduled Task install blocked ({detail.splitlines()[0]}) — using Startup folder fallback"
+        )
         entry = _install_startup_entry(script_path)
         pid = _spawn_detached(script_path)
         print(f"✓ Installed Windows login item: {entry}")
@@ -496,7 +525,9 @@ def install(force: bool = False) -> None:
     raise RuntimeError(f"Windows gateway install failed: {detail}")
 
 
-def _wait_for_gateway_ready(timeout_s: float = 6.0, interval_s: float = 0.4) -> list[int]:
+def _wait_for_gateway_ready(
+    timeout_s: float = 6.0, interval_s: float = 0.4
+) -> list[int]:
     """Poll for a live gateway process for up to ``timeout_s`` seconds.
 
     Returns the list of PIDs found. Empty list means nothing came up in
@@ -521,6 +552,7 @@ def _report_gateway_start(via: str) -> None:
         print(f"⚠ Launched gateway via {via}, but no process detected after 6s.")
         print("  Check the log for startup errors:")
         from hermes_cli.config import get_hermes_home
+
         print(f"    type {Path(get_hermes_home()).resolve()}\\logs\\gateway.log")
         print(f"    type {Path(get_hermes_home()).resolve()}\\logs\\gateway-stdio.log")
 
@@ -549,7 +581,10 @@ def uninstall() -> None:
         else:
             print(f"⚠ schtasks /Delete returned code {code}: {err.strip()}")
 
-    for path, label in [(startup_entry, "Windows login item"), (script_path, "Task script")]:
+    for path, label in [
+        (startup_entry, "Windows login item"),
+        (script_path, "Task script"),
+    ]:
         try:
             path.unlink()
             print(f"✓ Removed {label}: {path}")
@@ -560,6 +595,7 @@ def uninstall() -> None:
 # ---------------------------------------------------------------------------
 # Status / start / stop / restart
 # ---------------------------------------------------------------------------
+
 
 def is_task_registered() -> bool:
     code, _out, _err = _exec_schtasks(["/Query", "/TN", get_task_name()])
@@ -577,7 +613,14 @@ def is_installed() -> bool:
 
 def query_task_status() -> dict[str, str]:
     """Parse ``schtasks /Query /V /FO LIST`` and pull the interesting keys."""
-    code, out, err = _exec_schtasks(["/Query", "/TN", get_task_name(), "/V", "/FO", "LIST"])
+    code, out, err = _exec_schtasks([
+        "/Query",
+        "/TN",
+        get_task_name(),
+        "/V",
+        "/FO",
+        "LIST",
+    ])
     if code != 0:
         return {}
     info: dict[str, str] = {}
@@ -649,7 +692,9 @@ def start() -> None:
         if code == 0:
             _report_gateway_start(f"Scheduled Task {get_task_name()!r}")
             return
-        print(f"⚠ schtasks /Run failed (code {code}): {err.strip()} — falling back to direct spawn")
+        print(
+            f"⚠ schtasks /Run failed (code {code}): {err.strip()} — falling back to direct spawn"
+        )
 
     # Direct spawn — no script_path needed with the new argv-based spawner.
     pid = _spawn_detached()

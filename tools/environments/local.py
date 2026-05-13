@@ -55,6 +55,7 @@ def _build_provider_env_blocklist() -> frozenset:
 
     try:
         from hermes_cli.auth import PROVIDER_REGISTRY
+
         for pconfig in PROVIDER_REGISTRY.values():
             blocked.update(pconfig.api_key_env_vars)
             if pconfig.base_url_env_var:
@@ -64,6 +65,7 @@ def _build_provider_env_blocklist() -> frozenset:
 
     try:
         from hermes_cli.config import OPTIONAL_ENV_VARS
+
         for name, metadata in OPTIONAL_ENV_VARS.items():
             category = metadata.get("category")
             if category in {"tool", "messaging"}:
@@ -144,7 +146,9 @@ def _build_provider_env_blocklist() -> frozenset:
 _HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 
 
-def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = None) -> dict:
+def _sanitize_subprocess_env(
+    base_env: dict | None, extra_env: dict | None = None
+) -> dict:
     """Filter Hermes-managed secrets from a subprocess environment."""
     try:
         from tools.env_passthrough import is_env_passthrough as _is_passthrough
@@ -161,13 +165,14 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
 
     for key, value in (extra_env or {}).items():
         if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = key[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
+            real_key = key[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX) :]
             sanitized[real_key] = value
         elif key not in _HERMES_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
             sanitized[key] = value
 
     # Per-profile HOME isolation for background processes (same as _make_run_env).
     from hermes_constants import get_subprocess_home
+
     _profile_home = get_subprocess_home()
     if _profile_home:
         sanitized["HOME"] = _profile_home
@@ -200,11 +205,17 @@ def _find_bash() -> str:
     #   PortableGit: %LOCALAPPDATA%\hermes\git\bin\bash.exe   (primary)
     #   MinGit:      %LOCALAPPDATA%\hermes\git\usr\bin\bash.exe (legacy/32-bit fallback)
     _local_appdata = os.environ.get("LOCALAPPDATA", "")
-    _hermes_portable_git = os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
+    _hermes_portable_git = (
+        os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
+    )
     if _hermes_portable_git:
         for candidate in (
-            os.path.join(_hermes_portable_git, "bin", "bash.exe"),        # PortableGit (primary)
-            os.path.join(_hermes_portable_git, "usr", "bin", "bash.exe"), # MinGit fallback
+            os.path.join(
+                _hermes_portable_git, "bin", "bash.exe"
+            ),  # PortableGit (primary)
+            os.path.join(
+                _hermes_portable_git, "usr", "bin", "bash.exe"
+            ),  # MinGit fallback
         ):
             if os.path.isfile(candidate):
                 return candidate
@@ -214,8 +225,18 @@ def _find_bash() -> str:
         return found
 
     for candidate in (
-        os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "Git", "bin", "bash.exe"),
-        os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "Git", "bin", "bash.exe"),
+        os.path.join(
+            os.environ.get("ProgramFiles", r"C:\Program Files"),
+            "Git",
+            "bin",
+            "bash.exe",
+        ),
+        os.path.join(
+            os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
+            "Git",
+            "bin",
+            "bash.exe",
+        ),
         os.path.join(_local_appdata, "Programs", "Git", "bin", "bash.exe"),
     ):
         if candidate and os.path.isfile(candidate):
@@ -250,7 +271,7 @@ def _make_run_env(env: dict) -> dict:
     run_env = {}
     for k, v in merged.items():
         if k.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = k[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
+            real_key = k[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX) :]
             run_env[real_key] = v
         elif k not in _HERMES_PROVIDER_ENV_BLOCKLIST or _is_passthrough(k):
             run_env[k] = v
@@ -264,12 +285,15 @@ def _make_run_env(env: dict) -> dict:
     # Hermes is driving via _find_bash (Git Bash), and Git Bash itself
     # prepends its MSYS2 /usr/bin equivalent via the shell-init files.
     if not _IS_WINDOWS and "/usr/bin" not in existing_path.split(":"):
-        run_env["PATH"] = f"{existing_path}:{_SANE_PATH}" if existing_path else _SANE_PATH
+        run_env["PATH"] = (
+            f"{existing_path}:{_SANE_PATH}" if existing_path else _SANE_PATH
+        )
 
     # Per-profile HOME isolation: redirect system tool configs (git, ssh, gh,
     # npm …) into {HERMES_HOME}/home/ when that directory exists.  Only the
     # subprocess sees the override — the Python process keeps the real HOME.
     from hermes_constants import get_subprocess_home
+
     _profile_home = get_subprocess_home()
     if _profile_home:
         run_env["HOME"] = _profile_home
@@ -401,6 +425,7 @@ class LocalEnvironment(BaseEnvironment):
             # the path so we can guarantee no spaces.
             try:
                 from hermes_constants import get_hermes_home
+
                 cache_dir = get_hermes_home() / "cache" / "terminal"
             except Exception:
                 cache_dir = Path(tempfile.gettempdir()) / "hermes_terminal"
@@ -422,9 +447,14 @@ class LocalEnvironment(BaseEnvironment):
 
         return "/tmp"
 
-    def _run_bash(self, cmd_string: str, *, login: bool = False,
-                  timeout: int = 120,
-                  stdin_data: str | None = None) -> subprocess.Popen:
+    def _run_bash(
+        self,
+        cmd_string: str,
+        *,
+        login: bool = False,
+        timeout: int = 120,
+        stdin_data: str | None = None,
+    ) -> subprocess.Popen:
         bash = _find_bash()
         # For login-shell invocations (used by init_session to build the
         # environment snapshot), prepend sources for the user's bashrc /
@@ -457,8 +487,8 @@ class LocalEnvironment(BaseEnvironment):
         # On Windows, self.cwd may be a Git Bash-style path (/c/Users/...)
         # from pwd output. subprocess.Popen needs a native Windows path.
         _popen_cwd = self.cwd
-        if _IS_WINDOWS and _popen_cwd and re.match(r'^/[a-zA-Z]/', _popen_cwd):
-            _popen_cwd = _popen_cwd[1].upper() + ':' + _popen_cwd[2:].replace('/', '\\')
+        if _IS_WINDOWS and _popen_cwd and re.match(r"^/[a-zA-Z]/", _popen_cwd):
+            _popen_cwd = _popen_cwd[1].upper() + ":" + _popen_cwd[2:].replace("/", "\\")
 
         proc = subprocess.Popen(
             args,
@@ -489,7 +519,9 @@ class LocalEnvironment(BaseEnvironment):
         def _group_alive(pgid: int) -> bool:
             try:
                 # POSIX-only: _IS_WINDOWS is handled before this helper is used.
-                os.killpg(pgid, 0)  # windows-footgun: ok — POSIX process-group alive probe
+                os.killpg(
+                    pgid, 0
+                )  # windows-footgun: ok — POSIX process-group alive probe
                 return True
             except ProcessLookupError:
                 return False
@@ -527,7 +559,9 @@ class LocalEnvironment(BaseEnvironment):
                         raise
 
                 try:
-                    os.killpg(pgid, signal.SIGTERM)  # windows-footgun: ok — POSIX process-group SIGTERM (guarded by _IS_WINDOWS above)
+                    os.killpg(
+                        pgid, signal.SIGTERM
+                    )  # windows-footgun: ok — POSIX process-group SIGTERM (guarded by _IS_WINDOWS above)
                 except ProcessLookupError:
                     return
 
@@ -539,7 +573,9 @@ class LocalEnvironment(BaseEnvironment):
 
                 try:
                     # POSIX-only: _IS_WINDOWS is handled by the outer branch.
-                    os.killpg(pgid, signal.SIGKILL)  # windows-footgun: ok — POSIX process-group SIGKILL
+                    os.killpg(
+                        pgid, signal.SIGKILL
+                    )  # windows-footgun: ok — POSIX process-group SIGKILL
                 except ProcessLookupError:
                     return
                 _wait_for_group_exit(pgid, 2.0)

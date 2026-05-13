@@ -5,13 +5,20 @@ Covers the threading behavior control for multi-chunk replies:
 - "first": Only first chunk threads (default)
 - "all": All chunks thread to original message
 """
+
 import os
 import sys
 from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
 
-from gateway.config import PlatformConfig, GatewayConfig, Platform, _apply_env_overrides, load_gateway_config
+from gateway.config import (
+    PlatformConfig,
+    GatewayConfig,
+    Platform,
+    _apply_env_overrides,
+    load_gateway_config,
+)
 
 
 def _ensure_telegram_mock():
@@ -37,9 +44,13 @@ from gateway.platforms.telegram import TelegramAdapter  # noqa: E402
 @pytest.fixture()
 def adapter_factory():
     """Factory to create TelegramAdapter with custom reply_to_mode."""
+
     def create(reply_to_mode: str = "first"):
-        config = PlatformConfig(enabled=True, token="test-token", reply_to_mode=reply_to_mode)
+        config = PlatformConfig(
+            enabled=True, token="test-token", reply_to_mode=reply_to_mode
+        )
         return TelegramAdapter(config)
+
     return create
 
 
@@ -121,7 +132,11 @@ class TestSendWithReplyToMode:
         adapter = adapter_factory(reply_to_mode="off")
         adapter._bot = MagicMock()
         adapter._bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
-        adapter.truncate_message = lambda content, max_len, **kw: ["chunk1", "chunk2", "chunk3"]
+        adapter.truncate_message = lambda content, max_len, **kw: [
+            "chunk1",
+            "chunk2",
+            "chunk3",
+        ]
 
         await adapter.send("12345", "test content", reply_to="999")
 
@@ -133,7 +148,11 @@ class TestSendWithReplyToMode:
         adapter = adapter_factory(reply_to_mode="first")
         adapter._bot = MagicMock()
         adapter._bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
-        adapter.truncate_message = lambda content, max_len, **kw: ["chunk1", "chunk2", "chunk3"]
+        adapter.truncate_message = lambda content, max_len, **kw: [
+            "chunk1",
+            "chunk2",
+            "chunk3",
+        ]
 
         await adapter.send("12345", "test content", reply_to="999")
 
@@ -148,7 +167,11 @@ class TestSendWithReplyToMode:
         adapter = adapter_factory(reply_to_mode="all")
         adapter._bot = MagicMock()
         adapter._bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
-        adapter.truncate_message = lambda content, max_len, **kw: ["chunk1", "chunk2", "chunk3"]
+        adapter.truncate_message = lambda content, max_len, **kw: [
+            "chunk1",
+            "chunk2",
+            "chunk3",
+        ]
 
         await adapter.send("12345", "test content", reply_to="999")
 
@@ -273,7 +296,7 @@ class TestTelegramYamlConfigLoading:
     def test_extra_reply_to_mode_off(self, tmp_path, monkeypatch):
         """telegram.extra.reply_to_mode is also honoured."""
         hermes_home = self._write_config(
-            tmp_path, "telegram:\n  extra:\n    reply_to_mode: \"off\"\n"
+            tmp_path, 'telegram:\n  extra:\n    reply_to_mode: "off"\n'
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         monkeypatch.delenv("TELEGRAM_REPLY_TO_MODE", raising=False)
@@ -296,7 +319,7 @@ class TestTelegramYamlConfigLoading:
         """telegram.reply_to_mode wins over telegram.extra.reply_to_mode."""
         hermes_home = self._write_config(
             tmp_path,
-            "telegram:\n  reply_to_mode: all\n  extra:\n    reply_to_mode: \"off\"\n",
+            'telegram:\n  reply_to_mode: all\n  extra:\n    reply_to_mode: "off"\n',
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         monkeypatch.delenv("TELEGRAM_REPLY_TO_MODE", raising=False)

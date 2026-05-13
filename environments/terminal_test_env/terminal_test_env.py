@@ -131,11 +131,11 @@ class TerminalTestEnv(HermesAgentBaseEnv):
             # Modal terminal backend for cloud-isolated sandboxes per rollout
             terminal_backend="modal",
             # Atropos settings
-            group_size=3,              # 3 rollouts per group
+            group_size=3,  # 3 rollouts per group
             tokenizer_name="NousResearch/q-30b-t-h45-e1",
             tool_call_parser="hermes",
-            steps_per_eval=3,          # Eval after all 3 steps
-            total_steps=3,             # 3 groups total (1 group per step)
+            steps_per_eval=3,  # Eval after all 3 steps
+            total_steps=3,  # 3 groups total (1 group per step)
             use_wandb=True,
             wandb_name="terminal-test",
             ensure_scores_are_not_same=False,  # Allow all-same scores for simple tasks
@@ -238,23 +238,19 @@ class TerminalTestEnv(HermesAgentBaseEnv):
                     completion.choices[0].message.content if completion.choices else ""
                 )
 
-                samples.append(
-                    {
-                        "prompt": eval_item["prompt"],
-                        "response": response_content,
-                        "expected": eval_item["expected_content"],
-                    }
-                )
+                samples.append({
+                    "prompt": eval_item["prompt"],
+                    "response": response_content,
+                    "expected": eval_item["expected_content"],
+                })
 
             except Exception as e:
                 logger.error("Eval failed for item: %s", e)
-                samples.append(
-                    {
-                        "prompt": eval_item["prompt"],
-                        "response": f"ERROR: {e}",
-                        "expected": eval_item["expected_content"],
-                    }
-                )
+                samples.append({
+                    "prompt": eval_item["prompt"],
+                    "response": f"ERROR: {e}",
+                    "expected": eval_item["expected_content"],
+                })
 
         end_time = time.time()
 

@@ -41,7 +41,6 @@ def test_make_agent_passes_resolved_provider():
         ) as mock_resolve,
         patch("run_agent.AIAgent") as mock_agent,
     ):
-
         from tui_gateway.server import _make_agent
 
         _make_agent("sid-1", "key-1")
@@ -156,13 +155,11 @@ def test_probe_config_health_flags_null_sections():
 def test_probe_config_health_flags_null_personalities_with_active_personality():
     from tui_gateway.server import _probe_config_health
 
-    msg = _probe_config_health(
-        {
-            "agent": {"personalities": None},
-            "display": {"personality": "kawaii"},
-            "model": {},
-        }
-    )
+    msg = _probe_config_health({
+        "agent": {"personalities": None},
+        "display": {"personality": "kawaii"},
+        "model": {},
+    })
     assert "display.personality" in msg
     assert "agent.personalities" in msg
 
@@ -193,7 +190,6 @@ def test_make_agent_tolerates_null_config_sections():
         ),
         patch("run_agent.AIAgent") as mock_agent,
     ):
-
         from tui_gateway.server import _make_agent
 
         _make_agent("sid-null", "key-null")

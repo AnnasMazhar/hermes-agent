@@ -194,8 +194,11 @@ class TestSyncSkills:
     def _patches(self, bundled, skills_dir, manifest_file):
         """Return context manager stack for patching sync globals."""
         from contextlib import ExitStack
+
         stack = ExitStack()
-        stack.enter_context(patch("tools.skills_sync._get_bundled_dir", return_value=bundled))
+        stack.enter_context(
+            patch("tools.skills_sync._get_bundled_dir", return_value=bundled)
+        )
         stack.enter_context(patch("tools.skills_sync.SKILLS_DIR", skills_dir))
         stack.enter_context(patch("tools.skills_sync.MANIFEST_FILE", manifest_file))
         return stack
@@ -483,11 +486,17 @@ class TestSyncSkills:
         assert "hermes skills reset new-skill" in captured
 
     def test_nonexistent_bundled_dir(self, tmp_path):
-        with patch("tools.skills_sync._get_bundled_dir", return_value=tmp_path / "nope"):
+        with patch(
+            "tools.skills_sync._get_bundled_dir", return_value=tmp_path / "nope"
+        ):
             result = sync_skills(quiet=True)
         assert result == {
-            "copied": [], "updated": [], "skipped": 0,
-            "user_modified": [], "cleaned": [], "total_bundled": 0,
+            "copied": [],
+            "updated": [],
+            "skipped": 0,
+            "user_modified": [],
+            "cleaned": [],
+            "total_bundled": 0,
         }
 
     def test_failed_copy_does_not_poison_manifest(self, tmp_path):
@@ -618,8 +627,11 @@ class TestResetBundledSkill:
 
     def _patches(self, bundled, skills_dir, manifest_file):
         from contextlib import ExitStack
+
         stack = ExitStack()
-        stack.enter_context(patch("tools.skills_sync._get_bundled_dir", return_value=bundled))
+        stack.enter_context(
+            patch("tools.skills_sync._get_bundled_dir", return_value=bundled)
+        )
         stack.enter_context(patch("tools.skills_sync.SKILLS_DIR", skills_dir))
         stack.enter_context(patch("tools.skills_sync.MANIFEST_FILE", manifest_file))
         return stack
@@ -634,7 +646,9 @@ class TestResetBundledSkill:
         # so manifest has an old origin hash that no longer matches anything on disk.
         dest = skills_dir / "productivity" / "google-workspace"
         dest.mkdir(parents=True)
-        (dest / "SKILL.md").write_text("---\nname: google-workspace\n---\n# GW v2 (upstream)\n")
+        (dest / "SKILL.md").write_text(
+            "---\nname: google-workspace\n---\n# GW v2 (upstream)\n"
+        )
         # Stale origin_hash — from some prior bundled version. User "restored" by pasting
         # the current bundled contents, so user_hash == current bundled_hash, but manifest
         # still points at the stale hash → treated as user_modified forever.

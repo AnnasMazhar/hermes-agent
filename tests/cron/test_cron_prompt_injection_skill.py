@@ -46,6 +46,7 @@ def cron_env(tmp_path, monkeypatch):
     # uses. Without this, the tool resolves against the real
     # `~/.hermes/skills/` and our planted skills are invisible.
     import tools.skills_tool as _skills_tool
+
     monkeypatch.setattr(_skills_tool, "SKILLS_DIR", skills_dir)
     monkeypatch.setattr(_skills_tool, "HERMES_HOME", hermes_home)
 
@@ -53,6 +54,7 @@ def cron_env(tmp_path, monkeypatch):
     # CURRENT module object (post any reload that happened in fixtures of
     # previously-executed tests in the same worker).
     import cron.scheduler as _scheduler
+
     return hermes_home, _scheduler
 
 
@@ -115,7 +117,9 @@ class TestScanAssembledCronPrompt:
 class TestBuildJobPromptScansSkillContent:
     def test_clean_skill_builds_normally(self, cron_env):
         hermes_home, scheduler = cron_env
-        _plant_skill(hermes_home, "news-digest", "Fetch the top 5 headlines and summarize.")
+        _plant_skill(
+            hermes_home, "news-digest", "Fetch the top 5 headlines and summarize."
+        )
 
         job = {
             "id": "job-1",

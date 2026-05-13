@@ -53,7 +53,7 @@ _CUA_DRIVER_ARGS = ["mcp"]  # stdio MCP transport
 # Regex to parse list_windows text output lines:
 #   "- AppName (pid 12345) "Title" [window_id: 67890]"
 _WINDOW_LINE_RE = re.compile(
-    r'^-\s+(.+?)\s+\(pid\s+(\d+)\)\s+.*\[window_id:\s+(\d+)\]',
+    r"^-\s+(.+?)\s+\(pid\s+(\d+)\)\s+.*\[window_id:\s+(\d+)\]",
     re.MULTILINE,
 )
 
@@ -68,6 +68,7 @@ _ELEMENT_LINE_RE = re.compile(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _is_macos() -> bool:
     return sys.platform == "darwin"
@@ -108,12 +109,14 @@ def _parse_elements_from_tree(markdown: str) -> List[UIElement]:
     """Parse UIElement list from get_window_state AX tree markdown."""
     elements = []
     for m in _ELEMENT_LINE_RE.finditer(markdown):
-        elements.append(UIElement(
-            index=int(m.group(1)),
-            role=m.group(2),
-            label=m.group(3) or "",
-            bounds=(0, 0, 0, 0),
-        ))
+        elements.append(
+            UIElement(
+                index=int(m.group(1)),
+                role=m.group(2),
+                label=m.group(3) or "",
+                bounds=(0, 0, 0, 0),
+            )
+        )
     return elements
 
 
@@ -131,10 +134,19 @@ def _parse_key_combo(keys: str) -> Tuple[Optional[str], List[str]]:
     Returns (key, modifiers) where key is the non-modifier key and modifiers
     is a list of modifier names (cmd, shift, option, ctrl).
     """
-    MODIFIER_NAMES = {"cmd", "command", "shift", "option", "alt", "ctrl", "control", "fn"}
+    MODIFIER_NAMES = {
+        "cmd",
+        "command",
+        "shift",
+        "option",
+        "alt",
+        "ctrl",
+        "control",
+        "fn",
+    }
     KEY_ALIASES = {"command": "cmd", "alt": "option", "control": "ctrl"}
 
-    parts = [p.strip().lower() for p in re.split(r'[+\-]', keys) if p.strip()]
+    parts = [p.strip().lower() for p in re.split(r"[+\-]", keys) if p.strip()]
     modifiers = []
     key = None
     for part in parts:
@@ -149,6 +161,7 @@ def _parse_key_combo(keys: str) -> Tuple[Optional[str], List[str]]:
 # ---------------------------------------------------------------------------
 # Asyncio bridge — one long-lived loop on a background thread
 # ---------------------------------------------------------------------------
+
 
 class _AsyncBridge:
     """Runs one asyncio loop on a daemon thread; marshals coroutines from the caller."""
@@ -175,7 +188,9 @@ class _AsyncBridge:
                 except Exception:
                     pass
 
-        self._thread = threading.Thread(target=_run, daemon=True, name="cua-driver-loop")
+        self._thread = threading.Thread(
+            target=_run, daemon=True, name="cua-driver-loop"
+        )
         self._thread.start()
         if not self._ready.wait(timeout=5.0):
             raise RuntimeError("cua-driver asyncio bridge failed to start")
@@ -198,6 +213,7 @@ class _AsyncBridge:
 # ---------------------------------------------------------------------------
 # MCP session (lazy, shared across tool calls)
 # ---------------------------------------------------------------------------
+
 
 class _CuaDriverSession:
     """Holds the mcp ClientSession. Spawned lazily; re-entered on drop."""
@@ -263,7 +279,9 @@ class _CuaDriverSession:
         result = await self._session.call_tool(name, args)
         return _extract_tool_result(result)
 
-    def call_tool(self, name: str, args: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:
+    def call_tool(
+        self, name: str, args: Dict[str, Any], timeout: float = 30.0
+    ) -> Dict[str, Any]:
         self._require_started()
         return self._bridge.run(self._call_tool_async(name, args), timeout=timeout)
 
@@ -299,15 +317,23 @@ def _extract_tool_result(mcp_result: Any) -> Dict[str, Any]:
     if text_chunks:
         joined = "\n".join(t for t in text_chunks if t)
         try:
-            data = json.loads(joined) if joined.strip().startswith(("{", "[")) else joined
+            data = (
+                json.loads(joined) if joined.strip().startswith(("{", "[")) else joined
+            )
         except json.JSONDecodeError:
             data = joined
-    return {"data": data, "images": images, "structuredContent": structured, "isError": is_error}
+    return {
+        "data": data,
+        "images": images,
+        "structuredContent": structured,
+        "isError": is_error,
+    }
 
 
 # ---------------------------------------------------------------------------
 # The backend itself
 # ---------------------------------------------------------------------------
+
 
 class CuaDriverBackend(ComputerUseBackend):
     """Default computer-use backend. macOS-only via cua-driver MCP."""
@@ -367,8 +393,16 @@ class CuaDriverBackend(ComputerUseBackend):
             windows = _parse_windows_from_text(raw_text)
 
         if not windows:
-            return CaptureResult(mode=mode, width=0, height=0, png_b64=None,
-                                 elements=[], app="", window_title="", png_bytes_len=0)
+            return CaptureResult(
+                mode=mode,
+                width=0,
+                height=0,
+                png_b64=None,
+                elements=[],
+                app="",
+                window_title="",
+                png_bytes_len=0,
+            )
 
         # Filter by app name (case-insensitive substring) if requested.
         if app:
@@ -407,7 +441,7 @@ class CuaDriverBackend(ComputerUseBackend):
             summary, tree = _split_tree_text(text)
 
             # Parse element count from summary e.g. "✅ AppName — 42 elements, turn 3..."
-            m = re.search(r'(\d+)\s+elements?', summary)
+            m = re.search(r"(\d+)\s+elements?", summary)
             if tree and not gws_out["images"]:
                 # ax mode — no screenshot
                 elements = _parse_elements_from_tree(tree)
@@ -451,8 +485,11 @@ class CuaDriverBackend(ComputerUseBackend):
     ) -> ActionResult:
         pid = self._active_pid
         if pid is None:
-            return ActionResult(ok=False, action="click",
-                                message="No active window — call capture() first.")
+            return ActionResult(
+                ok=False,
+                action="click",
+                message="No active window — call capture() first.",
+            )
 
         # Choose tool based on button and click_count.
         if button == "right":
@@ -465,16 +502,20 @@ class CuaDriverBackend(ComputerUseBackend):
         args: Dict[str, Any] = {"pid": pid}
         if element is not None:
             if self._active_window_id is None:
-                return ActionResult(ok=False, action=tool,
-                                    message="No active window_id for element_index click.")
+                return ActionResult(
+                    ok=False,
+                    action=tool,
+                    message="No active window_id for element_index click.",
+                )
             args["element_index"] = element
             args["window_id"] = self._active_window_id
         elif x is not None and y is not None:
             args["x"] = x
             args["y"] = y
         else:
-            return ActionResult(ok=False, action=tool,
-                                message="click requires element= or x/y.")
+            return ActionResult(
+                ok=False, action=tool, message="click requires element= or x/y."
+            )
         if modifiers:
             args["modifier"] = modifiers
 
@@ -491,8 +532,11 @@ class CuaDriverBackend(ComputerUseBackend):
         modifiers: Optional[List[str]] = None,
     ) -> ActionResult:
         # cua-driver does not expose a drag tool.
-        return ActionResult(ok=False, action="drag",
-                            message="drag is not supported by the cua-driver backend.")
+        return ActionResult(
+            ok=False,
+            action="drag",
+            message="drag is not supported by the cua-driver backend.",
+        )
 
     def scroll(
         self,
@@ -506,8 +550,11 @@ class CuaDriverBackend(ComputerUseBackend):
     ) -> ActionResult:
         pid = self._active_pid
         if pid is None:
-            return ActionResult(ok=False, action="scroll",
-                                message="No active window — call capture() first.")
+            return ActionResult(
+                ok=False,
+                action="scroll",
+                message="No active window — call capture() first.",
+            )
         args: Dict[str, Any] = {
             "pid": pid,
             "direction": direction,
@@ -525,8 +572,11 @@ class CuaDriverBackend(ComputerUseBackend):
     def type_text(self, text: str) -> ActionResult:
         pid = self._active_pid
         if pid is None:
-            return ActionResult(ok=False, action="type_text",
-                                message="No active window — call capture() first.")
+            return ActionResult(
+                ok=False,
+                action="type_text",
+                message="No active window — call capture() first.",
+            )
         # Safari WebKit AXTextField does not accept AX attribute writes (type_text),
         # so use type_text_chars which synthesises individual key events instead.
         # This works universally across all macOS apps in background mode.
@@ -535,13 +585,17 @@ class CuaDriverBackend(ComputerUseBackend):
     def key(self, keys: str) -> ActionResult:
         pid = self._active_pid
         if pid is None:
-            return ActionResult(ok=False, action="key",
-                                message="No active window — call capture() first.")
+            return ActionResult(
+                ok=False,
+                action="key",
+                message="No active window — call capture() first.",
+            )
 
         key_name, modifiers = _parse_key_combo(keys)
         if not key_name:
-            return ActionResult(ok=False, action="key",
-                                message=f"Could not parse key from '{keys}'.")
+            return ActionResult(
+                ok=False, action="key", message=f"Could not parse key from '{keys}'."
+            )
 
         if modifiers:
             # hotkey requires at least one modifier + one key.
@@ -555,11 +609,17 @@ class CuaDriverBackend(ComputerUseBackend):
         pid = self._active_pid
         window_id = self._active_window_id
         if pid is None or window_id is None:
-            return ActionResult(ok=False, action="set_value",
-                                message="No active window — call capture() first.")
+            return ActionResult(
+                ok=False,
+                action="set_value",
+                message="No active window — call capture() first.",
+            )
         if element is None:
-            return ActionResult(ok=False, action="set_value",
-                                message="set_value requires element= (element index).")
+            return ActionResult(
+                ok=False,
+                action="set_value",
+                message="set_value requires element= (element index).",
+            )
         args: Dict[str, Any] = {
             "pid": pid,
             "window_id": window_id,
@@ -580,7 +640,7 @@ class CuaDriverBackend(ComputerUseBackend):
         if isinstance(data, str):
             apps = []
             for line in data.splitlines():
-                m = re.search(r'(.+?)\s+\(pid\s+(\d+)\)', line)
+                m = re.search(r"(.+?)\s+\(pid\s+(\d+)\)", line)
                 if m:
                     apps.append({"name": m.group(1).strip(), "pid": int(m.group(2))})
             return apps
@@ -624,12 +684,16 @@ class CuaDriverBackend(ComputerUseBackend):
             self._active_pid = target["pid"]
             self._active_window_id = target["window_id"]
             return ActionResult(
-                ok=True, action="focus_app",
+                ok=True,
+                action="focus_app",
                 message=f"Targeted {target['app_name']} (pid {self._active_pid}, "
-                        f"window {self._active_window_id}) without raising window.",
+                f"window {self._active_window_id}) without raising window.",
             )
-        return ActionResult(ok=False, action="focus_app",
-                            message=f"No on-screen window found for app '{app}'.")
+        return ActionResult(
+            ok=False,
+            action="focus_app",
+            message=f"No on-screen window found for app '{app}'.",
+        )
 
     # ── Internal ───────────────────────────────────────────────────
     def _action(self, name: str, args: Dict[str, Any]) -> ActionResult:
@@ -645,8 +709,12 @@ class CuaDriverBackend(ComputerUseBackend):
             message = str(data.get("message", ""))
         elif isinstance(data, str):
             message = data
-        return ActionResult(ok=ok, action=name, message=message,
-                            meta=data if isinstance(data, dict) else {})
+        return ActionResult(
+            ok=ok,
+            action=name,
+            message=message,
+            meta=data if isinstance(data, dict) else {},
+        )
 
 
 def _parse_element(d: Dict[str, Any]) -> UIElement:
@@ -670,6 +738,9 @@ def _parse_element(d: Dict[str, Any]) -> UIElement:
         app=str(d.get("app", "") or ""),
         pid=int(d.get("pid", 0) or 0),
         window_id=int(d.get("windowId", 0) or 0),
-        attributes={k: v for k, v in d.items()
-                    if k not in ("index", "role", "label", "bounds", "app", "pid", "windowId")},
+        attributes={
+            k: v
+            for k, v in d.items()
+            if k not in ("index", "role", "label", "bounds", "app", "pid", "windowId")
+        },
     )

@@ -21,13 +21,19 @@ def _restore_stdout():
 
 @pytest.fixture()
 def server():
-    with patch.dict("sys.modules", {
-        "hermes_constants": MagicMock(get_hermes_home=MagicMock(return_value="/tmp/hermes_test")),
-        "hermes_cli.env_loader": MagicMock(),
-        "hermes_cli.banner": MagicMock(),
-        "hermes_state": MagicMock(),
-    }):
+    with patch.dict(
+        "sys.modules",
+        {
+            "hermes_constants": MagicMock(
+                get_hermes_home=MagicMock(return_value="/tmp/hermes_test")
+            ),
+            "hermes_cli.env_loader": MagicMock(),
+            "hermes_cli.banner": MagicMock(),
+            "hermes_state": MagicMock(),
+        },
+    ):
         import importlib
+
         mod = importlib.import_module("tui_gateway.server")
         yield mod
         mod._sessions.clear()
@@ -55,13 +61,17 @@ def test_unknown_method(server):
 
 def test_ok_envelope(server):
     assert server._ok("r1", {"x": 1}) == {
-        "jsonrpc": "2.0", "id": "r1", "result": {"x": 1},
+        "jsonrpc": "2.0",
+        "id": "r1",
+        "result": {"x": 1},
     }
 
 
 def test_err_envelope(server):
     assert server._err("r2", 4001, "nope") == {
-        "jsonrpc": "2.0", "id": "r2", "error": {"code": 4001, "message": "nope"},
+        "jsonrpc": "2.0",
+        "id": "r2",
+        "error": {"code": 4001, "message": "nope"},
     }
 
 
@@ -76,8 +86,11 @@ def test_write_json(capture):
 
 def test_write_json_broken_pipe(server):
     class _Broken:
-        def write(self, _): raise BrokenPipeError
-        def flush(self): raise BrokenPipeError
+        def write(self, _):
+            raise BrokenPipeError
+
+        def flush(self):
+            raise BrokenPipeError
 
     server._real_stdout = _Broken()
     assert server.write_json({"x": 1}) is False
@@ -87,8 +100,11 @@ def test_write_json_closed_stream_returns_false(server):
     """ValueError ('I/O on closed file') used to bubble up; treat as gone."""
 
     class _Closed:
-        def write(self, _): raise ValueError("I/O operation on closed file")
-        def flush(self): raise ValueError("I/O operation on closed file")
+        def write(self, _):
+            raise ValueError("I/O operation on closed file")
+
+        def flush(self):
+            raise ValueError("I/O operation on closed file")
 
     server._real_stdout = _Closed()
     assert server.write_json({"x": 1}) is False
@@ -103,7 +119,9 @@ def test_write_json_unicode_encode_error_re_raises(server):
     class _AsciiOnly:
         def write(self, line):
             line.encode("ascii")  # raises UnicodeEncodeError on non-ascii
-        def flush(self): pass
+
+        def flush(self):
+            pass
 
     server._real_stdout = _AsciiOnly()
     with pytest.raises(UnicodeEncodeError):
@@ -115,8 +133,11 @@ def test_write_json_unrelated_value_error_re_raises(server):
     ValueErrors are programming errors and must surface."""
 
     class _BadValue:
-        def write(self, _): raise ValueError("something else entirely")
-        def flush(self): pass
+        def write(self, _):
+            raise ValueError("something else entirely")
+
+        def flush(self):
+            pass
 
     server._real_stdout = _BadValue()
     with pytest.raises(ValueError, match="something else entirely"):
@@ -142,8 +163,11 @@ def test_write_json_peer_gone_oserror_on_flush_returns_false(server):
     written = []
 
     class _FlushPeerGone:
-        def write(self, line): written.append(line)
-        def flush(self): raise OSError(errno.EPIPE, "broken pipe")
+        def write(self, line):
+            written.append(line)
+
+        def flush(self):
+            raise OSError(errno.EPIPE, "broken pipe")
 
     server._real_stdout = _FlushPeerGone()
     assert server.write_json({"x": 1}) is False
@@ -157,8 +181,11 @@ def test_write_json_non_peer_gone_oserror_re_raises(server):
     import errno
 
     class _DiskFull:
-        def write(self, _): raise OSError(errno.ENOSPC, "no space left")
-        def flush(self): pass
+        def write(self, _):
+            raise OSError(errno.ENOSPC, "no space left")
+
+        def flush(self):
+            pass
 
     server._real_stdout = _DiskFull()
     with pytest.raises(OSError, match="no space"):
@@ -182,8 +209,11 @@ def test_write_json_skips_flush_when_disable_flush_true(monkeypatch):
     written = []
 
     class _Stream:
-        def write(self, line): written.append(line)
-        def flush(self): flushed["count"] += 1
+        def write(self, line):
+            written.append(line)
+
+        def flush(self):
+            flushed["count"] += 1
 
     stream = _Stream()
     transport = transport_mod.StdioTransport(lambda: stream, threading.Lock())
@@ -240,7 +270,9 @@ def test_block_and_respond(capture):
     result = [None]
 
     threading.Thread(
-        target=lambda: result.__setitem__(0, server._block("test.prompt", "s1", {"q": "?"}, timeout=5)),
+        target=lambda: result.__setitem__(
+            0, server._block("test.prompt", "s1", {"q": "?"}, timeout=5)
+        ),
     ).start()
 
     for _ in range(100):
@@ -309,17 +341,19 @@ def test_session_resume_returns_hydrated_messages(server, monkeypatch):
             ]
 
     monkeypatch.setattr(server, "_get_db", lambda: _DB())
-    monkeypatch.setattr(server, "_make_agent", lambda sid, key, session_id=None: object())
-    monkeypatch.setattr(server, "_init_session", lambda sid, key, agent, history, cols=80: None)
+    monkeypatch.setattr(
+        server, "_make_agent", lambda sid, key, session_id=None: object()
+    )
+    monkeypatch.setattr(
+        server, "_init_session", lambda sid, key, agent, history, cols=80: None
+    )
     monkeypatch.setattr(server, "_session_info", lambda _agent: {"model": "test/model"})
 
-    resp = server.handle_request(
-        {
-            "id": "r1",
-            "method": "session.resume",
-            "params": {"session_id": "20260409_010101_abc123", "cols": 100},
-        }
-    )
+    resp = server.handle_request({
+        "id": "r1",
+        "method": "session.resume",
+        "params": {"session_id": "20260409_010101_abc123", "cols": 100},
+    })
 
     assert "error" not in resp
     assert resp["result"]["message_count"] == 3
@@ -347,21 +381,27 @@ def test_config_roundtrip(server, tmp_path):
 # ── _cli_exec_blocked ────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("argv", [
-    [],
-    ["setup"],
-    ["gateway"],
-    ["sessions", "browse"],
-    ["config", "edit"],
-])
+@pytest.mark.parametrize(
+    "argv",
+    [
+        [],
+        ["setup"],
+        ["gateway"],
+        ["sessions", "browse"],
+        ["config", "edit"],
+    ],
+)
 def test_cli_exec_blocked(server, argv):
     assert server._cli_exec_blocked(argv) is not None
 
 
-@pytest.mark.parametrize("argv", [
-    ["version"],
-    ["sessions", "list"],
-])
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["version"],
+        ["sessions", "list"],
+    ],
+)
 def test_cli_exec_allowed(server, argv):
     assert server._cli_exec_blocked(argv) is None
 
@@ -376,7 +416,9 @@ def test_slash_exec_rejects_skill_commands(server):
     server._sessions[sid] = {"session_key": sid, "agent": None}
 
     # Mock scan_skill_commands to return a known skill
-    fake_skills = {"/hermes-agent-dev": {"name": "hermes-agent-dev", "description": "Dev workflow"}}
+    fake_skills = {
+        "/hermes-agent-dev": {"name": "hermes-agent-dev", "description": "Dev workflow"}
+    }
 
     with patch("agent.skill_commands.get_skill_commands", return_value=fake_skills):
         resp = server.handle_request({
@@ -484,7 +526,9 @@ def test_slash_exec_plugin_handler_error_returns_output(server):
     assert worker.calls == []
 
 
-@pytest.mark.parametrize("cmd", ["retry", "queue hello", "q hello", "steer fix the test", "plan"])
+@pytest.mark.parametrize(
+    "cmd", ["retry", "queue hello", "q hello", "steer fix the test", "plan"]
+)
 def test_slash_exec_rejects_pending_input_commands(server, cmd):
     """slash.exec must reject commands that use _pending_input in the CLI."""
     sid = "test-session"
@@ -509,7 +553,11 @@ def test_command_dispatch_queue_sends_message(server):
     resp = server.handle_request({
         "id": "r1",
         "method": "command.dispatch",
-        "params": {"name": "queue", "arg": "tell me about quantum computing", "session_id": sid},
+        "params": {
+            "name": "queue",
+            "arg": "tell me about quantum computing",
+            "session_id": sid,
+        },
     })
 
     assert "error" not in resp
@@ -534,10 +582,14 @@ def test_command_dispatch_queue_requires_arg(server):
 
 
 def test_skills_manage_search_uses_tools_hub_sources(server):
-    result = type("Result", (), {
-        "description": "Build better terminal demos",
-        "name": "showroom",
-    })()
+    result = type(
+        "Result",
+        (),
+        {
+            "description": "Build better terminal demos",
+            "name": "showroom",
+        },
+    )()
     auth = MagicMock(return_value="auth")
     router = MagicMock(return_value=["source"])
     search = MagicMock(return_value=[result])
@@ -560,7 +612,9 @@ def test_skills_manage_search_uses_tools_hub_sources(server):
     }
     auth.assert_called_once_with()
     router.assert_called_once_with("auth")
-    search.assert_called_once_with("showroom", ["source"], source_filter="all", limit=20)
+    search.assert_called_once_with(
+        "showroom", ["source"], source_filter="all", limit=20
+    )
 
 
 def test_command_dispatch_steer_fallback_sends_message(server):
@@ -638,10 +692,16 @@ def test_command_dispatch_retry_handles_multipart_content(server):
     """command.dispatch /retry extracts text from multipart content lists."""
     sid = "test-session"
     history = [
-        {"role": "user", "content": [
-            {"type": "text", "text": "analyze this"},
-            {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}
-        ]},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "analyze this"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/png;base64,..."},
+                },
+            ],
+        },
         {"role": "assistant", "content": "I see the image."},
     ]
     server._sessions[sid] = {
@@ -669,11 +729,17 @@ def test_command_dispatch_returns_skill_payload(server):
     sid = "test-session"
     server._sessions[sid] = {"session_key": sid}
 
-    fake_skills = {"/hermes-agent-dev": {"name": "hermes-agent-dev", "description": "Dev workflow"}}
+    fake_skills = {
+        "/hermes-agent-dev": {"name": "hermes-agent-dev", "description": "Dev workflow"}
+    }
     fake_msg = "Loaded skill content here"
 
-    with patch("agent.skill_commands.scan_skill_commands", return_value=fake_skills), \
-         patch("agent.skill_commands.build_skill_invocation_message", return_value=fake_msg):
+    with (
+        patch("agent.skill_commands.scan_skill_commands", return_value=fake_skills),
+        patch(
+            "agent.skill_commands.build_skill_invocation_message", return_value=fake_msg
+        ),
+    ):
         resp = server.handle_request({
             "id": "r2",
             "method": "command.dispatch",
@@ -720,7 +786,9 @@ def test_dispatch_runs_short_handlers_inline(server):
 def test_dispatch_offloads_long_handlers_and_emits_via_stdout(capture):
     """Long handlers run on the pool and write their response via write_json."""
     server, buf = capture
-    server._methods["slash.exec"] = lambda rid, params: server._ok(rid, {"output": "hi"})
+    server._methods["slash.exec"] = lambda rid, params: server._ok(
+        rid, {"output": "hi"}
+    )
 
     resp = server.dispatch({"id": "r2", "method": "slash.exec", "params": {}})
     assert resp is None
@@ -737,7 +805,10 @@ def test_dispatch_offloads_long_handlers_and_emits_via_stdout(capture):
 def test_dispatch_long_handler_does_not_block_fast_handler(server):
     """A slow long handler must not prevent a concurrent fast handler from completing."""
     released = threading.Event()
-    server._methods["slash.exec"] = lambda rid, params: (released.wait(timeout=5), server._ok(rid, {"done": True}))[1]
+    server._methods["slash.exec"] = lambda rid, params: (
+        released.wait(timeout=5),
+        server._ok(rid, {"done": True}),
+    )[1]
     server._methods["fast.ping"] = lambda rid, params: server._ok(rid, {"pong": True})
 
     t0 = time.monotonic()
@@ -747,7 +818,9 @@ def test_dispatch_long_handler_does_not_block_fast_handler(server):
     fast_elapsed = time.monotonic() - t0
 
     assert fast_resp["result"] == {"pong": True}
-    assert fast_elapsed < 0.5, f"fast handler blocked for {fast_elapsed:.2f}s behind slow handler"
+    assert fast_elapsed < 0.5, (
+        f"fast handler blocked for {fast_elapsed:.2f}s behind slow handler"
+    )
 
     released.set()
 
@@ -764,13 +837,18 @@ def test_dispatch_session_compress_does_not_block_fast_handler(server):
     server._methods["fast.ping"] = lambda rid, params: server._ok(rid, {"pong": True})
 
     t0 = time.monotonic()
-    assert server.dispatch({"id": "slow", "method": "session.compress", "params": {}}) is None
+    assert (
+        server.dispatch({"id": "slow", "method": "session.compress", "params": {}})
+        is None
+    )
 
     fast_resp = server.dispatch({"id": "fast", "method": "fast.ping", "params": {}})
     fast_elapsed = time.monotonic() - t0
 
     assert fast_resp["result"] == {"pong": True}
-    assert fast_elapsed < 0.5, f"fast handler blocked for {fast_elapsed:.2f}s behind session.compress"
+    assert fast_elapsed < 0.5, (
+        f"fast handler blocked for {fast_elapsed:.2f}s behind session.compress"
+    )
 
     released.set()
 

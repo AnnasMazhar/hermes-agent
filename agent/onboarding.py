@@ -32,6 +32,7 @@ OPENCLAW_RESIDUE_FLAG = "openclaw_residue_cleanup"
 # Hint content
 # -------------------------------------------------------------------------
 
+
 def busy_input_hint_gateway(mode: str) -> str:
     """Hint shown the first time a user messages while the agent is busy.
 
@@ -129,6 +130,7 @@ def detect_openclaw_residue(home: Optional[Path] = None) -> bool:
 # -------------------------------------------------------------------------
 # State read / write
 # -------------------------------------------------------------------------
+
 
 def _get_seen_dict(config: Mapping[str, Any]) -> Mapping[str, Any]:
     onboarding = config.get("onboarding") if isinstance(config, Mapping) else None

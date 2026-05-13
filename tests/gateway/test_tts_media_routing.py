@@ -13,7 +13,12 @@ from unittest.mock import AsyncMock
 import pytest
 
 from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import BasePlatformAdapter, MessageEvent, MessageType, SendResult
+from gateway.platforms.base import (
+    BasePlatformAdapter,
+    MessageEvent,
+    MessageType,
+    SendResult,
+)
 from gateway.run import GatewayRunner
 from gateway.session import SessionSource, build_session_key
 
@@ -55,8 +60,12 @@ async def test_base_adapter_routes_telegram_flac_media_tag_to_document_sender():
     adapter = _MediaRoutingAdapter()
     event = _event()
     adapter._message_handler = AsyncMock(return_value="MEDIA:/tmp/speech.flac")
-    adapter.send_voice = AsyncMock(return_value=SendResult(success=True, message_id="voice"))
-    adapter.send_document = AsyncMock(return_value=SendResult(success=True, message_id="doc"))
+    adapter.send_voice = AsyncMock(
+        return_value=SendResult(success=True, message_id="voice")
+    )
+    adapter.send_document = AsyncMock(
+        return_value=SendResult(success=True, message_id="doc")
+    )
 
     await adapter._process_message_background(event, build_session_key(event.source))
 
@@ -73,8 +82,12 @@ async def test_base_adapter_routes_non_voice_telegram_ogg_media_tag_to_document_
     adapter = _MediaRoutingAdapter()
     event = _event()
     adapter._message_handler = AsyncMock(return_value="MEDIA:/tmp/speech.ogg")
-    adapter.send_voice = AsyncMock(return_value=SendResult(success=True, message_id="voice"))
-    adapter.send_document = AsyncMock(return_value=SendResult(success=True, message_id="doc"))
+    adapter.send_voice = AsyncMock(
+        return_value=SendResult(success=True, message_id="voice")
+    )
+    adapter.send_document = AsyncMock(
+        return_value=SendResult(success=True, message_id="doc")
+    )
 
     await adapter._process_message_background(event, build_session_key(event.source))
 
@@ -93,8 +106,12 @@ async def test_base_adapter_routes_voice_tagged_telegram_ogg_media_tag_to_voice_
     adapter._message_handler = AsyncMock(
         return_value="[[audio_as_voice]]\nMEDIA:/tmp/speech.ogg"
     )
-    adapter.send_voice = AsyncMock(return_value=SendResult(success=True, message_id="voice"))
-    adapter.send_document = AsyncMock(return_value=SendResult(success=True, message_id="doc"))
+    adapter.send_voice = AsyncMock(
+        return_value=SendResult(success=True, message_id="voice")
+    )
+    adapter.send_document = AsyncMock(
+        return_value=SendResult(success=True, message_id="doc")
+    )
 
     await adapter._process_message_background(event, build_session_key(event.source))
 
@@ -115,8 +132,12 @@ async def test_streaming_delivery_routes_telegram_flac_media_tag_to_document_sen
         extract_images=BasePlatformAdapter.extract_images,
         extract_local_files=BasePlatformAdapter.extract_local_files,
         send_voice=AsyncMock(return_value=SendResult(success=True, message_id="voice")),
-        send_document=AsyncMock(return_value=SendResult(success=True, message_id="doc")),
-        send_image_file=AsyncMock(return_value=SendResult(success=True, message_id="image")),
+        send_document=AsyncMock(
+            return_value=SendResult(success=True, message_id="doc")
+        ),
+        send_image_file=AsyncMock(
+            return_value=SendResult(success=True, message_id="image")
+        ),
         send_video=AsyncMock(return_value=SendResult(success=True, message_id="video")),
     )
 
@@ -144,8 +165,12 @@ async def test_streaming_delivery_routes_non_voice_telegram_ogg_media_tag_to_doc
         extract_images=BasePlatformAdapter.extract_images,
         extract_local_files=BasePlatformAdapter.extract_local_files,
         send_voice=AsyncMock(return_value=SendResult(success=True, message_id="voice")),
-        send_document=AsyncMock(return_value=SendResult(success=True, message_id="doc")),
-        send_image_file=AsyncMock(return_value=SendResult(success=True, message_id="image")),
+        send_document=AsyncMock(
+            return_value=SendResult(success=True, message_id="doc")
+        ),
+        send_image_file=AsyncMock(
+            return_value=SendResult(success=True, message_id="image")
+        ),
         send_video=AsyncMock(return_value=SendResult(success=True, message_id="video")),
     )
 
@@ -175,8 +200,12 @@ async def test_streaming_delivery_routes_telegram_mp3_media_tag_to_voice_sender(
         extract_images=BasePlatformAdapter.extract_images,
         extract_local_files=BasePlatformAdapter.extract_local_files,
         send_voice=AsyncMock(return_value=SendResult(success=True, message_id="voice")),
-        send_document=AsyncMock(return_value=SendResult(success=True, message_id="doc")),
-        send_image_file=AsyncMock(return_value=SendResult(success=True, message_id="image")),
+        send_document=AsyncMock(
+            return_value=SendResult(success=True, message_id="doc")
+        ),
+        send_image_file=AsyncMock(
+            return_value=SendResult(success=True, message_id="image")
+        ),
         send_video=AsyncMock(return_value=SendResult(success=True, message_id="video")),
     )
 

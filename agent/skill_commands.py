@@ -42,15 +42,17 @@ def _resolve_skill_commands_platform() -> Optional[str]:
     try:
         from gateway.session_context import get_session_env
 
-        resolved_platform = (
-            os.getenv("HERMES_PLATFORM")
-            or get_session_env("HERMES_SESSION_PLATFORM")
+        resolved_platform = os.getenv("HERMES_PLATFORM") or get_session_env(
+            "HERMES_SESSION_PLATFORM"
         )
     except Exception:
         resolved_platform = os.getenv("HERMES_PLATFORM")
     return resolved_platform or None
 
-def _load_skill_payload(skill_identifier: str, task_id: str | None = None) -> tuple[dict[str, Any], Path | None, str] | None:
+
+def _load_skill_payload(
+    skill_identifier: str, task_id: str | None = None
+) -> tuple[dict[str, Any], Path | None, str] | None:
     """Load a skill by name/path and return (loaded_payload, skill_dir, display_name)."""
     raw_identifier = (skill_identifier or "").strip()
     if not raw_identifier:
@@ -62,7 +64,9 @@ def _load_skill_payload(skill_identifier: str, task_id: str | None = None) -> tu
         identifier_path = Path(raw_identifier).expanduser()
         if identifier_path.is_absolute():
             try:
-                normalized = str(identifier_path.resolve().relative_to(SKILLS_DIR.resolve()))
+                normalized = str(
+                    identifier_path.resolve().relative_to(SKILLS_DIR.resolve())
+                )
             except Exception:
                 normalized = raw_identifier
         else:
@@ -112,7 +116,9 @@ def _inject_skill_config(loaded_skill: dict[str, Any], parts: list[str]) -> None
         )
 
         # The loaded_skill dict contains the raw content which includes frontmatter
-        raw_content = str(loaded_skill.get("raw_content") or loaded_skill.get("content") or "")
+        raw_content = str(
+            loaded_skill.get("raw_content") or loaded_skill.get("content") or ""
+        )
         if not raw_content:
             return
 
@@ -175,26 +181,20 @@ def _build_skill_message(
     _inject_skill_config(loaded_skill, parts)
 
     if loaded_skill.get("setup_skipped"):
-        parts.extend(
-            [
-                "",
-                "[Skill setup note: Required environment setup was skipped. Continue loading the skill and explain any reduced functionality if it matters.]",
-            ]
-        )
+        parts.extend([
+            "",
+            "[Skill setup note: Required environment setup was skipped. Continue loading the skill and explain any reduced functionality if it matters.]",
+        ])
     elif loaded_skill.get("gateway_setup_hint"):
-        parts.extend(
-            [
-                "",
-                f"[Skill setup note: {loaded_skill['gateway_setup_hint']}]",
-            ]
-        )
+        parts.extend([
+            "",
+            f"[Skill setup note: {loaded_skill['gateway_setup_hint']}]",
+        ])
     elif loaded_skill.get("setup_needed") and loaded_skill.get("setup_note"):
-        parts.extend(
-            [
-                "",
-                f"[Skill setup note: {loaded_skill['setup_note']}]",
-            ]
-        )
+        parts.extend([
+            "",
+            f"[Skill setup note: {loaded_skill['setup_note']}]",
+        ])
 
     supporting = []
     linked_files = loaded_skill.get("linked_files") or {}
@@ -229,7 +229,9 @@ def _build_skill_message(
 
     if user_instruction:
         parts.append("")
-        parts.append(f"The user has provided the following instruction alongside the skill invocation: {user_instruction}")
+        parts.append(
+            f"The user has provided the following instruction alongside the skill invocation: {user_instruction}"
+        )
 
     if runtime_note:
         parts.append("")
@@ -248,8 +250,14 @@ def scan_skill_commands() -> Dict[str, Dict[str, Any]]:
     _skill_commands_platform = _resolve_skill_commands_platform()
     _skill_commands = {}
     try:
-        from tools.skills_tool import SKILLS_DIR, _parse_frontmatter, skill_matches_platform, _get_disabled_skill_names
+        from tools.skills_tool import (
+            SKILLS_DIR,
+            _parse_frontmatter,
+            skill_matches_platform,
+            _get_disabled_skill_names,
+        )
         from agent.skill_utils import get_external_skills_dirs, iter_skill_index_files
+
         disabled = _get_disabled_skill_names()
         seen_names: set = set()
 
@@ -261,34 +269,37 @@ def scan_skill_commands() -> Dict[str, Dict[str, Any]]:
 
         for scan_dir in dirs_to_scan:
             for skill_md in iter_skill_index_files(scan_dir, "SKILL.md"):
-                if any(part in ('.git', '.github', '.hub', '.archive') for part in skill_md.parts):
+                if any(
+                    part in (".git", ".github", ".hub", ".archive")
+                    for part in skill_md.parts
+                ):
                     continue
                 try:
-                    content = skill_md.read_text(encoding='utf-8')
+                    content = skill_md.read_text(encoding="utf-8")
                     frontmatter, body = _parse_frontmatter(content)
                     # Skip skills incompatible with the current OS platform
                     if not skill_matches_platform(frontmatter):
                         continue
-                    name = frontmatter.get('name', skill_md.parent.name)
+                    name = frontmatter.get("name", skill_md.parent.name)
                     if name in seen_names:
                         continue
                     # Respect user's disabled skills config
                     if name in disabled:
                         continue
-                    description = frontmatter.get('description', '')
+                    description = frontmatter.get("description", "")
                     if not description:
-                        for line in body.strip().split('\n'):
+                        for line in body.strip().split("\n"):
                             line = line.strip()
-                            if line and not line.startswith('#'):
+                            if line and not line.startswith("#"):
                                 description = line[:80]
                                 break
                     seen_names.add(name)
                     # Normalize to hyphen-separated slug, stripping
                     # non-alnum chars (e.g. +, /) to avoid invalid
                     # Telegram command names downstream.
-                    cmd_name = name.lower().replace(' ', '-').replace('_', '-')
-                    cmd_name = _SKILL_INVALID_CHARS.sub('', cmd_name)
-                    cmd_name = _SKILL_MULTI_HYPHEN.sub('-', cmd_name).strip('-')
+                    cmd_name = name.lower().replace(" ", "-").replace("_", "-")
+                    cmd_name = _SKILL_INVALID_CHARS.sub("", cmd_name)
+                    cmd_name = _SKILL_MULTI_HYPHEN.sub("-", cmd_name).strip("-")
                     if not cmd_name:
                         continue
                     _skill_commands[f"/{cmd_name}"] = {
@@ -347,6 +358,7 @@ def reload_skills() -> Dict[str, Any]:
         ``description:`` field — the same string the system prompt renders
         as ``    - name: description`` for pre-existing skills.
     """
+
     # Snapshot pre-reload state (name -> description) from the current
     # slash-command cache. Using dicts lets the post-rescan diff carry
     # descriptions for newly-visible or just-removed skills without a
@@ -432,6 +444,7 @@ def build_skill_invocation_message(
     # Track active usage for Curator lifecycle management (#17782)
     try:
         from tools.skill_usage import bump_use
+
         bump_use(skill_name)
     except Exception:
         pass  # Non-critical — skill invocation proceeds regardless
@@ -479,6 +492,7 @@ def build_preloaded_skills_prompt(
         # Track active usage for Curator lifecycle management (#17782)
         try:
             from tools.skill_usage import bump_use
+
             bump_use(skill_name)
         except Exception:
             pass  # Non-critical

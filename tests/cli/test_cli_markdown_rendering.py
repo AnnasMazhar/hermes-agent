@@ -8,7 +8,9 @@ from cli import _render_final_assistant_content
 
 def _render_to_text(renderable) -> str:
     buf = StringIO()
-    Console(file=buf, width=80, force_terminal=False, color_system=None).print(renderable)
+    Console(file=buf, width=80, force_terminal=False, color_system=None).print(
+        renderable
+    )
     return buf.getvalue()
 
 

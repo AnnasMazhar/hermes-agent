@@ -30,6 +30,7 @@ _PNG_HEX = (
 
 def _b64_png() -> str:
     import base64
+
     return base64.b64encode(bytes.fromhex(_PNG_HEX)).decode()
 
 
@@ -98,7 +99,9 @@ class TestAvailability:
 
     def test_available_with_codex_token(self, monkeypatch):
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
         assert codex_plugin.OpenAICodexImageGenProvider().is_available() is True
 
     def test_openai_api_key_alone_is_not_enough(self, monkeypatch):
@@ -120,13 +123,17 @@ class TestGenerate:
         assert result["error_type"] == "auth_required"
 
     def test_returns_invalid_argument_for_empty_prompt(self, provider, monkeypatch):
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
         result = provider.generate("   ")
         assert result["success"] is False
         assert result["error_type"] == "invalid_argument"
 
     def test_generate_uses_codex_stream_path(self, provider, monkeypatch, tmp_path):
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
 
         output_item = SimpleNamespace(
             type="image_generation_call",
@@ -159,7 +166,9 @@ class TestGenerate:
         assert saved.name.startswith("openai_codex_")
 
     def test_codex_stream_request_shape(self, provider, monkeypatch):
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
 
         captured = {}
 
@@ -171,8 +180,12 @@ class TestGenerate:
                 id="ig_test",
                 result=_b64_png(),
             )
-            done_event = SimpleNamespace(type="response.output_item.done", item=output_item)
-            final_response = SimpleNamespace(output=[], status="completed", output_text="")
+            done_event = SimpleNamespace(
+                type="response.output_item.done", item=output_item
+            )
+            final_response = SimpleNamespace(
+                output=[], status="completed", output_text=""
+            )
             return _FakeStream([done_event], final_response)
 
         fake_client = SimpleNamespace(responses=SimpleNamespace(stream=_stream))
@@ -202,7 +215,9 @@ class TestGenerate:
     def test_partial_image_event_used_when_done_missing(self, provider, monkeypatch):
         """If the stream never emits output_item.done, fall back to the
         partial_image event so users at least get the latest preview frame."""
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
 
         partial_event = SimpleNamespace(
             type="response.image_generation_call.partial_image",
@@ -224,7 +239,9 @@ class TestGenerate:
     def test_final_response_sweep_recovers_image(self, provider, monkeypatch):
         """If no image_generation_call event arrives mid-stream, the
         post-stream final-response sweep should still find the image."""
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
 
         final_item = SimpleNamespace(
             type="image_generation_call",
@@ -232,7 +249,9 @@ class TestGenerate:
             id="ig_final",
             result=_b64_png(),
         )
-        final_response = SimpleNamespace(output=[final_item], status="completed", output_text="")
+        final_response = SimpleNamespace(
+            output=[final_item], status="completed", output_text=""
+        )
 
         fake_client = SimpleNamespace(
             responses=SimpleNamespace(
@@ -246,7 +265,9 @@ class TestGenerate:
         assert Path(result["image"]).exists()
 
     def test_empty_response_returns_error(self, provider, monkeypatch):
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
 
         final_response = SimpleNamespace(output=[], status="completed", output_text="")
         fake_client = SimpleNamespace(
@@ -261,7 +282,9 @@ class TestGenerate:
         assert result["error_type"] == "empty_response"
 
     def test_client_init_failure_returns_auth_error(self, provider, monkeypatch):
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
         monkeypatch.setattr(codex_plugin, "_build_codex_client", lambda: None)
 
         result = provider.generate("a cat")
@@ -269,7 +292,9 @@ class TestGenerate:
         assert result["error_type"] == "auth_required"
 
     def test_stream_exception_returns_api_error(self, provider, monkeypatch):
-        monkeypatch.setattr(codex_plugin, "_read_codex_access_token", lambda: "codex-token")
+        monkeypatch.setattr(
+            codex_plugin, "_read_codex_access_token", lambda: "codex-token"
+        )
 
         def _boom(**kwargs):
             raise RuntimeError("cloudflare 403")

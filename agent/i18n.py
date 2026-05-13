@@ -45,14 +45,41 @@ DEFAULT_LANGUAGE = "en"
 # Accept a few natural aliases so users who type "chinese" / "zh-CN" / "jp"
 # get the right catalog instead of silently falling back to English.
 _LANGUAGE_ALIASES: dict[str, str] = {
-    "english": "en", "en-us": "en", "en-gb": "en",
-    "chinese": "zh", "mandarin": "zh", "zh-cn": "zh", "zh-tw": "zh", "zh-hans": "zh", "zh-hant": "zh",
-    "japanese": "ja", "jp": "ja", "ja-jp": "ja",
-    "german": "de", "deutsch": "de", "de-de": "de",
-    "spanish": "es", "español": "es", "espanol": "es", "es-es": "es", "es-mx": "es",
-    "french": "fr", "français": "fr", "france": "fr", "fr-fr": "fr", "fr-be": "fr", "fr-ca": "fr", "fr-ch": "fr",
-    "ukrainian": "uk", "ukrainisch": "uk", "українська": "uk", "uk-ua": "uk", "ua": "uk",
-    "turkish": "tr", "türkçe": "tr", "tr-tr": "tr",
+    "english": "en",
+    "en-us": "en",
+    "en-gb": "en",
+    "chinese": "zh",
+    "mandarin": "zh",
+    "zh-cn": "zh",
+    "zh-tw": "zh",
+    "zh-hans": "zh",
+    "zh-hant": "zh",
+    "japanese": "ja",
+    "jp": "ja",
+    "ja-jp": "ja",
+    "german": "de",
+    "deutsch": "de",
+    "de-de": "de",
+    "spanish": "es",
+    "español": "es",
+    "espanol": "es",
+    "es-es": "es",
+    "es-mx": "es",
+    "french": "fr",
+    "français": "fr",
+    "france": "fr",
+    "fr-fr": "fr",
+    "fr-be": "fr",
+    "fr-ca": "fr",
+    "fr-ch": "fr",
+    "ukrainian": "uk",
+    "ukrainisch": "uk",
+    "українська": "uk",
+    "uk-ua": "uk",
+    "ua": "uk",
+    "turkish": "tr",
+    "türkçe": "tr",
+    "tr-tr": "tr",
 }
 
 _catalog_cache: dict[str, dict[str, str]] = {}
@@ -113,6 +140,7 @@ def _load_catalog(lang: str) -> dict[str, str]:
 
     try:
         import yaml  # PyYAML is already a hermes dependency
+
         with path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f) or {}
     except Exception as exc:
@@ -149,6 +177,7 @@ def _config_language_cached() -> str | None:
     """
     try:
         from hermes_cli.config import load_config
+
         cfg = load_config()
         lang = (cfg.get("display") or {}).get("language")
         if lang:
@@ -218,7 +247,10 @@ def t(key: str, lang: str | None = None, **format_kwargs: Any) -> str:
         except (KeyError, IndexError, ValueError) as exc:
             logger.warning(
                 "i18n format failed for key=%r lang=%r kwargs=%r: %s",
-                key, target, format_kwargs, exc,
+                key,
+                target,
+                format_kwargs,
+                exc,
             )
             return value
     return value

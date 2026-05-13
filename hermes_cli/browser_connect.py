@@ -30,13 +30,23 @@ _WINDOWS_INSTALL_PARTS = (
 )
 
 _LINUX_BIN_NAMES = (
-    "google-chrome", "google-chrome-stable", "chromium-browser",
-    "chromium", "brave-browser", "microsoft-edge",
+    "google-chrome",
+    "google-chrome-stable",
+    "chromium-browser",
+    "chromium",
+    "brave-browser",
+    "microsoft-edge",
 )
 
 _WINDOWS_BIN_NAMES = (
-    "chrome.exe", "msedge.exe", "brave.exe", "chromium.exe",
-    "chrome", "msedge", "brave", "chromium",
+    "chrome.exe",
+    "msedge.exe",
+    "brave.exe",
+    "chromium.exe",
+    "chrome",
+    "msedge",
+    "brave",
+    "chromium",
 )
 
 
@@ -92,13 +102,17 @@ def _chrome_debug_args(port: int) -> list[str]:
     ]
 
 
-def manual_chrome_debug_command(port: int = DEFAULT_BROWSER_CDP_PORT, system: str | None = None) -> str | None:
+def manual_chrome_debug_command(
+    port: int = DEFAULT_BROWSER_CDP_PORT, system: str | None = None
+) -> str | None:
     system = system or platform.system()
     candidates = get_chrome_debug_candidates(system)
 
     if candidates:
         argv = [candidates[0], *_chrome_debug_args(port)]
-        return subprocess.list2cmdline(argv) if system == "Windows" else shlex.join(argv)
+        return (
+            subprocess.list2cmdline(argv) if system == "Windows" else shlex.join(argv)
+        )
 
     if system == "Darwin":
         data_dir = chrome_debug_data_dir()
@@ -119,7 +133,9 @@ def _detach_kwargs(system: str) -> dict:
     return {"creationflags": flags} if flags else {}
 
 
-def try_launch_chrome_debug(port: int = DEFAULT_BROWSER_CDP_PORT, system: str | None = None) -> bool:
+def try_launch_chrome_debug(
+    port: int = DEFAULT_BROWSER_CDP_PORT, system: str | None = None
+) -> bool:
     system = system or platform.system()
     candidates = get_chrome_debug_candidates(system)
     if not candidates:

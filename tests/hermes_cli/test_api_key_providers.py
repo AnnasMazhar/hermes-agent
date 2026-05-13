@@ -26,24 +26,28 @@ from hermes_cli.copilot_auth import _try_gh_cli_token
 # Provider Registry tests
 # =============================================================================
 
+
 class TestProviderRegistry:
     """Test that new providers are correctly registered."""
 
-    @pytest.mark.parametrize("provider_id,name,auth_type", [
-        ("copilot-acp", "GitHub Copilot ACP", "external_process"),
-        ("copilot", "GitHub Copilot", "api_key"),
-        ("huggingface", "Hugging Face", "api_key"),
-        ("zai", "Z.AI / GLM", "api_key"),
-        ("xai", "xAI", "api_key"),
-        ("nvidia", "NVIDIA NIM", "api_key"),
-        ("kimi-coding", "Kimi / Moonshot", "api_key"),
-        ("stepfun", "StepFun Step Plan", "api_key"),
-        ("minimax", "MiniMax", "api_key"),
-        ("minimax-cn", "MiniMax (China)", "api_key"),
-        ("ai-gateway", "Vercel AI Gateway", "api_key"),
-        ("kilocode", "Kilo Code", "api_key"),
-        ("gmi", "GMI Cloud", "api_key"),
-    ])
+    @pytest.mark.parametrize(
+        "provider_id,name,auth_type",
+        [
+            ("copilot-acp", "GitHub Copilot ACP", "external_process"),
+            ("copilot", "GitHub Copilot", "api_key"),
+            ("huggingface", "Hugging Face", "api_key"),
+            ("zai", "Z.AI / GLM", "api_key"),
+            ("xai", "xAI", "api_key"),
+            ("nvidia", "NVIDIA NIM", "api_key"),
+            ("kimi-coding", "Kimi / Moonshot", "api_key"),
+            ("stepfun", "StepFun Step Plan", "api_key"),
+            ("minimax", "MiniMax", "api_key"),
+            ("minimax-cn", "MiniMax (China)", "api_key"),
+            ("ai-gateway", "Vercel AI Gateway", "api_key"),
+            ("kilocode", "Kilo Code", "api_key"),
+            ("gmi", "GMI Cloud", "api_key"),
+        ],
+    )
     def test_provider_registered(self, provider_id, name, auth_type):
         assert provider_id in PROVIDER_REGISTRY
         pconfig = PROVIDER_REGISTRY[provider_id]
@@ -53,7 +57,11 @@ class TestProviderRegistry:
 
     def test_zai_env_vars(self):
         pconfig = PROVIDER_REGISTRY["zai"]
-        assert pconfig.api_key_env_vars == ("GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY")
+        assert pconfig.api_key_env_vars == (
+            "GLM_API_KEY",
+            "ZAI_API_KEY",
+            "Z_AI_API_KEY",
+        )
         assert pconfig.base_url_env_var == "GLM_BASE_URL"
 
     def test_xai_env_vars(self):
@@ -70,7 +78,11 @@ class TestProviderRegistry:
 
     def test_copilot_env_vars(self):
         pconfig = PROVIDER_REGISTRY["copilot"]
-        assert pconfig.api_key_env_vars == ("COPILOT_GITHUB_TOKEN", "GH_TOKEN", "GITHUB_TOKEN")
+        assert pconfig.api_key_env_vars == (
+            "COPILOT_GITHUB_TOKEN",
+            "GH_TOKEN",
+            "GITHUB_TOKEN",
+        )
         assert pconfig.base_url_env_var == "COPILOT_API_BASE_URL"
 
     def test_kimi_env_vars(self):
@@ -118,17 +130,47 @@ class TestProviderRegistry:
         assert pconfig.base_url_env_var == "HF_BASE_URL"
 
     def test_base_urls(self):
-        assert PROVIDER_REGISTRY["copilot"].inference_base_url == "https://api.githubcopilot.com"
+        assert (
+            PROVIDER_REGISTRY["copilot"].inference_base_url
+            == "https://api.githubcopilot.com"
+        )
         assert PROVIDER_REGISTRY["copilot-acp"].inference_base_url == "acp://copilot"
-        assert PROVIDER_REGISTRY["zai"].inference_base_url == "https://api.z.ai/api/paas/v4"
-        assert PROVIDER_REGISTRY["kimi-coding"].inference_base_url == "https://api.moonshot.ai/v1"
-        assert PROVIDER_REGISTRY["stepfun"].inference_base_url == STEPFUN_STEP_PLAN_INTL_BASE_URL
-        assert PROVIDER_REGISTRY["minimax"].inference_base_url == "https://api.minimax.io/anthropic"
-        assert PROVIDER_REGISTRY["minimax-cn"].inference_base_url == "https://api.minimaxi.com/anthropic"
-        assert PROVIDER_REGISTRY["ai-gateway"].inference_base_url == "https://ai-gateway.vercel.sh/v1"
-        assert PROVIDER_REGISTRY["kilocode"].inference_base_url == "https://api.kilo.ai/api/gateway"
-        assert PROVIDER_REGISTRY["gmi"].inference_base_url == "https://api.gmi-serving.com/v1"
-        assert PROVIDER_REGISTRY["huggingface"].inference_base_url == "https://router.huggingface.co/v1"
+        assert (
+            PROVIDER_REGISTRY["zai"].inference_base_url
+            == "https://api.z.ai/api/paas/v4"
+        )
+        assert (
+            PROVIDER_REGISTRY["kimi-coding"].inference_base_url
+            == "https://api.moonshot.ai/v1"
+        )
+        assert (
+            PROVIDER_REGISTRY["stepfun"].inference_base_url
+            == STEPFUN_STEP_PLAN_INTL_BASE_URL
+        )
+        assert (
+            PROVIDER_REGISTRY["minimax"].inference_base_url
+            == "https://api.minimax.io/anthropic"
+        )
+        assert (
+            PROVIDER_REGISTRY["minimax-cn"].inference_base_url
+            == "https://api.minimaxi.com/anthropic"
+        )
+        assert (
+            PROVIDER_REGISTRY["ai-gateway"].inference_base_url
+            == "https://ai-gateway.vercel.sh/v1"
+        )
+        assert (
+            PROVIDER_REGISTRY["kilocode"].inference_base_url
+            == "https://api.kilo.ai/api/gateway"
+        )
+        assert (
+            PROVIDER_REGISTRY["gmi"].inference_base_url
+            == "https://api.gmi-serving.com/v1"
+        )
+        assert (
+            PROVIDER_REGISTRY["huggingface"].inference_base_url
+            == "https://router.huggingface.co/v1"
+        )
 
     def test_oauth_providers_unchanged(self):
         """Ensure we didn't break the existing OAuth providers."""
@@ -143,19 +185,39 @@ class TestProviderRegistry:
 # =============================================================================
 
 PROVIDER_ENV_VARS = (
-    "OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN",
+    "OPENROUTER_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_TOKEN",
     "CLAUDE_CODE_OAUTH_TOKEN",
-    "LM_API_KEY", "LM_BASE_URL",
-    "GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY",
-    "KIMI_API_KEY", "KIMI_BASE_URL", "STEPFUN_API_KEY", "STEPFUN_BASE_URL",
-    "MINIMAX_API_KEY", "MINIMAX_CN_API_KEY",
-    "AI_GATEWAY_API_KEY", "AI_GATEWAY_BASE_URL",
-    "KILOCODE_API_KEY", "KILOCODE_BASE_URL",
-    "GMI_API_KEY", "GMI_BASE_URL",
-    "DASHSCOPE_API_KEY", "OPENCODE_ZEN_API_KEY", "OPENCODE_GO_API_KEY",
-    "NOUS_API_KEY", "GITHUB_TOKEN", "GH_TOKEN",
-    "OPENAI_BASE_URL", "HERMES_COPILOT_ACP_COMMAND", "COPILOT_CLI_PATH",
-    "HERMES_COPILOT_ACP_ARGS", "COPILOT_ACP_BASE_URL",
+    "LM_API_KEY",
+    "LM_BASE_URL",
+    "GLM_API_KEY",
+    "ZAI_API_KEY",
+    "Z_AI_API_KEY",
+    "KIMI_API_KEY",
+    "KIMI_BASE_URL",
+    "STEPFUN_API_KEY",
+    "STEPFUN_BASE_URL",
+    "MINIMAX_API_KEY",
+    "MINIMAX_CN_API_KEY",
+    "AI_GATEWAY_API_KEY",
+    "AI_GATEWAY_BASE_URL",
+    "KILOCODE_API_KEY",
+    "KILOCODE_BASE_URL",
+    "GMI_API_KEY",
+    "GMI_BASE_URL",
+    "DASHSCOPE_API_KEY",
+    "OPENCODE_ZEN_API_KEY",
+    "OPENCODE_GO_API_KEY",
+    "NOUS_API_KEY",
+    "GITHUB_TOKEN",
+    "GH_TOKEN",
+    "OPENAI_BASE_URL",
+    "HERMES_COPILOT_ACP_COMMAND",
+    "COPILOT_CLI_PATH",
+    "HERMES_COPILOT_ACP_ARGS",
+    "COPILOT_ACP_BASE_URL",
 )
 
 
@@ -323,8 +385,8 @@ class TestResolveProvider:
 # API Key Provider Status tests
 # =============================================================================
 
-class TestApiKeyProviderStatus:
 
+class TestApiKeyProviderStatus:
     def test_unconfigured_provider(self):
         status = get_api_key_provider_status("zai")
         assert status["configured"] is False
@@ -359,7 +421,9 @@ class TestApiKeyProviderStatus:
         assert status["base_url"] == STEPFUN_STEP_PLAN_CN_BASE_URL
 
     def test_copilot_status_uses_gh_cli_token(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_gh_cli_token")
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_gh_cli_token"
+        )
         status = get_api_key_provider_status("copilot")
         assert status["configured"] is True
         assert status["logged_in"] is True
@@ -374,7 +438,9 @@ class TestApiKeyProviderStatus:
 
     def test_copilot_acp_status_detects_local_cli(self, monkeypatch):
         monkeypatch.setenv("HERMES_COPILOT_ACP_ARGS", "--acp --stdio --debug")
-        monkeypatch.setattr("hermes_cli.auth.shutil.which", lambda command: f"/usr/local/bin/{command}")
+        monkeypatch.setattr(
+            "hermes_cli.auth.shutil.which", lambda command: f"/usr/local/bin/{command}"
+        )
 
         status = get_external_process_provider_status("copilot-acp")
 
@@ -386,7 +452,9 @@ class TestApiKeyProviderStatus:
         assert status["base_url"] == "acp://copilot"
 
     def test_get_auth_status_dispatches_to_external_process(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.auth.shutil.which", lambda command: f"/opt/bin/{command}")
+        monkeypatch.setattr(
+            "hermes_cli.auth.shutil.which", lambda command: f"/opt/bin/{command}"
+        )
 
         status = get_auth_status("copilot-acp")
 
@@ -402,11 +470,13 @@ class TestApiKeyProviderStatus:
 # Credential Resolution tests
 # =============================================================================
 
-class TestResolveApiKeyProviderCredentials:
 
+class TestResolveApiKeyProviderCredentials:
     def test_resolve_zai_with_key(self, monkeypatch):
         monkeypatch.setenv("GLM_API_KEY", "glm-secret-key")
-        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None)
+        monkeypatch.setattr(
+            "hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None
+        )
         creds = resolve_api_key_provider_credentials("zai")
         assert creds["provider"] == "zai"
         assert creds["api_key"] == "glm-secret-key"
@@ -422,7 +492,9 @@ class TestResolveApiKeyProviderCredentials:
         assert creds["source"] == "GITHUB_TOKEN"
 
     def test_resolve_copilot_with_gh_cli_fallback(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret")
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret"
+        )
         creds = resolve_api_key_provider_credentials("copilot")
         assert creds["provider"] == "copilot"
         assert creds["api_key"] == "gho_cli_secret"
@@ -453,7 +525,9 @@ class TestResolveApiKeyProviderCredentials:
         assert creds["base_url"] == "http://127.0.0.1:1234/v1"
 
     def test_try_gh_cli_token_uses_homebrew_path_when_not_on_path(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.copilot_auth.shutil.which", lambda command: None)
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth.shutil.which", lambda command: None
+        )
         monkeypatch.setattr(
             "hermes_cli.copilot_auth.os.path.isfile",
             lambda path: path == "/opt/homebrew/bin/gh",
@@ -480,7 +554,9 @@ class TestResolveApiKeyProviderCredentials:
 
     def test_resolve_copilot_acp_with_local_cli(self, monkeypatch):
         monkeypatch.setenv("HERMES_COPILOT_ACP_ARGS", "--acp --stdio")
-        monkeypatch.setattr("hermes_cli.auth.shutil.which", lambda command: f"/usr/local/bin/{command}")
+        monkeypatch.setattr(
+            "hermes_cli.auth.shutil.which", lambda command: f"/usr/local/bin/{command}"
+        )
 
         creds = resolve_external_process_provider_credentials("copilot-acp")
 
@@ -577,7 +653,9 @@ class TestResolveApiKeyProviderCredentials:
         """GLM_API_KEY takes priority over ZAI_API_KEY."""
         monkeypatch.setenv("GLM_API_KEY", "primary")
         monkeypatch.setenv("ZAI_API_KEY", "secondary")
-        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None)
+        monkeypatch.setattr(
+            "hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None
+        )
         creds = resolve_api_key_provider_credentials("zai")
         assert creds["api_key"] == "primary"
         assert creds["source"] == "GLM_API_KEY"
@@ -585,7 +663,9 @@ class TestResolveApiKeyProviderCredentials:
     def test_zai_key_fallback(self, monkeypatch):
         """ZAI_API_KEY used when GLM_API_KEY not set."""
         monkeypatch.setenv("ZAI_API_KEY", "secondary")
-        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None)
+        monkeypatch.setattr(
+            "hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None
+        )
         creds = resolve_api_key_provider_credentials("zai")
         assert creds["api_key"] == "secondary"
         assert creds["source"] == "ZAI_API_KEY"
@@ -595,11 +675,12 @@ class TestResolveApiKeyProviderCredentials:
 # Runtime Provider Resolution tests
 # =============================================================================
 
-class TestRuntimeProviderResolution:
 
+class TestRuntimeProviderResolution:
     def test_runtime_zai(self, monkeypatch):
         monkeypatch.setenv("GLM_API_KEY", "glm-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="zai")
         assert result["provider"] == "zai"
         assert result["api_mode"] == "chat_completions"
@@ -609,6 +690,7 @@ class TestRuntimeProviderResolution:
     def test_runtime_kimi(self, monkeypatch):
         monkeypatch.setenv("KIMI_API_KEY", "kimi-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="kimi-coding")
         assert result["provider"] == "kimi-coding"
         assert result["api_mode"] == "chat_completions"
@@ -618,6 +700,7 @@ class TestRuntimeProviderResolution:
         monkeypatch.setenv("STEPFUN_API_KEY", "stepfun-key")
         monkeypatch.setenv("STEPFUN_BASE_URL", STEPFUN_STEP_PLAN_CN_BASE_URL)
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="stepfun")
         assert result["provider"] == "stepfun"
         assert result["api_mode"] == "chat_completions"
@@ -627,6 +710,7 @@ class TestRuntimeProviderResolution:
     def test_runtime_minimax(self, monkeypatch):
         monkeypatch.setenv("MINIMAX_API_KEY", "mm-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="minimax")
         assert result["provider"] == "minimax"
         assert result["api_key"] == "mm-key"
@@ -634,6 +718,7 @@ class TestRuntimeProviderResolution:
     def test_runtime_ai_gateway(self, monkeypatch):
         monkeypatch.setenv("AI_GATEWAY_API_KEY", "gw-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="ai-gateway")
         assert result["provider"] == "ai-gateway"
         assert result["api_mode"] == "chat_completions"
@@ -643,6 +728,7 @@ class TestRuntimeProviderResolution:
     def test_runtime_kilocode(self, monkeypatch):
         monkeypatch.setenv("KILOCODE_API_KEY", "kilo-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="kilocode")
         assert result["provider"] == "kilocode"
         assert result["api_mode"] == "chat_completions"
@@ -652,6 +738,7 @@ class TestRuntimeProviderResolution:
     def test_runtime_gmi(self, monkeypatch):
         monkeypatch.setenv("GMI_API_KEY", "gmi-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="gmi")
         assert result["provider"] == "gmi"
         assert result["api_mode"] == "chat_completions"
@@ -661,13 +748,17 @@ class TestRuntimeProviderResolution:
     def test_runtime_auto_detects_api_key_provider(self, monkeypatch):
         monkeypatch.setenv("KIMI_API_KEY", "auto-kimi-key")
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="auto")
         assert result["provider"] == "kimi-coding"
         assert result["api_key"] == "auto-kimi-key"
 
     def test_runtime_copilot_uses_gh_cli_token(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret")
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret"
+        )
         from hermes_cli.runtime_provider import resolve_runtime_provider
+
         result = resolve_runtime_provider(requested="copilot")
         assert result["provider"] == "copilot"
         assert result["api_mode"] == "chat_completions"
@@ -675,7 +766,9 @@ class TestRuntimeProviderResolution:
         assert result["base_url"] == "https://api.githubcopilot.com"
 
     def test_runtime_copilot_uses_responses_for_gpt_5_4(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret")
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret"
+        )
         monkeypatch.setattr(
             "hermes_cli.runtime_provider._get_model_config",
             lambda: {"provider": "copilot", "default": "gpt-5.4"},
@@ -698,7 +791,9 @@ class TestRuntimeProviderResolution:
         assert result["api_mode"] == "codex_responses"
 
     def test_runtime_copilot_acp_uses_process_runtime(self, monkeypatch):
-        monkeypatch.setattr("hermes_cli.auth.shutil.which", lambda command: f"/usr/local/bin/{command}")
+        monkeypatch.setattr(
+            "hermes_cli.auth.shutil.which", lambda command: f"/usr/local/bin/{command}"
+        )
         monkeypatch.setenv("HERMES_COPILOT_ACP_ARGS", "--acp --stdio --debug")
 
         from hermes_cli.runtime_provider import resolve_runtime_provider
@@ -717,50 +812,66 @@ class TestRuntimeProviderResolution:
 # _has_any_provider_configured tests
 # =============================================================================
 
-class TestHasAnyProviderConfigured:
 
+class TestHasAnyProviderConfigured:
     def test_glm_key_counts(self, monkeypatch, tmp_path):
         from hermes_cli import config as config_module
+
         monkeypatch.setenv("GLM_API_KEY", "test-key")
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
     def test_minimax_key_counts(self, monkeypatch, tmp_path):
         from hermes_cli import config as config_module
+
         monkeypatch.setenv("MINIMAX_API_KEY", "test-key")
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
     def test_gh_cli_token_counts(self, monkeypatch, tmp_path):
         from hermes_cli import config as config_module
-        monkeypatch.setattr("hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret")
+
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth._try_gh_cli_token", lambda: "gho_cli_secret"
+        )
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
     def test_claude_code_creds_ignored_on_fresh_install(self, monkeypatch, tmp_path):
         """Claude Code credentials should NOT skip the wizard when Hermes is unconfigured."""
         from hermes_cli import config as config_module
         from hermes_cli.auth import PROVIDER_REGISTRY
+
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
-        monkeypatch.setattr("hermes_cli.copilot_auth.resolve_copilot_token", lambda: ("", ""))
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth.resolve_copilot_token", lambda: ("", "")
+        )
         # Clear all provider env vars so earlier checks don't short-circuit
-        _all_vars = {"OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-                      "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"}
+        _all_vars = {
+            "OPENROUTER_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "OPENAI_BASE_URL",
+        }
         for pconfig in PROVIDER_REGISTRY.values():
             if pconfig.auth_type == "api_key":
                 _all_vars.update(pconfig.api_key_env_vars)
@@ -778,64 +889,98 @@ class TestHasAnyProviderConfigured:
             lambda creds: True,
         )
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is False
 
     def test_config_provider_counts(self, monkeypatch, tmp_path):
         """config.yaml with model.provider set should count as configured."""
         import yaml
         from hermes_cli import config as config_module
+
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         config_file = hermes_home / "config.yaml"
-        config_file.write_text(yaml.dump({
-            "model": {"default": "anthropic/claude-opus-4.6", "provider": "openrouter"},
-        }))
+        config_file.write_text(
+            yaml.dump({
+                "model": {
+                    "default": "anthropic/claude-opus-4.6",
+                    "provider": "openrouter",
+                },
+            })
+        )
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         # Clear all provider env vars
-        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-                     "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
+        for var in (
+            "OPENROUTER_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "OPENAI_BASE_URL",
+        ):
             monkeypatch.delenv(var, raising=False)
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
     def test_config_base_url_counts(self, monkeypatch, tmp_path):
         """config.yaml with model.base_url set (custom endpoint) should count."""
         import yaml
         from hermes_cli import config as config_module
+
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         config_file = hermes_home / "config.yaml"
-        config_file.write_text(yaml.dump({
-            "model": {"default": "my-model", "base_url": "http://localhost:11434/v1"},
-        }))
+        config_file.write_text(
+            yaml.dump({
+                "model": {
+                    "default": "my-model",
+                    "base_url": "http://localhost:11434/v1",
+                },
+            })
+        )
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-                     "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
+        for var in (
+            "OPENROUTER_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "OPENAI_BASE_URL",
+        ):
             monkeypatch.delenv(var, raising=False)
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
     def test_config_api_key_counts(self, monkeypatch, tmp_path):
         """config.yaml with model.api_key set should count."""
         import yaml
         from hermes_cli import config as config_module
+
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         config_file = hermes_home / "config.yaml"
-        config_file.write_text(yaml.dump({
-            "model": {"default": "my-model", "api_key": "sk-test-key"},
-        }))
+        config_file.write_text(
+            yaml.dump({
+                "model": {"default": "my-model", "api_key": "sk-test-key"},
+            })
+        )
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-                     "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
+        for var in (
+            "OPENROUTER_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "OPENAI_BASE_URL",
+        ):
             monkeypatch.delenv(var, raising=False)
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
     def test_config_dict_no_provider_no_creds_still_false(self, monkeypatch, tmp_path):
@@ -843,18 +988,28 @@ class TestHasAnyProviderConfigured:
         import yaml
         from hermes_cli import config as config_module
         from hermes_cli.auth import PROVIDER_REGISTRY
+
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         config_file = hermes_home / "config.yaml"
-        config_file.write_text(yaml.dump({
-            "model": {"default": ""},
-        }))
+        config_file.write_text(
+            yaml.dump({
+                "model": {"default": ""},
+            })
+        )
         monkeypatch.setattr(config_module, "get_env_path", lambda: hermes_home / ".env")
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        monkeypatch.setattr("hermes_cli.copilot_auth.resolve_copilot_token", lambda: ("", ""))
-        _all_vars = {"OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-                      "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"}
+        monkeypatch.setattr(
+            "hermes_cli.copilot_auth.resolve_copilot_token", lambda: ("", "")
+        )
+        _all_vars = {
+            "OPENROUTER_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "OPENAI_BASE_URL",
+        }
         for pconfig in PROVIDER_REGISTRY.values():
             if pconfig.auth_type == "api_key":
                 _all_vars.update(pconfig.api_key_env_vars)
@@ -863,12 +1018,16 @@ class TestHasAnyProviderConfigured:
         # Prevent gh-cli / copilot auth fallback from leaking in
         monkeypatch.setattr("hermes_cli.auth.get_auth_status", lambda _pid: {})
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is False
 
-    def test_claude_code_creds_counted_when_hermes_configured(self, monkeypatch, tmp_path):
+    def test_claude_code_creds_counted_when_hermes_configured(
+        self, monkeypatch, tmp_path
+    ):
         """Claude Code credentials should count when Hermes has been explicitly configured."""
         import yaml
         from hermes_cli import config as config_module
+
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         # Write a config with a non-default model to simulate explicit configuration
@@ -878,8 +1037,13 @@ class TestHasAnyProviderConfigured:
         monkeypatch.setattr(config_module, "get_hermes_home", lambda: hermes_home)
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
         # Clear all provider env vars
-        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-                     "ANTHROPIC_TOKEN", "OPENAI_BASE_URL"):
+        for var in (
+            "OPENROUTER_API_KEY",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "OPENAI_BASE_URL",
+        ):
             monkeypatch.delenv(var, raising=False)
         # Simulate valid Claude Code credentials
         monkeypatch.setattr(
@@ -891,6 +1055,7 @@ class TestHasAnyProviderConfigured:
             lambda creds: True,
         )
         from hermes_cli.main import _has_any_provider_configured
+
         assert _has_any_provider_configured() is True
 
 
@@ -974,7 +1139,9 @@ class TestKimiCodeCredentialAutoDetect:
     def test_non_kimi_providers_unaffected(self, monkeypatch):
         """Ensure the auto-detect logic doesn't leak to other providers."""
         monkeypatch.setenv("GLM_API_KEY", "sk-kim...isnt")
-        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None)
+        monkeypatch.setattr(
+            "hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None
+        )
         creds = resolve_api_key_provider_credentials("zai")
         assert creds["base_url"] == "https://api.z.ai/api/paas/v4"
 
@@ -998,7 +1165,9 @@ class TestZaiEndpointAutoDetect:
 
     def test_probe_failure_falls_back_to_default(self, monkeypatch):
         monkeypatch.setenv("GLM_API_KEY", "glm-key")
-        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None)
+        monkeypatch.setattr(
+            "hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None
+        )
         creds = resolve_api_key_provider_credentials("zai")
         assert creds["base_url"] == "https://api.z.ai/api/paas/v4"
 
@@ -1020,7 +1189,9 @@ class TestZaiEndpointAutoDetect:
 
     def test_no_key_skips_probe(self, monkeypatch):
         """Without an API key, no probe should occur."""
-        monkeypatch.setattr("hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None)
+        monkeypatch.setattr(
+            "hermes_cli.auth.detect_zai_endpoint", lambda *a, **kw: None
+        )
         creds = resolve_api_key_provider_credentials("zai")
         assert creds["api_key"] == ""
 
@@ -1029,11 +1200,13 @@ class TestZaiEndpointAutoDetect:
 # Kimi / Moonshot model list isolation tests
 # =============================================================================
 
+
 class TestKimiMoonshotModelListIsolation:
     """Moonshot (legacy) users must not see Coding Plan-only models."""
 
     def test_moonshot_list_excludes_coding_plan_only_models(self):
         from hermes_cli.main import _PROVIDER_MODELS
+
         moonshot_models = _PROVIDER_MODELS["moonshot"]
         coding_plan_only = {"kimi-for-coding", "kimi-k2-thinking-turbo"}
         leaked = set(moonshot_models) & coding_plan_only
@@ -1041,10 +1214,12 @@ class TestKimiMoonshotModelListIsolation:
 
     def test_moonshot_list_non_empty(self):
         from hermes_cli.main import _PROVIDER_MODELS
+
         assert len(_PROVIDER_MODELS["moonshot"]) >= 1
 
     def test_coding_plan_list_non_empty(self):
         from hermes_cli.main import _PROVIDER_MODELS
+
         assert len(_PROVIDER_MODELS["kimi-coding"]) >= 1
 
 
@@ -1052,16 +1227,19 @@ class TestKimiMoonshotModelListIsolation:
 # Hugging Face provider model list tests
 # =============================================================================
 
+
 class TestHuggingFaceModels:
     """Verify Hugging Face model lists are consistent across all locations."""
 
     def test_main_provider_models_has_huggingface(self):
         from hermes_cli.main import _PROVIDER_MODELS
+
         assert "huggingface" in _PROVIDER_MODELS
         assert len(_PROVIDER_MODELS["huggingface"]) >= 1
 
     def test_models_py_has_huggingface(self):
         from hermes_cli.models import _PROVIDER_MODELS
+
         assert "huggingface" in _PROVIDER_MODELS
         assert len(_PROVIDER_MODELS["huggingface"]) >= 1
 
@@ -1069,12 +1247,14 @@ class TestHuggingFaceModels:
         """Model lists in main.py and models.py should be identical."""
         from hermes_cli.main import _PROVIDER_MODELS as main_models
         from hermes_cli.models import _PROVIDER_MODELS as models_models
+
         assert main_models["huggingface"] == models_models["huggingface"]
 
     def test_model_metadata_has_context_lengths(self):
         """Every HF model should have a context length entry."""
         from hermes_cli.models import _PROVIDER_MODELS
         from agent.model_metadata import DEFAULT_CONTEXT_LENGTHS
+
         lower_keys = {k.lower() for k in DEFAULT_CONTEXT_LENGTHS}
         hf_models = _PROVIDER_MODELS["huggingface"]
         for model in hf_models:
@@ -1085,16 +1265,19 @@ class TestHuggingFaceModels:
     def test_models_use_org_name_format(self):
         """HF models should use org/name format (e.g. Qwen/Qwen3-235B)."""
         from hermes_cli.models import _PROVIDER_MODELS
+
         for model in _PROVIDER_MODELS["huggingface"]:
             assert "/" in model, f"HF model {model!r} missing org/ prefix"
 
     def test_provider_aliases_in_models_py(self):
         from hermes_cli.models import _PROVIDER_ALIASES
+
         assert _PROVIDER_ALIASES.get("hf") == "huggingface"
         assert _PROVIDER_ALIASES.get("hugging-face") == "huggingface"
 
     def test_provider_label(self):
         from hermes_cli.models import _PROVIDER_LABELS
+
         assert "huggingface" in _PROVIDER_LABELS
         assert _PROVIDER_LABELS["huggingface"] == "Hugging Face"
 
@@ -1102,6 +1285,7 @@ class TestHuggingFaceModels:
 # =============================================================================
 # MiniMax OAuth provider tests (added by feat/minimax-oauth-provider)
 # =============================================================================
+
 
 class TestMinimaxOAuthProvider:
     """Tests for the minimax-oauth OAuth provider."""
@@ -1119,6 +1303,7 @@ class TestMinimaxOAuthProvider:
             MINIMAX_OAUTH_CN_BASE,
             MINIMAX_OAUTH_CN_INFERENCE,
         )
+
         pconfig = PROVIDER_REGISTRY["minimax-oauth"]
         assert pconfig.portal_base_url == MINIMAX_OAUTH_GLOBAL_BASE
         assert pconfig.inference_base_url == MINIMAX_OAUTH_GLOBAL_INFERENCE
@@ -1139,21 +1324,25 @@ class TestMinimaxOAuthProvider:
 
     def test_minimax_oauth_listed_in_canonical_providers(self):
         from hermes_cli.models import CANONICAL_PROVIDERS
+
         slugs = [p.slug for p in CANONICAL_PROVIDERS]
         assert "minimax-oauth" in slugs
 
     def test_minimax_oauth_models_alias_in_models_py(self):
         from hermes_cli.models import _PROVIDER_ALIASES
+
         assert _PROVIDER_ALIASES.get("minimax-portal") == "minimax-oauth"
         assert _PROVIDER_ALIASES.get("minimax-global") == "minimax-oauth"
         assert _PROVIDER_ALIASES.get("minimax_oauth") == "minimax-oauth"
 
     def test_minimax_oauth_has_models(self):
         from hermes_cli.models import _PROVIDER_MODELS
+
         models = _PROVIDER_MODELS.get("minimax-oauth", [])
         assert len(models) >= 1
 
     def test_minimax_oauth_aux_model_registered(self):
         from agent.auxiliary_client import _API_KEY_PROVIDER_AUX_MODELS
+
         assert "minimax-oauth" in _API_KEY_PROVIDER_AUX_MODELS
         assert _API_KEY_PROVIDER_AUX_MODELS["minimax-oauth"]  # non-empty

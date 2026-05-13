@@ -105,7 +105,9 @@ def extract_local_skills():
                 "name": fm.get("name", os.path.basename(root)),
                 "description": fm.get("description", ""),
                 "category": category,
-                "categoryLabel": CATEGORY_LABELS.get(category, category.replace("-", " ").title()),
+                "categoryLabel": CATEGORY_LABELS.get(
+                    category, category.replace("-", " ").title()
+                ),
                 "source": source_label,
                 "tags": tags or [],
                 "platforms": fm.get("platforms", []),
@@ -145,8 +147,12 @@ def extract_cached_index_skills():
                 if not isinstance(agent, dict):
                     continue
                 skills.append({
-                    "name": agent.get("identifier", agent.get("meta", {}).get("title", "unknown")),
-                    "description": (agent.get("meta", {}).get("description", "") or "").split("\n")[0][:200],
+                    "name": agent.get(
+                        "identifier", agent.get("meta", {}).get("title", "unknown")
+                    ),
+                    "description": (
+                        agent.get("meta", {}).get("description", "") or ""
+                    ).split("\n")[0][:200],
                     "category": _guess_category(agent.get("meta", {}).get("tags", [])),
                     "categoryLabel": "",  # filled below
                     "source": source_label,
@@ -179,7 +185,9 @@ def extract_cached_index_skills():
         if not s["categoryLabel"]:
             s["categoryLabel"] = CATEGORY_LABELS.get(
                 s["category"],
-                s["category"].replace("-", " ").title() if s["category"] else "Uncategorized",
+                s["category"].replace("-", " ").title()
+                if s["category"]
+                else "Uncategorized",
             )
 
     return skills
@@ -188,9 +196,18 @@ def extract_cached_index_skills():
 TAG_TO_CATEGORY = {}
 for _cat, _tags in {
     "software-development": [
-        "programming", "code", "coding", "software-development",
-        "frontend-development", "backend-development", "web-development",
-        "react", "python", "typescript", "java", "rust",
+        "programming",
+        "code",
+        "coding",
+        "software-development",
+        "frontend-development",
+        "backend-development",
+        "web-development",
+        "react",
+        "python",
+        "typescript",
+        "java",
+        "rust",
     ],
     "creative": ["writing", "design", "creative", "art", "image-generation"],
     "research": ["education", "academic", "research"],
@@ -246,20 +263,24 @@ def main():
     all_skills = _consolidate_small_categories(local + external)
 
     source_order = {"built-in": 0, "optional": 1}
-    all_skills.sort(key=lambda s: (
-        source_order.get(s["source"], 2),
-        1 if s["category"] == "other" else 0,
-        s["category"],
-        s["name"],
-    ))
+    all_skills.sort(
+        key=lambda s: (
+            source_order.get(s["source"], 2),
+            1 if s["category"] == "other" else 0,
+            s["category"],
+            s["name"],
+        )
+    )
 
     os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
     with open(OUTPUT, "w", encoding="utf-8") as f:
         json.dump(all_skills, f, indent=2)
 
     print(f"Extracted {len(all_skills)} skills to {OUTPUT}")
-    print(f"  {len(local)} local ({sum(1 for s in local if s['source'] == 'built-in')} built-in, "
-          f"{sum(1 for s in local if s['source'] == 'optional')} optional)")
+    print(
+        f"  {len(local)} local ({sum(1 for s in local if s['source'] == 'built-in')} built-in, "
+        f"{sum(1 for s in local if s['source'] == 'optional')} optional)"
+    )
     print(f"  {len(external)} from external indexes")
 
 

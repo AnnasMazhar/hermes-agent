@@ -52,13 +52,17 @@ class MSGraphWebhookAdapter(BasePlatformAdapter):
         self._webhook_path: str = self._normalize_path(
             extra.get("webhook_path", DEFAULT_WEBHOOK_PATH)
         )
-        self._health_path: str = self._normalize_path(extra.get("health_path", "/health"))
+        self._health_path: str = self._normalize_path(
+            extra.get("health_path", "/health")
+        )
         self._accepted_resources: list[str] = [
             str(value).strip()
             for value in (extra.get("accepted_resources") or [])
             if str(value).strip()
         ]
-        self._client_state: Optional[str] = self._string_or_none(extra.get("client_state"))
+        self._client_state: Optional[str] = self._string_or_none(
+            extra.get("client_state")
+        )
         self._max_seen_receipts = max(
             1, int(extra.get("max_seen_receipts", DEFAULT_MAX_SEEN_RECEIPTS))
         )
@@ -129,7 +133,9 @@ class MSGraphWebhookAdapter(BasePlatformAdapter):
                 )
         return networks
 
-    def set_notification_scheduler(self, scheduler: Optional[NotificationScheduler]) -> None:
+    def set_notification_scheduler(
+        self, scheduler: Optional[NotificationScheduler]
+    ) -> None:
         self._notification_scheduler = scheduler
 
     async def connect(self) -> bool:
@@ -171,15 +177,13 @@ class MSGraphWebhookAdapter(BasePlatformAdapter):
         return {"name": chat_id, "type": "webhook"}
 
     async def _handle_health(self, request: "web.Request") -> "web.Response":
-        return web.json_response(
-            {
-                "status": "ok",
-                "platform": self.platform.value,
-                "webhook_path": self._webhook_path,
-                "accepted": self._accepted_count,
-                "duplicates": self._duplicate_count,
-            }
-        )
+        return web.json_response({
+            "status": "ok",
+            "platform": self.platform.value,
+            "webhook_path": self._webhook_path,
+            "accepted": self._accepted_count,
+            "duplicates": self._duplicate_count,
+        })
 
     async def _handle_validation(self, request: "web.Request") -> "web.Response":
         """Handle Microsoft Graph subscription validation handshake.
@@ -289,7 +293,9 @@ class MSGraphWebhookAdapter(BasePlatformAdapter):
                 continue
             if normalized_pattern.endswith("*"):
                 prefix = normalized_pattern[:-1].rstrip("/")
-                if normalized_resource == prefix or normalized_resource.startswith(f"{prefix}/"):
+                if normalized_resource == prefix or normalized_resource.startswith(
+                    f"{prefix}/"
+                ):
                     return True
                 continue
             if (
@@ -331,7 +337,10 @@ class MSGraphWebhookAdapter(BasePlatformAdapter):
         notification: Dict[str, Any],
         receipt_key: Optional[str],
     ) -> MessageEvent:
-        message_id = receipt_key or f"sha1:{sha1(json.dumps(notification, sort_keys=True).encode('utf-8')).hexdigest()}"
+        message_id = (
+            receipt_key
+            or f"sha1:{sha1(json.dumps(notification, sort_keys=True).encode('utf-8')).hexdigest()}"
+        )
         source = self.build_source(
             chat_id=f"msgraph:{notification.get('subscriptionId', 'unknown')}",
             chat_name="msgraph/webhook",

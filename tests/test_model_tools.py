@@ -19,6 +19,7 @@ from model_tools import (
 # handle_function_call
 # =========================================================================
 
+
 class TestHandleFunctionCall:
     def test_agent_loop_tool_returns_error(self):
         for tool_name in _AGENT_LOOP_TOOLS:
@@ -97,9 +98,7 @@ class TestHandleFunctionCall:
         ):
             handle_function_call("web_search", {"q": "test"}, task_id="t1")
 
-        kwargs_by_hook = {
-            c.args[0]: c.kwargs for c in mock_invoke_hook.call_args_list
-        }
+        kwargs_by_hook = {c.args[0]: c.kwargs for c in mock_invoke_hook.call_args_list}
         assert "duration_ms" in kwargs_by_hook["post_tool_call"]
         assert "duration_ms" in kwargs_by_hook["transform_tool_result"]
 
@@ -117,6 +116,7 @@ class TestHandleFunctionCall:
 # Agent loop tools
 # =========================================================================
 
+
 class TestAgentLoopTools:
     def test_expected_tools_in_set(self):
         assert "todo" in _AGENT_LOOP_TOOLS
@@ -132,6 +132,7 @@ class TestAgentLoopTools:
 # =========================================================================
 # Pre-tool-call blocking via plugin hooks
 # =========================================================================
+
 
 class TestPreToolCallBlocking:
     """Verify that pre_tool_call hooks can block tool execution."""
@@ -153,7 +154,9 @@ class TestPreToolCallBlocking:
         monkeypatch.setattr("hermes_cli.plugins.invoke_hook", fake_invoke_hook)
         monkeypatch.setattr("model_tools.registry.dispatch", fake_dispatch)
 
-        result = json.loads(handle_function_call("read_file", {"path": "test.txt"}, task_id="t1"))
+        result = json.loads(
+            handle_function_call("read_file", {"path": "test.txt"}, task_id="t1")
+        )
         assert result == {"error": "Blocked by policy"}
         assert not dispatch_called
 
@@ -166,31 +169,41 @@ class TestPreToolCallBlocking:
             return []
 
         monkeypatch.setattr("hermes_cli.plugins.invoke_hook", fake_invoke_hook)
-        monkeypatch.setattr("model_tools.registry.dispatch",
-                            lambda *a, **kw: (_ for _ in ()).throw(AssertionError("should not run")))
-        monkeypatch.setattr("tools.file_tools.notify_other_tool_call",
-                            lambda task_id: notifications.append(task_id))
+        monkeypatch.setattr(
+            "model_tools.registry.dispatch",
+            lambda *a, **kw: (_ for _ in ()).throw(AssertionError("should not run")),
+        )
+        monkeypatch.setattr(
+            "tools.file_tools.notify_other_tool_call",
+            lambda task_id: notifications.append(task_id),
+        )
 
-        result = json.loads(handle_function_call("web_search", {"q": "test"}, task_id="t1"))
+        result = json.loads(
+            handle_function_call("web_search", {"q": "test"}, task_id="t1")
+        )
         assert result == {"error": "Blocked"}
         assert notifications == []
 
     def test_invalid_hook_returns_do_not_block(self, monkeypatch):
         """Malformed hook returns should be ignored — tool executes normally."""
+
         def fake_invoke_hook(hook_name, **kwargs):
             if hook_name == "pre_tool_call":
                 return [
                     "block",
-                    {"action": "block"},           # missing message
+                    {"action": "block"},  # missing message
                     {"action": "deny", "message": "nope"},
                 ]
             return []
 
         monkeypatch.setattr("hermes_cli.plugins.invoke_hook", fake_invoke_hook)
-        monkeypatch.setattr("model_tools.registry.dispatch",
-                            lambda *a, **kw: json.dumps({"ok": True}))
+        monkeypatch.setattr(
+            "model_tools.registry.dispatch", lambda *a, **kw: json.dumps({"ok": True})
+        )
 
-        result = json.loads(handle_function_call("read_file", {"path": "test.txt"}, task_id="t1"))
+        result = json.loads(
+            handle_function_call("read_file", {"path": "test.txt"}, task_id="t1")
+        )
         assert result == {"ok": True}
 
     def test_skip_flag_prevents_double_fire(self, monkeypatch):
@@ -209,11 +222,13 @@ class TestPreToolCallBlocking:
             return []
 
         monkeypatch.setattr("hermes_cli.plugins.invoke_hook", fake_invoke_hook)
-        monkeypatch.setattr("model_tools.registry.dispatch",
-                            lambda *a, **kw: json.dumps({"ok": True}))
+        monkeypatch.setattr(
+            "model_tools.registry.dispatch", lambda *a, **kw: json.dumps({"ok": True})
+        )
 
-        handle_function_call("web_search", {"q": "test"}, task_id="t1",
-                             skip_pre_tool_call_hook=True)
+        handle_function_call(
+            "web_search", {"q": "test"}, task_id="t1", skip_pre_tool_call_hook=True
+        )
 
         # Single-fire contract: when skip=True the caller already fired
         # pre_tool_call, so handle_function_call must not fire it again.
@@ -247,18 +262,23 @@ class TestPreToolCallBlocking:
             return []
 
         monkeypatch.setattr("hermes_cli.plugins.invoke_hook", fake_invoke_hook)
-        monkeypatch.setattr("model_tools.registry.dispatch",
-                            lambda *a, **kw: json.dumps({"ok": True}))
+        monkeypatch.setattr(
+            "model_tools.registry.dispatch", lambda *a, **kw: json.dumps({"ok": True})
+        )
 
         # Step 1: caller checks for a block directive (this fires pre_tool_call once).
         block = get_pre_tool_call_block_message(
-            "web_search", {"q": "test"}, task_id="t1",
+            "web_search",
+            {"q": "test"},
+            task_id="t1",
         )
         assert block is None
 
         # Step 2: caller dispatches with skip=True so the hook isn't re-fired.
         handle_function_call(
-            "web_search", {"q": "test"}, task_id="t1",
+            "web_search",
+            {"q": "test"},
+            task_id="t1",
             skip_pre_tool_call_hook=True,
         )
 
@@ -273,12 +293,21 @@ class TestPreToolCallBlocking:
 # Legacy toolset map
 # =========================================================================
 
+
 class TestLegacyToolsetMap:
     def test_expected_legacy_names(self):
         expected = [
-            "web_tools", "terminal_tools", "vision_tools", "moa_tools",
-            "image_tools", "skills_tools", "browser_tools", "cronjob_tools",
-            "rl_tools", "file_tools", "tts_tools",
+            "web_tools",
+            "terminal_tools",
+            "vision_tools",
+            "moa_tools",
+            "image_tools",
+            "skills_tools",
+            "browser_tools",
+            "cronjob_tools",
+            "rl_tools",
+            "file_tools",
+            "tts_tools",
         ]
         for name in expected:
             assert name in _LEGACY_TOOLSET_MAP, f"Missing legacy toolset: {name}"
@@ -293,6 +322,7 @@ class TestLegacyToolsetMap:
 # =========================================================================
 # Backward-compat wrappers
 # =========================================================================
+
 
 class TestBackwardCompat:
     def test_get_all_tool_names_returns_list(self):
@@ -322,6 +352,7 @@ class TestBackwardCompat:
 # (regression: fix: eliminate duplicate checkpoint entries and JSON-unsafe coercion)
 # =========================================================================
 
+
 class TestCoerceNumberInfNan:
     """_coerce_number must honor its documented contract ("Returns original
     string on failure") for inf/nan inputs, because float('inf') and
@@ -329,18 +360,22 @@ class TestCoerceNumberInfNan:
 
     def test_inf_returns_original_string(self):
         from model_tools import _coerce_number
+
         assert _coerce_number("inf") == "inf"
 
     def test_negative_inf_returns_original_string(self):
         from model_tools import _coerce_number
+
         assert _coerce_number("-inf") == "-inf"
 
     def test_nan_returns_original_string(self):
         from model_tools import _coerce_number
+
         assert _coerce_number("nan") == "nan"
 
     def test_infinity_spelling_returns_original_string(self):
         from model_tools import _coerce_number
+
         # Python's float() parses "Infinity" too — still not JSON-safe.
         assert _coerce_number("Infinity") == "Infinity"
 
@@ -348,6 +383,7 @@ class TestCoerceNumberInfNan:
         """Whatever _coerce_number returns for inf/nan must round-trip
         through strict (allow_nan=False) json.dumps without raising."""
         from model_tools import _coerce_number
+
         for s in ("inf", "-inf", "nan", "Infinity"):
             result = _coerce_number(s)
             json.dumps({"x": result}, allow_nan=False)  # must not raise
@@ -355,6 +391,7 @@ class TestCoerceNumberInfNan:
     def test_normal_numbers_still_coerce(self):
         """Guard against over-correction — real numbers still coerce."""
         from model_tools import _coerce_number
+
         assert _coerce_number("42") == 42
         assert _coerce_number("3.14") == 3.14
         assert _coerce_number("1e3") == 1000

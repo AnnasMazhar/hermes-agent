@@ -36,13 +36,13 @@ ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 CODE_LENGTH = 8
 
 # Timing constants
-CODE_TTL_SECONDS = 3600             # Codes expire after 1 hour
-RATE_LIMIT_SECONDS = 600            # 1 request per user per 10 minutes
-LOCKOUT_SECONDS = 3600              # Lockout duration after too many failures
+CODE_TTL_SECONDS = 3600  # Codes expire after 1 hour
+RATE_LIMIT_SECONDS = 600  # 1 request per user per 10 minutes
+LOCKOUT_SECONDS = 3600  # Lockout duration after too many failures
 
 # Limits
-MAX_PENDING_PER_PLATFORM = 3        # Max pending codes per platform
-MAX_FAILED_ATTEMPTS = 5             # Failed approvals before lockout
+MAX_PENDING_PER_PLATFORM = 3  # Max pending codes per platform
+MAX_FAILED_ATTEMPTS = 5  # Failed approvals before lockout
 
 PAIRING_DIR = get_hermes_dir("platforms/pairing", "pairing")
 
@@ -290,8 +290,11 @@ class PairingStore:
             lockout_key = f"_lockout:{platform}"
             limits[lockout_key] = time.time() + LOCKOUT_SECONDS
             limits[fail_key] = 0  # Reset counter
-            print(f"[pairing] Platform {platform} locked out for {LOCKOUT_SECONDS}s "
-                  f"after {MAX_FAILED_ATTEMPTS} failed attempts", flush=True)
+            print(
+                f"[pairing] Platform {platform} locked out for {LOCKOUT_SECONDS}s "
+                f"after {MAX_FAILED_ATTEMPTS} failed attempts",
+                flush=True,
+            )
         self._save_json(self._rate_limit_path(), limits)
 
     # ----- Cleanup -----
@@ -302,7 +305,8 @@ class PairingStore:
         pending = self._load_json(path)
         now = time.time()
         expired = [
-            code for code, info in pending.items()
+            code
+            for code, info in pending.items()
             if (now - info["created_at"]) > CODE_TTL_SECONDS
         ]
         if expired:

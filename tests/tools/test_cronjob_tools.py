@@ -15,6 +15,7 @@ from tools.cronjob_tools import (
 # Cron prompt scanning
 # =========================================================================
 
+
 class TestScanCronPrompt:
     def test_clean_prompt_passes(self):
         assert _scan_cron_prompt("Check if nginx is running on server 10.0.0.1") == ""
@@ -145,7 +146,9 @@ class TestUnifiedCronjobTool:
         assert listing["jobs"][0]["schedule"] == "every 60m"
 
     def test_pause_and_resume(self):
-        created = json.loads(cronjob(action="create", prompt="Check", schedule="every 1h"))
+        created = json.loads(
+            cronjob(action="create", prompt="Check", schedule="every 1h")
+        )
         job_id = created["job_id"]
 
         paused = json.loads(cronjob(action="pause", job_id=job_id))
@@ -157,11 +160,15 @@ class TestUnifiedCronjobTool:
         assert resumed["job"]["state"] == "scheduled"
 
     def test_update_schedule_recomputes_display(self):
-        created = json.loads(cronjob(action="create", prompt="Check", schedule="every 1h"))
+        created = json.loads(
+            cronjob(action="create", prompt="Check", schedule="every 1h")
+        )
         job_id = created["job_id"]
 
         updated = json.loads(
-            cronjob(action="update", job_id=job_id, schedule="every 2h", name="New Name")
+            cronjob(
+                action="update", job_id=job_id, schedule="every 2h", name="New Name"
+            )
         )
         assert updated["success"] is True
         assert updated["job"]["name"] == "New Name"
@@ -297,9 +304,7 @@ class TestUnifiedCronjobTool:
         """update with deliver=['telegram'] stores the canonical string."""
         from cron.jobs import get_job
 
-        created = json.loads(
-            cronjob(action="create", prompt="x", schedule="every 1h")
-        )
+        created = json.loads(cronjob(action="create", prompt="x", schedule="every 1h"))
         updated = json.loads(
             cronjob(
                 action="update",

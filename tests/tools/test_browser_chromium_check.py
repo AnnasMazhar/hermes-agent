@@ -51,9 +51,6 @@ class TestChromiumInstalled:
         (tmp_path / "chromium_headless_shell-1208").mkdir()
         assert bt._chromium_installed() is True
 
-
-
-
     def test_result_cached(self, monkeypatch, tmp_path):
         monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
         (tmp_path / "chromium-1208").mkdir()
@@ -64,11 +61,14 @@ class TestChromiumInstalled:
 
 
 class TestCheckBrowserRequirementsChromium:
-
     def test_local_mode_with_chromium_returns_true(self, monkeypatch, tmp_path):
         monkeypatch.setattr(bt, "_is_camofox_mode", lambda: False)
-        monkeypatch.setattr(bt, "_find_agent_browser", lambda: "/usr/local/bin/agent-browser")
-        monkeypatch.setattr(bt, "_requires_real_termux_browser_install", lambda _: False)
+        monkeypatch.setattr(
+            bt, "_find_agent_browser", lambda: "/usr/local/bin/agent-browser"
+        )
+        monkeypatch.setattr(
+            bt, "_requires_real_termux_browser_install", lambda _: False
+        )
         monkeypatch.setattr(bt, "_get_cloud_provider", lambda: None)
         monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
         (tmp_path / "chromium-1208").mkdir()
@@ -77,15 +77,21 @@ class TestCheckBrowserRequirementsChromium:
 
     def test_cloud_mode_does_not_require_local_chromium(self, monkeypatch, tmp_path):
         """Cloud browsers (Browserbase etc.) host their own Chromium."""
+
         class FakeProvider:
             def is_configured(self):
                 return True
+
             def provider_name(self):
                 return "browserbase"
 
         monkeypatch.setattr(bt, "_is_camofox_mode", lambda: False)
-        monkeypatch.setattr(bt, "_find_agent_browser", lambda: "/usr/local/bin/agent-browser")
-        monkeypatch.setattr(bt, "_requires_real_termux_browser_install", lambda _: False)
+        monkeypatch.setattr(
+            bt, "_find_agent_browser", lambda: "/usr/local/bin/agent-browser"
+        )
+        monkeypatch.setattr(
+            bt, "_requires_real_termux_browser_install", lambda _: False
+        )
         monkeypatch.setattr(bt, "_get_cloud_provider", lambda: FakeProvider())
         # Point chromium search at an empty dir — should not matter for cloud.
         monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
@@ -106,6 +112,3 @@ class TestRunBrowserCommandChromiumGuard:
     """Verify _run_browser_command fails fast (no timeout hang) when
     Chromium is missing in local mode.
     """
-
-
-

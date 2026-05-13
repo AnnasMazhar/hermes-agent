@@ -53,9 +53,13 @@ class TestMcpAddCommandDest:
         dispatcher into the chat fallback.
         """
         parser = _build_parser()
-        args = parser.parse_args(
-            ["mcp", "add", "foo", "--url", "https://example.com/mcp"]
-        )
+        args = parser.parse_args([
+            "mcp",
+            "add",
+            "foo",
+            "--url",
+            "https://example.com/mcp",
+        ])
 
         assert args.command == "mcp"
         assert args.mcp_action == "add"
@@ -66,9 +70,7 @@ class TestMcpAddCommandDest:
     def test_command_flag_writes_to_mcp_command_dest(self):
         """`--command npx` must populate args.mcp_command, not args.command."""
         parser = _build_parser()
-        args = parser.parse_args(
-            ["mcp", "add", "github", "--command", "npx"]
-        )
+        args = parser.parse_args(["mcp", "add", "github", "--command", "npx"])
 
         assert args.command == "mcp"
         assert args.mcp_command == "npx"

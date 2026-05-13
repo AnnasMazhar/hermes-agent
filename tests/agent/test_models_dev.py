@@ -1,4 +1,5 @@
 """Tests for agent.models_dev — models.dev registry integration."""
+
 import json
 from unittest.mock import patch, MagicMock
 
@@ -168,6 +169,7 @@ class TestFetchModelsDev:
 
         # Clear caches
         import agent.models_dev as md
+
         md._models_dev_cache = {}
         md._models_dev_cache_time = 0
 
@@ -182,6 +184,7 @@ class TestFetchModelsDev:
         mock_get.side_effect = Exception("network error")
 
         import agent.models_dev as md
+
         md._models_dev_cache = SAMPLE_REGISTRY
         md._models_dev_cache_time = 0  # expired
 
@@ -194,6 +197,7 @@ class TestFetchModelsDev:
     def test_in_memory_cache_used(self, mock_get):
         import agent.models_dev as md
         import time
+
         md._models_dev_cache = SAMPLE_REGISTRY
         md._models_dev_cache_time = time.time()  # fresh
 
@@ -281,13 +285,16 @@ class TestGetModelCapabilities:
     def test_modalities_non_dict_handled(self):
         """Non-dict modalities field should not crash."""
         registry = {
-            "google": {"id": "google", "models": {
-                "weird-model": {
-                    "id": "weird-model",
-                    "modalities": "text",  # not a dict
-                    "limit": {"context": 200000, "output": 8192},
+            "google": {
+                "id": "google",
+                "models": {
+                    "weird-model": {
+                        "id": "weird-model",
+                        "modalities": "text",  # not a dict
+                        "limit": {"context": 200000, "output": 8192},
+                    },
                 },
-            }},
+            },
         }
         with patch("agent.models_dev.fetch_models_dev", return_value=registry):
             caps = get_model_capabilities("gemini", "weird-model")

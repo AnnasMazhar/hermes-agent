@@ -20,7 +20,7 @@ def test_setup_ollama_cloud_passes_force_refresh(monkeypatch):
     assert marker in src, "ollama-cloud branch missing from provider setup"
     idx = src.index(marker)
     # The call to fetch_ollama_cloud_models should be within the next ~2000 chars.
-    snippet = src[idx:idx + 2000]
+    snippet = src[idx : idx + 2000]
     assert "fetch_ollama_cloud_models(" in snippet, snippet[:500]
     assert "force_refresh=True" in snippet, (
         "ollama-cloud setup must pass force_refresh=True so newly released "

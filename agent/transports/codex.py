@@ -24,11 +24,13 @@ class ResponsesApiTransport(ProviderTransport):
     def convert_messages(self, messages: List[Dict[str, Any]], **kwargs) -> Any:
         """Convert OpenAI chat messages to Responses API input items."""
         from agent.codex_responses_adapter import _chat_messages_to_responses_input
+
         return _chat_messages_to_responses_input(messages)
 
     def convert_tools(self, tools: List[Dict[str, Any]]) -> Any:
         """Convert OpenAI tool schemas to Responses API function definitions."""
         from agent.codex_responses_adapter import _responses_tools
+
         return _responses_tools(tools)
 
     def build_kwargs(
@@ -127,13 +129,11 @@ class ResponsesApiTransport(ProviderTransport):
                 existing_extra_headers = kwargs.get("extra_headers")
                 merged_extra_headers: Dict[str, str] = {}
                 if isinstance(existing_extra_headers, dict):
-                    merged_extra_headers.update(
-                        {
-                            str(key): str(value)
-                            for key, value in existing_extra_headers.items()
-                            if key and value is not None
-                        }
-                    )
+                    merged_extra_headers.update({
+                        str(key): str(value)
+                        for key, value in existing_extra_headers.items()
+                        if key and value is not None
+                    })
                 merged_extra_headers["session_id"] = cache_scope_id
                 merged_extra_headers["x-client-request-id"] = cache_scope_id
                 kwargs["extra_headers"] = merged_extra_headers
@@ -146,13 +146,11 @@ class ResponsesApiTransport(ProviderTransport):
             existing_extra_headers = kwargs.get("extra_headers")
             merged_extra_headers: Dict[str, str] = {}
             if isinstance(existing_extra_headers, dict):
-                merged_extra_headers.update(
-                    {
-                        str(key): str(value)
-                        for key, value in existing_extra_headers.items()
-                        if key and value is not None
-                    }
-                )
+                merged_extra_headers.update({
+                    str(key): str(value)
+                    for key, value in existing_extra_headers.items()
+                    if key and value is not None
+                })
             merged_extra_headers["x-grok-conv-id"] = session_id
             kwargs["extra_headers"] = merged_extra_headers
 
@@ -176,12 +174,20 @@ class ResponsesApiTransport(ProviderTransport):
                     provider_data["call_id"] = tc.call_id
                 if hasattr(tc, "response_item_id") and tc.response_item_id:
                     provider_data["response_item_id"] = tc.response_item_id
-                tool_calls.append(ToolCall(
-                    id=tc.id if hasattr(tc, "id") else (tc.function.name if hasattr(tc, "function") else None),
-                    name=tc.function.name if hasattr(tc, "function") else getattr(tc, "name", ""),
-                    arguments=tc.function.arguments if hasattr(tc, "function") else getattr(tc, "arguments", "{}"),
-                    provider_data=provider_data or None,
-                ))
+                tool_calls.append(
+                    ToolCall(
+                        id=tc.id
+                        if hasattr(tc, "id")
+                        else (tc.function.name if hasattr(tc, "function") else None),
+                        name=tc.function.name
+                        if hasattr(tc, "function")
+                        else getattr(tc, "name", ""),
+                        arguments=tc.function.arguments
+                        if hasattr(tc, "function")
+                        else getattr(tc, "arguments", "{}"),
+                        provider_data=provider_data or None,
+                    )
+                )
 
         # Extract reasoning items for provider_data
         provider_data = {}
@@ -221,6 +227,7 @@ class ResponsesApiTransport(ProviderTransport):
         Normalizes input items, strips unsupported fields, validates structure.
         """
         from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+
         return _preflight_codex_api_kwargs(api_kwargs, allow_stream=allow_stream)
 
     def map_finish_reason(self, raw_reason: str) -> str:

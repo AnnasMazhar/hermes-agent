@@ -77,6 +77,7 @@ def test_get_platform_tools_uses_default_when_platform_not_configured():
 def test_configurable_toolsets_include_messaging():
     assert any(ts_key == "messaging" for ts_key, _, _ in CONFIGURABLE_TOOLSETS)
 
+
 def test_get_platform_tools_default_telegram_includes_messaging():
     enabled = _get_platform_tools({}, "telegram")
 
@@ -89,7 +90,9 @@ def test_get_platform_tools_homeassistant_platform_keeps_homeassistant_toolset()
     assert "homeassistant" in enabled
 
 
-def test_get_platform_tools_homeassistant_toolset_enabled_for_cron_when_hass_token_set(monkeypatch):
+def test_get_platform_tools_homeassistant_toolset_enabled_for_cron_when_hass_token_set(
+    monkeypatch,
+):
     """HA toolset is runtime-gated by check_fn (requires HASS_TOKEN).
 
     When HASS_TOKEN is set, the user has explicitly opted in — _DEFAULT_OFF_TOOLSETS
@@ -110,7 +113,9 @@ def test_get_platform_tools_homeassistant_toolset_enabled_for_cron_when_hass_tok
     assert "homeassistant" in cli_enabled
 
 
-def test_get_platform_tools_homeassistant_toolset_off_for_cron_when_hass_token_missing(monkeypatch):
+def test_get_platform_tools_homeassistant_toolset_off_for_cron_when_hass_token_missing(
+    monkeypatch,
+):
     """Without HASS_TOKEN, HA stays off by default — preserves #14798's behavior
     for users who never configured HA."""
     monkeypatch.delenv("HASS_TOKEN", raising=False)
@@ -188,7 +193,9 @@ def test_get_platform_tools_includes_enabled_mcp_servers_by_default():
     config = {
         "mcp_servers": {
             "exa": {"url": "https://mcp.exa.ai/mcp"},
-            "web-search-prime": {"url": "https://api.z.ai/api/mcp/web_search_prime/mcp"},
+            "web-search-prime": {
+                "url": "https://api.z.ai/api/mcp/web_search_prime/mcp"
+            },
             "disabled-server": {"url": "https://example.com/mcp", "enabled": False},
         }
     }
@@ -205,7 +212,9 @@ def test_get_platform_tools_keeps_enabled_mcp_servers_with_explicit_builtin_sele
         "platform_toolsets": {"cli": ["web", "memory"]},
         "mcp_servers": {
             "exa": {"url": "https://mcp.exa.ai/mcp"},
-            "web-search-prime": {"url": "https://api.z.ai/api/mcp/web_search_prime/mcp"},
+            "web-search-prime": {
+                "url": "https://api.z.ai/api/mcp/web_search_prime/mcp"
+            },
         },
     }
 
@@ -223,7 +232,9 @@ def test_get_platform_tools_no_mcp_sentinel_excludes_all_mcp_servers():
         "platform_toolsets": {"cli": ["web", "terminal", "no_mcp"]},
         "mcp_servers": {
             "exa": {"url": "https://mcp.exa.ai/mcp"},
-            "web-search-prime": {"url": "https://api.z.ai/api/mcp/web_search_prime/mcp"},
+            "web-search-prime": {
+                "url": "https://api.z.ai/api/mcp/web_search_prime/mcp"
+            },
         },
     }
 
@@ -313,11 +324,7 @@ def test_save_platform_tools_handles_empty_existing_config():
 
 def test_save_platform_tools_handles_invalid_existing_config():
     """Saving platform tools works when existing config is not a list."""
-    config = {
-        "platform_toolsets": {
-            "cli": "invalid-string-value"
-        }
-    }
+    config = {"platform_toolsets": {"cli": "invalid-string-value"}}
 
     with patch("hermes_cli.tools_config.save_config"):
         _save_platform_tools(config, "cli", {"web"})
@@ -343,19 +350,41 @@ def test_save_platform_tools_does_not_preserve_platform_default_toolsets():
     config = {
         "platform_toolsets": {
             "cli": [
-                "browser", "clarify", "code_execution", "cronjob",
-                "delegation", "file", "hermes-cli",  # <-- the culprit
-                "memory", "session_search", "skills", "terminal",
-                "todo", "tts", "vision", "web",
+                "browser",
+                "clarify",
+                "code_execution",
+                "cronjob",
+                "delegation",
+                "file",
+                "hermes-cli",  # <-- the culprit
+                "memory",
+                "session_search",
+                "skills",
+                "terminal",
+                "todo",
+                "tts",
+                "vision",
+                "web",
             ]
         }
     }
 
     # User unchecks image_gen, homeassistant, moa — keeps the rest
     new_selection = {
-        "browser", "clarify", "code_execution", "cronjob",
-        "delegation", "file", "memory", "session_search",
-        "skills", "terminal", "todo", "tts", "vision", "web",
+        "browser",
+        "clarify",
+        "code_execution",
+        "cronjob",
+        "delegation",
+        "file",
+        "memory",
+        "session_search",
+        "skills",
+        "terminal",
+        "todo",
+        "tts",
+        "vision",
+        "web",
     }
 
     with patch("hermes_cli.tools_config.save_config"):
@@ -382,7 +411,11 @@ def test_save_platform_tools_does_not_preserve_hermes_telegram():
     config = {
         "platform_toolsets": {
             "telegram": [
-                "browser", "file", "hermes-telegram", "terminal", "web",
+                "browser",
+                "file",
+                "hermes-telegram",
+                "terminal",
+                "web",
             ]
         }
     }
@@ -403,7 +436,11 @@ def test_save_platform_tools_still_preserves_mcp_with_platform_default_present()
     config = {
         "platform_toolsets": {
             "cli": [
-                "web", "terminal", "hermes-cli", "my-mcp-server", "github-tools",
+                "web",
+                "terminal",
+                "hermes-cli",
+                "my-mcp-server",
+                "github-tools",
             ]
         }
     }
@@ -431,7 +468,9 @@ def test_save_platform_tools_still_preserves_mcp_with_platform_default_present()
 
 
 def test_visible_providers_include_nous_subscription_when_logged_in(monkeypatch):
-    monkeypatch.setattr("hermes_cli.tools_config.managed_nous_tools_enabled", lambda: True)
+    monkeypatch.setattr(
+        "hermes_cli.tools_config.managed_nous_tools_enabled", lambda: True
+    )
     config = {"model": {"provider": "nous"}}
 
     monkeypatch.setattr(
@@ -445,7 +484,9 @@ def test_visible_providers_include_nous_subscription_when_logged_in(monkeypatch)
 
 
 def test_visible_providers_hide_nous_subscription_when_feature_flag_is_off(monkeypatch):
-    monkeypatch.setattr("hermes_cli.tools_config.managed_nous_tools_enabled", lambda: False)
+    monkeypatch.setattr(
+        "hermes_cli.tools_config.managed_nous_tools_enabled", lambda: False
+    )
     config = {"model": {"provider": "nous"}}
 
     monkeypatch.setattr(
@@ -455,7 +496,9 @@ def test_visible_providers_hide_nous_subscription_when_feature_flag_is_off(monke
 
     providers = _visible_providers(TOOL_CATEGORIES["browser"], config)
 
-    assert all(not provider["name"].startswith("Nous Subscription") for provider in providers)
+    assert all(
+        not provider["name"].startswith("Nous Subscription") for provider in providers
+    )
 
 
 def test_local_browser_provider_is_saved_explicitly(monkeypatch):
@@ -500,8 +543,12 @@ def test_reconfigure_lists_enabled_web_without_existing_provider_config(monkeypa
 
 
 def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
-    monkeypatch.setattr("hermes_cli.tools_config.managed_nous_tools_enabled", lambda: True)
-    monkeypatch.setattr("hermes_cli.nous_subscription.managed_nous_tools_enabled", lambda: True)
+    monkeypatch.setattr(
+        "hermes_cli.tools_config.managed_nous_tools_enabled", lambda: True
+    )
+    monkeypatch.setattr(
+        "hermes_cli.nous_subscription.managed_nous_tools_enabled", lambda: True
+    )
     config = {
         "model": {"provider": "nous"},
         "platform_toolsets": {"cli": []},
@@ -551,6 +598,7 @@ def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
     assert config["tts"]["provider"] == "openai"
     assert config["browser"]["cloud_provider"] == "browser-use"
     assert configured == []
+
 
 # ── Platform / toolset consistency ────────────────────────────────────────────
 
@@ -632,16 +680,19 @@ def test_numeric_mcp_server_name_does_not_crash_sorted():
 
 # ─── Imagegen Backend Picker Wiring ────────────────────────────────────────
 
+
 class TestImagegenBackendRegistry:
     """IMAGEGEN_BACKENDS tags drive the model picker flow in tools_config."""
 
     def test_fal_backend_registered(self):
         from hermes_cli.tools_config import IMAGEGEN_BACKENDS
+
         assert "fal" in IMAGEGEN_BACKENDS
 
     def test_fal_catalog_loads_lazily(self):
         """catalog_fn should defer import to avoid import cycles."""
         from hermes_cli.tools_config import IMAGEGEN_BACKENDS
+
         catalog, default = IMAGEGEN_BACKENDS["fal"]["catalog_fn"]()
         assert default == "fal-ai/flux-2/klein/9b"
         assert "fal-ai/flux-2/klein/9b" in catalog
@@ -651,6 +702,7 @@ class TestImagegenBackendRegistry:
         """Both Nous Subscription and FAL.ai providers must carry the
         imagegen_backend tag so _configure_provider fires the picker."""
         from hermes_cli.tools_config import TOOL_CATEGORIES
+
         providers = TOOL_CATEGORIES["image_gen"]["providers"]
         for p in providers:
             assert p.get("imagegen_backend") == "fal", (
@@ -664,6 +716,7 @@ class TestImagegenModelPicker:
 
     def test_picker_writes_chosen_model_to_config(self):
         from hermes_cli.tools_config import _configure_imagegen_model
+
         config = {}
         # Force _prompt_choice to pick index 1 (second-in-ordered-list).
         with patch("hermes_cli.tools_config._prompt_choice", return_value=1):
@@ -679,6 +732,7 @@ class TestImagegenModelPicker:
             _configure_imagegen_model,
             IMAGEGEN_BACKENDS,
         )
+
         catalog, default_model = IMAGEGEN_BACKENDS["fal"]["catalog_fn"]()
         model_ids = list(catalog.keys())
         ordered = [default_model] + [m for m in model_ids if m != default_model]
@@ -686,6 +740,7 @@ class TestImagegenModelPicker:
 
         # Only ONE picker call is expected (for model) — not two (model + quality).
         call_count = {"n": 0}
+
         def fake_prompt(*a, **kw):
             call_count["n"] += 1
             return gpt_idx
@@ -702,6 +757,7 @@ class TestImagegenModelPicker:
 
     def test_picker_no_op_for_unknown_backend(self):
         from hermes_cli.tools_config import _configure_imagegen_model
+
         config = {}
         _configure_imagegen_model("nonexistent-backend", config)
         assert config == {}  # untouched
@@ -710,6 +766,7 @@ class TestImagegenModelPicker:
         """When image_gen is a non-dict (user-edit YAML), the picker should
         replace it with a fresh dict rather than crash."""
         from hermes_cli.tools_config import _configure_imagegen_model
+
         config = {"image_gen": "some-garbage-string"}
         with patch("hermes_cli.tools_config._prompt_choice", return_value=0):
             _configure_imagegen_model("fal", config)
@@ -721,11 +778,7 @@ def test_save_platform_tools_normalizes_numeric_entries():
     """YAML may parse bare numeric toolset names as int. They should be
     normalized to str so they survive the save round-trip.
     """
-    config = {
-        "platform_toolsets": {
-            "cli": ["web", "terminal", 12306, "custom-mcp"]
-        }
-    }
+    config = {"platform_toolsets": {"cli": ["web", "terminal", 12306, "custom-mcp"]}}
 
     with patch("hermes_cli.tools_config.save_config"):
         _save_platform_tools(config, "cli", {"web", "browser"})
@@ -740,11 +793,7 @@ def test_save_platform_tools_clears_no_mcp_sentinel():
     the sentinel unconditionally — otherwise a user who once set no_mcp by
     hand could never re-enable MCP servers through the UI.
     """
-    config = {
-        "platform_toolsets": {
-            "cli": ["web", "terminal", "no_mcp"]
-        }
-    }
+    config = {"platform_toolsets": {"cli": ["web", "terminal", "no_mcp"]}}
 
     with patch("hermes_cli.tools_config.save_config"):
         _save_platform_tools(config, "cli", {"web", "browser"})
@@ -758,9 +807,7 @@ def test_save_platform_tools_preserves_mcp_server_names():
     the save — we only clear `no_mcp`, not every non-configurable entry.
     """
     config = {
-        "platform_toolsets": {
-            "cli": ["web", "terminal", "custom-mcp", "another-mcp"]
-        }
+        "platform_toolsets": {"cli": ["web", "terminal", "custom-mcp", "another-mcp"]}
     }
 
     with patch("hermes_cli.tools_config.save_config"):
@@ -787,7 +834,13 @@ def test_get_platform_tools_recovers_non_configurable_toolsets_from_composite():
     }
     fake_toolsets["hermes-_test_platform"] = {
         "description": "test composite",
-        "tools": ["web_search", "web_extract", "terminal", "process", "_test_special_tool"],
+        "tools": [
+            "web_search",
+            "web_extract",
+            "terminal",
+            "process",
+            "_test_special_tool",
+        ],
         "includes": [],
     }
 
@@ -795,7 +848,9 @@ def test_get_platform_tools_recovers_non_configurable_toolsets_from_composite():
         "_test_platform": {"label": "Test", "default_toolset": "hermes-_test_platform"},
     }
 
-    with mock_patch("hermes_cli.tools_config.PLATFORMS", {**PLATFORMS, **test_platforms}):
+    with mock_patch(
+        "hermes_cli.tools_config.PLATFORMS", {**PLATFORMS, **test_platforms}
+    ):
         with mock_patch("toolsets.TOOLSETS", fake_toolsets):
             enabled = _get_platform_tools({}, "_test_platform")
 
@@ -837,6 +892,7 @@ def test_discord_toolsets_not_available_on_other_platforms():
     """Platform-scoping: discord / discord_admin should not appear on CLI,
     Telegram, etc. — not even as an opt-in."""
     from hermes_cli.tools_config import _toolset_allowed_for_platform
+
     for plat in ["cli", "telegram", "slack", "whatsapp", "signal"]:
         assert not _toolset_allowed_for_platform("discord", plat), (
             f"`discord` toolset leaked onto {plat}"
@@ -860,8 +916,11 @@ def test_save_platform_tools_strips_restricted_toolsets():
     """Hand-edited or all-platforms checklist with `discord` selected for
     Telegram must be stripped at save time."""
     from hermes_cli.tools_config import _save_platform_tools
+
     config = {}
-    _save_platform_tools(config, "telegram", {"web", "terminal", "discord", "discord_admin"})
+    _save_platform_tools(
+        config, "telegram", {"web", "terminal", "discord", "discord_admin"}
+    )
     saved = config["platform_toolsets"]["telegram"]
     assert "discord" not in saved
     assert "discord_admin" not in saved
@@ -903,16 +962,50 @@ def test_get_effective_configurable_toolsets_dedupes_bundled_plugins():
     assert spotify_rows[0][1] == "🎵 Spotify"
 
 
-@pytest.mark.parametrize("provider,config_key,expected", [
-    # managed provider → use_gateway True
-    ({"name": "T", "tts_provider": "elevenlabs", "managed_nous_feature": "tts", "env_vars": []}, "tts", True),
-    ({"name": "B", "browser_provider": "browserbase", "managed_nous_feature": "browser", "env_vars": []}, "browser", True),
-    ({"name": "W", "web_backend": "tavily", "managed_nous_feature": "web", "env_vars": []}, "web", True),
-    # self-hosted provider → use_gateway False
-    ({"name": "T", "tts_provider": "elevenlabs", "env_vars": []}, "tts", False),
-    ({"name": "B", "browser_provider": "browserbase", "env_vars": []}, "browser", False),
-    ({"name": "W", "web_backend": "tavily", "env_vars": []}, "web", False),
-])
+@pytest.mark.parametrize(
+    "provider,config_key,expected",
+    [
+        # managed provider → use_gateway True
+        (
+            {
+                "name": "T",
+                "tts_provider": "elevenlabs",
+                "managed_nous_feature": "tts",
+                "env_vars": [],
+            },
+            "tts",
+            True,
+        ),
+        (
+            {
+                "name": "B",
+                "browser_provider": "browserbase",
+                "managed_nous_feature": "browser",
+                "env_vars": [],
+            },
+            "browser",
+            True,
+        ),
+        (
+            {
+                "name": "W",
+                "web_backend": "tavily",
+                "managed_nous_feature": "web",
+                "env_vars": [],
+            },
+            "web",
+            True,
+        ),
+        # self-hosted provider → use_gateway False
+        ({"name": "T", "tts_provider": "elevenlabs", "env_vars": []}, "tts", False),
+        (
+            {"name": "B", "browser_provider": "browserbase", "env_vars": []},
+            "browser",
+            False,
+        ),
+        ({"name": "W", "web_backend": "tavily", "env_vars": []}, "web", False),
+    ],
+)
 def test_reconfigure_provider_syncs_use_gateway(provider, config_key, expected):
     config = {}
     _reconfigure_provider(provider, config)
@@ -922,6 +1015,10 @@ def test_reconfigure_provider_syncs_use_gateway(provider, config_key, expected):
 def test_reconfigure_browser_provider_overwrites_stale_use_gateway():
     # Switching from managed (use_gateway=True) to self-hosted must clear the stale flag.
     config = {"browser": {"cloud_provider": "managed-browser", "use_gateway": True}}
-    provider = {"name": "Browserbase", "browser_provider": "browserbase", "env_vars": []}
+    provider = {
+        "name": "Browserbase",
+        "browser_provider": "browserbase",
+        "env_vars": [],
+    }
     _reconfigure_provider(provider, config)
     assert config["browser"]["use_gateway"] is False

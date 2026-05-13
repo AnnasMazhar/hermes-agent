@@ -11,11 +11,11 @@ from agent.transports.types import NormalizedResponse, ToolCall
 @pytest.fixture
 def transport():
     import agent.transports.codex  # noqa: F401
+
     return get_transport("codex_responses")
 
 
 class TestCodexTransportBasic:
-
     def test_api_mode(self, transport):
         assert transport.api_mode == "codex_responses"
 
@@ -23,14 +23,19 @@ class TestCodexTransportBasic:
         assert transport is not None
 
     def test_convert_tools(self, transport):
-        tools = [{
-            "type": "function",
-            "function": {
-                "name": "terminal",
-                "description": "Run a command",
-                "parameters": {"type": "object", "properties": {"command": {"type": "string"}}},
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "terminal",
+                    "description": "Run a command",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"command": {"type": "string"}},
+                    },
+                },
             }
-        }]
+        ]
         result = transport.convert_tools(tools)
         assert len(result) == 1
         assert result[0]["type"] == "function"
@@ -38,7 +43,6 @@ class TestCodexTransportBasic:
 
 
 class TestCodexBuildKwargs:
-
     def test_basic_kwargs(self, transport):
         messages = [
             {"role": "system", "content": "You are helpful."},
@@ -70,7 +74,9 @@ class TestCodexBuildKwargs:
     def test_reasoning_config(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             reasoning_config={"effort": "high"},
         )
         assert kw.get("reasoning", {}).get("effort") == "high"
@@ -78,7 +84,9 @@ class TestCodexBuildKwargs:
     def test_reasoning_disabled(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             reasoning_config={"enabled": False},
         )
         assert "reasoning" not in kw or kw.get("include") == []
@@ -86,7 +94,9 @@ class TestCodexBuildKwargs:
     def test_session_id_sets_cache_key(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             session_id="test-session-123",
         )
         assert kw.get("prompt_cache_key") == "test-session-123"
@@ -94,7 +104,9 @@ class TestCodexBuildKwargs:
     def test_github_responses_no_cache_key(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             session_id="test-session",
             is_github_responses=True,
         )
@@ -103,7 +115,9 @@ class TestCodexBuildKwargs:
     def test_max_tokens(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             max_tokens=4096,
         )
         assert kw.get("max_output_tokens") == 4096
@@ -111,7 +125,9 @@ class TestCodexBuildKwargs:
     def test_codex_backend_no_max_output_tokens(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             max_tokens=4096,
             is_codex_backend=True,
         )
@@ -120,7 +136,9 @@ class TestCodexBuildKwargs:
     def test_xai_headers(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="grok-3", messages=messages, tools=[],
+            model="grok-3",
+            messages=messages,
+            tools=[],
             session_id="conv-123",
             is_xai_responses=True,
         )
@@ -129,7 +147,9 @@ class TestCodexBuildKwargs:
     def test_xai_headers_preserve_request_override_headers(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="grok-3", messages=messages, tools=[],
+            model="grok-3",
+            messages=messages,
+            tools=[],
             session_id="conv-123",
             is_xai_responses=True,
             request_overrides={"extra_headers": {"X-Test": "1", "X-Trace": "abc"}},
@@ -143,7 +163,9 @@ class TestCodexBuildKwargs:
     def test_minimal_effort_clamped(self, transport):
         messages = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
-            model="gpt-5.4", messages=messages, tools=[],
+            model="gpt-5.4",
+            messages=messages,
+            tools=[],
             reasoning_config={"effort": "minimal"},
         )
         # "minimal" should be clamped to "low"
@@ -151,7 +173,6 @@ class TestCodexBuildKwargs:
 
 
 class TestCodexValidateResponse:
-
     def test_none_response(self, transport):
         assert transport.validate_response(None) is False
 
@@ -171,7 +192,6 @@ class TestCodexValidateResponse:
 
 
 class TestCodexMapFinishReason:
-
     def test_completed(self, transport):
         assert transport.map_finish_reason("completed") == "stop"
 
@@ -186,7 +206,6 @@ class TestCodexMapFinishReason:
 
 
 class TestCodexNormalizeResponse:
-
     def test_text_response(self, transport):
         """Normalize a simple text Codex response."""
         r = SimpleNamespace(
@@ -200,8 +219,12 @@ class TestCodexNormalizeResponse:
             ],
             status="completed",
             incomplete_details=None,
-            usage=SimpleNamespace(input_tokens=10, output_tokens=5,
-                                  input_tokens_details=None, output_tokens_details=None),
+            usage=SimpleNamespace(
+                input_tokens=10,
+                output_tokens=5,
+                input_tokens_details=None,
+                output_tokens_details=None,
+            ),
         )
         nr = transport.normalize_response(r)
         assert isinstance(nr, NormalizedResponse)
@@ -223,8 +246,12 @@ class TestCodexNormalizeResponse:
             ],
             status="completed",
             incomplete_details=None,
-            usage=SimpleNamespace(input_tokens=10, output_tokens=5,
-                                  input_tokens_details=None, output_tokens_details=None),
+            usage=SimpleNamespace(
+                input_tokens=10,
+                output_tokens=5,
+                input_tokens_details=None,
+                output_tokens_details=None,
+            ),
         )
         nr = transport.normalize_response(r)
         assert nr.codex_message_items == [
@@ -253,8 +280,12 @@ class TestCodexNormalizeResponse:
             ],
             status="completed",
             incomplete_details=None,
-            usage=SimpleNamespace(input_tokens=10, output_tokens=20,
-                                  input_tokens_details=None, output_tokens_details=None),
+            usage=SimpleNamespace(
+                input_tokens=10,
+                output_tokens=20,
+                input_tokens_details=None,
+                output_tokens_details=None,
+            ),
         )
         nr = transport.normalize_response(r)
         assert nr.finish_reason == "tool_calls"

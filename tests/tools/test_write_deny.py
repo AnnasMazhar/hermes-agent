@@ -38,18 +38,23 @@ class TestWriteDenyExactPaths:
         # points HERMES_HOME at a tempdir — resolve via get_hermes_home()
         # to match the denylist.
         from hermes_constants import get_hermes_home
+
         path = str(get_hermes_home() / ".env")
         assert _is_write_denied(path) is True
 
     def test_shell_profiles(self):
         home = str(Path.home())
         for name in [".bashrc", ".zshrc", ".profile", ".bash_profile", ".zprofile"]:
-            assert _is_write_denied(os.path.join(home, name)) is True, f"{name} should be denied"
+            assert _is_write_denied(os.path.join(home, name)) is True, (
+                f"{name} should be denied"
+            )
 
     def test_package_manager_configs(self):
         home = str(Path.home())
         for name in [".npmrc", ".pypirc", ".pgpass"]:
-            assert _is_write_denied(os.path.join(home, name)) is True, f"{name} should be denied"
+            assert _is_write_denied(os.path.join(home, name)) is True, (
+                f"{name} should be denied"
+            )
 
 
 class TestWriteDenyPrefixes:

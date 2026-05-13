@@ -66,7 +66,9 @@ class TestKimiProfile:
 
     def test_thinking_enabled(self):
         p = get_provider_profile("kimi")
-        eb, tl = p.build_api_kwargs_extras(reasoning_config={"enabled": True, "effort": "high"})
+        eb, tl = p.build_api_kwargs_extras(
+            reasoning_config={"enabled": True, "effort": "high"}
+        )
         assert eb["thinking"] == {"type": "enabled"}
         assert tl["reasoning_effort"] == "high"
 

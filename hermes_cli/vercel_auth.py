@@ -25,8 +25,12 @@ def describe_vercel_auth() -> VercelAuthStatus:
 
     has_oidc = _present("VERCEL_OIDC_TOKEN")
     token_states = {name: _present(name) for name in _TOKEN_TUPLE_VARS}
-    present_token_vars = tuple(name for name, present in token_states.items() if present)
-    missing_token_vars = tuple(name for name, present in token_states.items() if not present)
+    present_token_vars = tuple(
+        name for name, present in token_states.items() if present
+    )
+    missing_token_vars = tuple(
+        name for name, present in token_states.items() if not present
+    )
 
     if has_oidc:
         details = [
@@ -36,7 +40,9 @@ def describe_vercel_auth() -> VercelAuthStatus:
         ]
         if present_token_vars:
             details.append(f"also present: {', '.join(present_token_vars)}")
-        return VercelAuthStatus(True, "OIDC token via VERCEL_OIDC_TOKEN", tuple(details))
+        return VercelAuthStatus(
+            True, "OIDC token via VERCEL_OIDC_TOKEN", tuple(details)
+        )
 
     if not missing_token_vars:
         return VercelAuthStatus(

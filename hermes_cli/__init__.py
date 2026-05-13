@@ -36,8 +36,11 @@ def _ensure_utf8():
         try:
             if getattr(stream, "encoding", "").lower().replace("-", "") != "utf8":
                 new_stream = open(
-                    stream.fileno(), "w", encoding="utf-8",
-                    buffering=1, closefd=False,
+                    stream.fileno(),
+                    "w",
+                    encoding="utf-8",
+                    buffering=1,
+                    closefd=False,
                 )
                 setattr(sys, stream_name, new_stream)
         except (AttributeError, OSError):

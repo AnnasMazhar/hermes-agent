@@ -27,6 +27,7 @@ class TestReadFileHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import read_file_tool
+
         result = json.loads(read_file_tool("/tmp/test.txt"))
         assert result["content"] == "line1\nline2"
         assert result["total_lines"] == 2
@@ -42,6 +43,7 @@ class TestReadFileHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import read_file_tool
+
         read_file_tool("/tmp/big.txt", offset=10, limit=20)
         mock_ops.read_file.assert_called_once_with("/tmp/big.txt", 10, 20)
 
@@ -55,6 +57,7 @@ class TestReadFileHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import read_file_tool
+
         read_file_tool("/tmp/big.txt", offset=0, limit=0)
         mock_ops.read_file.assert_called_once_with("/tmp/big.txt", 1, 1)
 
@@ -63,6 +66,7 @@ class TestReadFileHandler:
         mock_get.side_effect = RuntimeError("terminal not available")
 
         from tools.file_tools import read_file_tool
+
         result = json.loads(read_file_tool("/tmp/test.txt"))
         assert "error" in result
         assert "terminal not available" in result["error"]
@@ -73,25 +77,35 @@ class TestWriteFileHandler:
     def test_writes_content(self, mock_get):
         mock_ops = MagicMock()
         result_obj = MagicMock()
-        result_obj.to_dict.return_value = {"status": "ok", "path": "/tmp/out.txt", "bytes": 13}
+        result_obj.to_dict.return_value = {
+            "status": "ok",
+            "path": "/tmp/out.txt",
+            "bytes": 13,
+        }
         mock_ops.write_file.return_value = result_obj
         mock_get.return_value = mock_ops
 
         from tools.file_tools import write_file_tool
+
         result = json.loads(write_file_tool("/tmp/out.txt", "hello world!\n"))
         assert result["status"] == "ok"
         mock_ops.write_file.assert_called_once_with("/tmp/out.txt", "hello world!\n")
 
     @patch("tools.file_tools._get_file_ops")
-    def test_permission_error_returns_error_json_without_error_log(self, mock_get, caplog):
+    def test_permission_error_returns_error_json_without_error_log(
+        self, mock_get, caplog
+    ):
         mock_get.side_effect = PermissionError("read-only filesystem")
 
         from tools.file_tools import write_file_tool
+
         with caplog.at_level(logging.DEBUG, logger="tools.file_tools"):
             result = json.loads(write_file_tool("/tmp/out.txt", "data"))
         assert "error" in result
         assert "read-only" in result["error"]
-        assert any("write_file expected denial" in r.getMessage() for r in caplog.records)
+        assert any(
+            "write_file expected denial" in r.getMessage() for r in caplog.records
+        )
         assert not any(r.levelno >= logging.ERROR for r in caplog.records)
 
     @patch("tools.file_tools._get_file_ops")
@@ -99,6 +113,7 @@ class TestWriteFileHandler:
         mock_get.side_effect = RuntimeError("boom")
 
         from tools.file_tools import write_file_tool
+
         with caplog.at_level(logging.ERROR, logger="tools.file_tools"):
             result = json.loads(write_file_tool("/tmp/out.txt", "data"))
         assert result["error"] == "boom"
@@ -111,7 +126,11 @@ class TestWriteFileHandler:
         result = json.loads(_handle_write_file({"path": "/tmp/oops.md"}))
         assert "error" in result
         assert "content" in result["error"]
-        assert "path" not in result.get("error", "").lower() or "missing" not in result.get("error", "").lower() or True  # just check error present
+        assert (
+            "path" not in result.get("error", "").lower()
+            or "missing" not in result.get("error", "").lower()
+            or True
+        )  # just check error present
 
     def test_missing_path_key_returns_error(self):
         """#19096 — handler must reject tool calls where 'path' key is absent."""
@@ -127,20 +146,30 @@ class TestWriteFileHandler:
         with patch("tools.file_tools._get_file_ops") as mock_get:
             mock_ops = MagicMock()
             result_obj = MagicMock()
-            result_obj.to_dict.return_value = {"status": "ok", "path": "/tmp/empty.txt", "bytes": 0}
+            result_obj.to_dict.return_value = {
+                "status": "ok",
+                "path": "/tmp/empty.txt",
+                "bytes": 0,
+            }
             mock_ops.write_file.return_value = result_obj
             mock_get.return_value = mock_ops
 
-            result = json.loads(_handle_write_file({"path": "/tmp/empty.txt", "content": ""}))
+            result = json.loads(
+                _handle_write_file({"path": "/tmp/empty.txt", "content": ""})
+            )
             assert result["status"] == "ok"
 
     def test_non_string_content_returns_error(self):
         """#19096 — content must be a string, not a dict or list."""
         from tools.file_tools import _handle_write_file
 
-        result = json.loads(_handle_write_file({"path": "/tmp/x.txt", "content": {"nested": "dict"}}))
+        result = json.loads(
+            _handle_write_file({"path": "/tmp/x.txt", "content": {"nested": "dict"}})
+        )
         assert "error" in result
-        assert "string" in result["error"].lower() or "content" in result["error"].lower()
+        assert (
+            "string" in result["error"].lower() or "content" in result["error"].lower()
+        )
 
 
 class TestPatchHandler:
@@ -153,10 +182,12 @@ class TestPatchHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import patch_tool
-        result = json.loads(patch_tool(
-            mode="replace", path="/tmp/f.py",
-            old_string="foo", new_string="bar"
-        ))
+
+        result = json.loads(
+            patch_tool(
+                mode="replace", path="/tmp/f.py", old_string="foo", new_string="bar"
+            )
+        )
         assert result["status"] == "ok"
         mock_ops.patch_replace.assert_called_once_with("/tmp/f.py", "foo", "bar", False)
 
@@ -169,20 +200,34 @@ class TestPatchHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import patch_tool
-        patch_tool(mode="replace", path="/tmp/f.py",
-                   old_string="x", new_string="y", replace_all=True)
+
+        patch_tool(
+            mode="replace",
+            path="/tmp/f.py",
+            old_string="x",
+            new_string="y",
+            replace_all=True,
+        )
         mock_ops.patch_replace.assert_called_once_with("/tmp/f.py", "x", "y", True)
 
     @patch("tools.file_tools._get_file_ops")
     def test_replace_mode_missing_path_errors(self, mock_get):
         from tools.file_tools import patch_tool
-        result = json.loads(patch_tool(mode="replace", path=None, old_string="a", new_string="b"))
+
+        result = json.loads(
+            patch_tool(mode="replace", path=None, old_string="a", new_string="b")
+        )
         assert "error" in result
 
     @patch("tools.file_tools._get_file_ops")
     def test_replace_mode_missing_strings_errors(self, mock_get):
         from tools.file_tools import patch_tool
-        result = json.loads(patch_tool(mode="replace", path="/tmp/f.py", old_string=None, new_string="b"))
+
+        result = json.loads(
+            patch_tool(
+                mode="replace", path="/tmp/f.py", old_string=None, new_string="b"
+            )
+        )
         assert "error" in result
 
     @patch("tools.file_tools._get_file_ops")
@@ -194,6 +239,7 @@ class TestPatchHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import patch_tool
+
         result = json.loads(patch_tool(mode="patch", patch="*** Begin Patch\n..."))
         assert result["status"] == "ok"
         mock_ops.patch_v4a.assert_called_once()
@@ -201,12 +247,14 @@ class TestPatchHandler:
     @patch("tools.file_tools._get_file_ops")
     def test_patch_mode_missing_content_errors(self, mock_get):
         from tools.file_tools import patch_tool
+
         result = json.loads(patch_tool(mode="patch", patch=None))
         assert "error" in result
 
     @patch("tools.file_tools._get_file_ops")
     def test_unknown_mode_errors(self, mock_get):
         from tools.file_tools import patch_tool
+
         result = json.loads(patch_tool(mode="invalid_mode"))
         assert "error" in result
         assert "Unknown mode" in result["error"]
@@ -222,6 +270,7 @@ class TestSearchHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import search_tool
+
         result = json.loads(search_tool(pattern="TODO", target="content", path="."))
         assert "matches" in result
         mock_ops.search.assert_called_once()
@@ -235,11 +284,26 @@ class TestSearchHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import search_tool
-        search_tool(pattern="class", target="files", path="/src",
-                    file_glob="*.py", limit=10, offset=5, output_mode="count", context=2)
+
+        search_tool(
+            pattern="class",
+            target="files",
+            path="/src",
+            file_glob="*.py",
+            limit=10,
+            offset=5,
+            output_mode="count",
+            context=2,
+        )
         mock_ops.search.assert_called_once_with(
-            pattern="class", path="/src", target="files", file_glob="*.py",
-            limit=10, offset=5, output_mode="count", context=2,
+            pattern="class",
+            path="/src",
+            target="files",
+            file_glob="*.py",
+            limit=10,
+            offset=5,
+            output_mode="count",
+            context=2,
         )
 
     @patch("tools.file_tools._get_file_ops")
@@ -251,10 +315,17 @@ class TestSearchHandler:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import search_tool
+
         search_tool(pattern="class", target="files", path="/src", limit=-5, offset=-2)
         mock_ops.search.assert_called_once_with(
-            pattern="class", path="/src", target="files", file_glob=None,
-            limit=1, offset=0, output_mode="content", context=0,
+            pattern="class",
+            path="/src",
+            target="files",
+            file_glob=None,
+            limit=1,
+            offset=0,
+            output_mode="content",
+            context=0,
         )
 
     @patch("tools.file_tools._get_file_ops")
@@ -262,6 +333,7 @@ class TestSearchHandler:
         mock_get.side_effect = RuntimeError("no terminal")
 
         from tools.file_tools import search_tool
+
         result = json.loads(search_tool(pattern="x"))
         assert "error" in result
 
@@ -269,6 +341,7 @@ class TestSearchHandler:
 # ---------------------------------------------------------------------------
 # Tool result hint tests (#722)
 # ---------------------------------------------------------------------------
+
 
 class TestPatchHints:
     """Patch tool should hint when old_string is not found."""
@@ -284,6 +357,7 @@ class TestPatchHints:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import patch_tool
+
         raw = patch_tool(mode="replace", path="foo.py", old_string="x", new_string="y")
         # patch_tool surfaces the hint as a structured "_hint" field on the
         # JSON error payload (not an inline "[Hint: ..." tail).
@@ -299,6 +373,7 @@ class TestPatchHints:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import patch_tool
+
         raw = patch_tool(mode="replace", path="foo.py", old_string="x", new_string="y")
         assert "_hint" not in raw
 
@@ -309,6 +384,7 @@ class TestSearchHints:
     def setup_method(self):
         """Clear read/search tracker between tests to avoid cross-test state."""
         from tools.file_tools import _read_tracker
+
         _read_tracker.clear()
 
     @patch("tools.file_tools._get_file_ops")
@@ -324,6 +400,7 @@ class TestSearchHints:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import search_tool
+
         raw = search_tool(pattern="foo", offset=0, limit=50)
         assert "[Hint:" in raw
         assert "offset=50" in raw
@@ -340,6 +417,7 @@ class TestSearchHints:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import search_tool
+
         raw = search_tool(pattern="foo")
         assert "[Hint:" not in raw
 
@@ -356,6 +434,7 @@ class TestSearchHints:
         mock_get.return_value = mock_ops
 
         from tools.file_tools import search_tool
+
         raw = search_tool(pattern="foo", offset=50, limit=50)
         assert "[Hint:" in raw
         assert "offset=100" in raw
@@ -364,6 +443,7 @@ class TestSearchHints:
 # ---------------------------------------------------------------------------
 # PATCH_SCHEMA shape tests (issue #15524)
 # ---------------------------------------------------------------------------
+
 
 class TestPatchSchemaShape:
     """PATCH_SCHEMA must advertise per-mode required params via description

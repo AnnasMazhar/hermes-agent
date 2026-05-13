@@ -435,9 +435,7 @@ class BaseEnvironment(ABC):
         # vars into every tool response (issue #15459).  Linux bash is
         # silent here, but the redirect is harmless.
         if self._snapshot_ready:
-            parts.append(
-                f"source {_quoted_snap} >/dev/null 2>&1 || true"
-            )
+            parts.append(f"source {_quoted_snap} >/dev/null 2>&1 || true")
 
         # Preserve bare ``~`` expansion, but rewrite ``~/...`` through
         # ``$HOME`` so suffixes with spaces remain a single shell word.
@@ -603,7 +601,9 @@ class BaseEnvironment(ABC):
             logger.info(
                 "[interrupt-debug] _wait_for_process ENTER tid=%s pid=%s "
                 "timeout=%ss activity_cb=%s initial_interrupt=%s",
-                _tid, _pid, timeout,
+                _tid,
+                _pid,
+                timeout,
                 "set" if not _cb_was_none else "MISSING",
                 is_interrupted(),
             )
@@ -616,7 +616,10 @@ class BaseEnvironment(ABC):
                         logger.info(
                             "[interrupt-debug] _wait_for_process INTERRUPT DETECTED "
                             "tid=%s pid=%s iter=%d elapsed=%.1fs — killing process group",
-                            _tid, _pid, _iter_count, time.monotonic() - _activity_state["start"],
+                            _tid,
+                            _pid,
+                            _iter_count,
+                            time.monotonic() - _activity_state["start"],
                         )
                     self._kill_process(proc)
                     drain_thread.join(timeout=2)
@@ -629,7 +632,10 @@ class BaseEnvironment(ABC):
                         logger.info(
                             "[interrupt-debug] _wait_for_process TIMEOUT "
                             "tid=%s pid=%s iter=%d timeout=%ss",
-                            _tid, _pid, _iter_count, timeout,
+                            _tid,
+                            _pid,
+                            _iter_count,
+                            timeout,
                         )
                     self._kill_process(proc)
                     drain_thread.join(timeout=2)
@@ -653,11 +659,15 @@ class BaseEnvironment(ABC):
                         "[interrupt-debug] _wait_for_process HEARTBEAT "
                         "tid=%s pid=%s iter=%d elapsed=%.0fs "
                         "interrupt=%s activity_cb=%s%s",
-                        _tid, _pid, _iter_count,
+                        _tid,
+                        _pid,
+                        _iter_count,
                         time.monotonic() - _activity_state["start"],
                         is_interrupted(),
                         "set" if not _cb_now_none else "MISSING",
-                        " (LOST during run)" if _cb_now_none and not _cb_was_none else "",
+                        " (LOST during run)"
+                        if _cb_now_none and not _cb_was_none
+                        else "",
                     )
                     _last_heartbeat = time.monotonic()
                     _cb_was_none = _cb_now_none
@@ -675,7 +685,9 @@ class BaseEnvironment(ABC):
                 logger.info(
                     "[interrupt-debug] _wait_for_process EXCEPTION_EXIT "
                     "tid=%s pid=%s iter=%d elapsed=%.1fs — killing subprocess group before re-raise",
-                    _tid, _pid, _iter_count,
+                    _tid,
+                    _pid,
+                    _iter_count,
                     time.monotonic() - _activity_state["start"],
                 )
             try:
@@ -699,7 +711,9 @@ class BaseEnvironment(ABC):
             logger.info(
                 "[interrupt-debug] _wait_for_process EXIT (natural) "
                 "tid=%s pid=%s iter=%d elapsed=%.1fs returncode=%s",
-                _tid, _pid, _iter_count,
+                _tid,
+                _pid,
+                _iter_count,
                 time.monotonic() - _activity_state["start"],
                 proc.returncode,
             )
@@ -791,6 +805,7 @@ class BaseEnvironment(ABC):
         # Rewriting to `A && { B & }` runs B as a plain background in the
         # current shell — no subshell wait.
         from tools.terminal_tool import _rewrite_compound_background
+
         exec_command = _rewrite_compound_background(exec_command)
         effective_timeout = timeout or self.timeout
         effective_cwd = cwd or self.cwd
@@ -840,4 +855,3 @@ class BaseEnvironment(ABC):
         from tools.terminal_tool import _transform_sudo_command
 
         return _transform_sudo_command(command)
-

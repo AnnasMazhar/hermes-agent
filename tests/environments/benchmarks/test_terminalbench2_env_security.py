@@ -48,7 +48,9 @@ def _load_terminalbench_module(monkeypatch):
             "atroposlib.envs.base",
             EvalHandlingEnum=_EvalHandlingEnum,
         ),
-        "atroposlib.envs.server_handling": _stub_module("atroposlib.envs.server_handling"),
+        "atroposlib.envs.server_handling": _stub_module(
+            "atroposlib.envs.server_handling"
+        ),
         "atroposlib.envs.server_handling.server_manager": _stub_module(
             "atroposlib.envs.server_handling.server_manager",
             APIServerConfig=_APIServerConfig,
@@ -77,7 +79,9 @@ def _load_terminalbench_module(monkeypatch):
 
     stub_modules["atroposlib"].envs = stub_modules["atroposlib.envs"]
     stub_modules["atroposlib.envs"].base = stub_modules["atroposlib.envs.base"]
-    stub_modules["atroposlib.envs"].server_handling = stub_modules["atroposlib.envs.server_handling"]
+    stub_modules["atroposlib.envs"].server_handling = stub_modules[
+        "atroposlib.envs.server_handling"
+    ]
     stub_modules["atroposlib.envs.server_handling"].server_manager = stub_modules[
         "atroposlib.envs.server_handling.server_manager"
     ]
@@ -121,12 +125,10 @@ def _build_tar_b64(entries):
 
 def test_extract_base64_tar_allows_safe_files(tmp_path, monkeypatch):
     module = _load_terminalbench_module(monkeypatch)
-    archive = _build_tar_b64(
-        [
-            {"kind": "dir", "name": "nested"},
-            {"kind": "file", "name": "nested/hello.txt", "data": "hello"},
-        ]
-    )
+    archive = _build_tar_b64([
+        {"kind": "dir", "name": "nested"},
+        {"kind": "file", "name": "nested/hello.txt", "data": "hello"},
+    ])
 
     target = tmp_path / "extract"
     module._extract_base64_tar(archive, target)
@@ -136,11 +138,9 @@ def test_extract_base64_tar_allows_safe_files(tmp_path, monkeypatch):
 
 def test_extract_base64_tar_rejects_path_traversal(tmp_path, monkeypatch):
     module = _load_terminalbench_module(monkeypatch)
-    archive = _build_tar_b64(
-        [
-            {"kind": "file", "name": "../escape.txt", "data": "owned"},
-        ]
-    )
+    archive = _build_tar_b64([
+        {"kind": "file", "name": "../escape.txt", "data": "owned"},
+    ])
 
     target = tmp_path / "extract"
     with pytest.raises(ValueError, match="Unsafe archive member path"):
@@ -151,11 +151,9 @@ def test_extract_base64_tar_rejects_path_traversal(tmp_path, monkeypatch):
 
 def test_extract_base64_tar_rejects_symlinks(tmp_path, monkeypatch):
     module = _load_terminalbench_module(monkeypatch)
-    archive = _build_tar_b64(
-        [
-            {"kind": "symlink", "name": "link", "target": "../../escape.txt"},
-        ]
-    )
+    archive = _build_tar_b64([
+        {"kind": "symlink", "name": "link", "target": "../../escape.txt"},
+    ])
 
     target = tmp_path / "extract"
     with pytest.raises(ValueError, match="Unsupported archive member type"):

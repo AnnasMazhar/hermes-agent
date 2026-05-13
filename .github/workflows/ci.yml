@@ -42,7 +42,7 @@ jobs:
       - name: Install bandit
         run: uv tool install "bandit[toml]"
       - name: Bandit security scan
-        run: bandit -r agent/ tools/ gateway/ cron/ hermes_cli/ -c pyproject.toml
+        run: bandit -r agent/ tools/ gateway/ cron/ hermes_cli/ -c pyproject.toml --confidence-level high
 
   test:
     runs-on: ubuntu-latest

@@ -45,6 +45,7 @@ FAKE_BMP = b"BM" + b"\x00" * 100
 # Level 1: Clipboard module — platform dispatch + tool interactions
 # ═════════════════════════════════════════════════════════════════════════
 
+
 class TestSaveClipboardImage:
     def test_dispatches_to_macos_on_darwin(self, tmp_path):
         dest = tmp_path / "out.png"
@@ -81,18 +82,23 @@ class TestSaveClipboardImage:
 
 # ── macOS ────────────────────────────────────────────────────────────────
 
+
 class TestMacosPngpaste:
     def test_success_writes_file(self, tmp_path):
         dest = tmp_path / "out.png"
+
         def fake_run(cmd, **kw):
             dest.write_bytes(FAKE_PNG)
             return MagicMock(returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_pngpaste(dest) is True
         assert dest.stat().st_size == len(FAKE_PNG)
 
     def test_not_installed(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _macos_pngpaste(tmp_path / "out.png") is False
 
     def test_no_image_in_clipboard(self, tmp_path):
@@ -104,16 +110,20 @@ class TestMacosPngpaste:
 
     def test_empty_file_rejected(self, tmp_path):
         dest = tmp_path / "out.png"
+
         def fake_run(cmd, **kw):
             dest.write_bytes(b"")
             return MagicMock(returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_pngpaste(dest) is False
 
     def test_timeout_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run",
-                   side_effect=subprocess.TimeoutExpired("pngpaste", 3)):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run",
+            side_effect=subprocess.TimeoutExpired("pngpaste", 3),
+        ):
             assert _macos_pngpaste(dest) is False
 
 
@@ -127,9 +137,7 @@ class TestMacosHasImage:
 
     def test_tiff_detected(self):
         with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                stdout="«class TIFF»", returncode=0
-            )
+            mock_run.return_value = MagicMock(stdout="«class TIFF»", returncode=0)
             assert _macos_has_image() is True
 
     def test_text_only(self):
@@ -149,18 +157,22 @@ class TestMacosOsascript:
             assert _macos_osascript(tmp_path / "out.png") is False
 
     def test_clipboard_info_fails(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=Exception("fail")):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=Exception("fail")
+        ):
             assert _macos_osascript(tmp_path / "out.png") is False
 
     def test_success_with_png(self, tmp_path):
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if len(calls) == 1:
                 return MagicMock(stdout="«class PNGf», «class ut16»", returncode=0)
             dest.write_bytes(FAKE_PNG)
             return MagicMock(stdout="", returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is True
         assert dest.stat().st_size > 0
@@ -168,40 +180,47 @@ class TestMacosOsascript:
     def test_success_with_tiff(self, tmp_path):
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if len(calls) == 1:
                 return MagicMock(stdout="«class TIFF»", returncode=0)
             dest.write_bytes(FAKE_PNG)
             return MagicMock(stdout="", returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is True
 
     def test_extraction_returns_fail(self, tmp_path):
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if len(calls) == 1:
                 return MagicMock(stdout="«class PNGf»", returncode=0)
             return MagicMock(stdout="fail", returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
     def test_extraction_writes_empty_file(self, tmp_path):
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if len(calls) == 1:
                 return MagicMock(stdout="«class PNGf»", returncode=0)
             dest.write_bytes(b"")
             return MagicMock(stdout="", returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
 
 # ── WSL detection ────────────────────────────────────────────────────────
+
 
 class TestIsWsl:
     def setup_method(self):
@@ -209,6 +228,7 @@ class TestIsWsl:
         # globals so this stays stable even if hermes_constants was imported
         # through a different module object earlier in a large xdist run.
         import hermes_constants
+
         hermes_constants._wsl_detected = None
         _is_wsl.__globals__["_wsl_detected"] = None
 
@@ -216,6 +236,7 @@ class TestIsWsl:
         # Reset again after the test so we don't leak a cached value
         # (True/False) into whichever test the xdist worker runs next.
         import hermes_constants
+
         hermes_constants._wsl_detected = None
         _is_wsl.__globals__["_wsl_detected"] = None
 
@@ -242,7 +263,9 @@ class TestIsWsl:
             assert _is_wsl() is False
 
     def test_proc_version_missing(self):
-        with patch.dict(_is_wsl.__globals__, {"open": MagicMock(side_effect=FileNotFoundError)}):
+        with patch.dict(
+            _is_wsl.__globals__, {"open": MagicMock(side_effect=FileNotFoundError)}
+        ):
             assert _is_wsl() is False
 
     def test_result_is_cached(self):
@@ -255,6 +278,7 @@ class TestIsWsl:
 
 
 # ── WSL (powershell.exe) ────────────────────────────────────────────────
+
 
 class TestWslHasImage:
     def test_clipboard_has_image(self):
@@ -277,7 +301,9 @@ class TestWslHasImage:
             assert mock_run.call_count == 2
 
     def test_powershell_not_found(self):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _wsl_has_image() is False
 
     def test_powershell_error(self):
@@ -322,23 +348,30 @@ class TestWslSave:
 
     def test_powershell_not_found(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _wsl_save(dest) is False
 
     def test_invalid_base64(self, tmp_path):
         dest = tmp_path / "out.png"
         with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="not-valid-base64!!!", returncode=0)
+            mock_run.return_value = MagicMock(
+                stdout="not-valid-base64!!!", returncode=0
+            )
             assert _wsl_save(dest) is False
 
     def test_timeout(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run",
-                   side_effect=subprocess.TimeoutExpired("powershell.exe", 15)):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run",
+            side_effect=subprocess.TimeoutExpired("powershell.exe", 15),
+        ):
             assert _wsl_save(dest) is False
 
 
 # ── Wayland (wl-paste) ──────────────────────────────────────────────────
+
 
 class TestWaylandHasImage:
     def test_has_png(self):
@@ -363,7 +396,9 @@ class TestWaylandHasImage:
             assert _wayland_has_image() is False
 
     def test_wl_paste_not_installed(self):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _wayland_has_image() is False
 
 
@@ -371,6 +406,7 @@ class TestWaylandSave:
     def test_png_extraction(self, tmp_path):
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if "--list-types" in cmd:
@@ -379,6 +415,7 @@ class TestWaylandSave:
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _wayland_save(dest) is True
         assert dest.stat().st_size > 0
@@ -386,6 +423,7 @@ class TestWaylandSave:
     def test_bmp_extraction_with_pillow_convert(self, tmp_path):
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if "--list-types" in cmd:
@@ -393,6 +431,7 @@ class TestWaylandSave:
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_BMP)
             return MagicMock(returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             with patch("hermes_cli.clipboard._convert_to_png", return_value=True):
                 assert _wayland_save(dest) is True
@@ -407,7 +446,9 @@ class TestWaylandSave:
 
     def test_wl_paste_not_installed(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _wayland_save(dest) is False
 
     def test_list_types_fails(self, tmp_path):
@@ -420,6 +461,7 @@ class TestWaylandSave:
         """When both PNG and BMP are available, PNG should be preferred."""
         dest = tmp_path / "out.png"
         calls = []
+
         def fake_run(cmd, **kw):
             calls.append(cmd)
             if "--list-types" in cmd:
@@ -429,6 +471,7 @@ class TestWaylandSave:
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _wayland_save(dest) is True
         # Verify PNG was requested, not BMP
@@ -437,6 +480,7 @@ class TestWaylandSave:
 
 
 # ── X11 (xclip) ─────────────────────────────────────────────────────────
+
 
 class TestXclipHasImage:
     def test_has_image(self):
@@ -448,19 +492,21 @@ class TestXclipHasImage:
 
     def test_no_image(self):
         with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                stdout="text/plain\n", returncode=0
-            )
+            mock_run.return_value = MagicMock(stdout="text/plain\n", returncode=0)
             assert _xclip_has_image() is False
 
     def test_xclip_not_installed(self):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _xclip_has_image() is False
 
 
 class TestXclipSave:
     def test_no_xclip_installed(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+        ):
             assert _xclip_save(tmp_path / "out.png") is False
 
     def test_no_image_in_clipboard(self, tmp_path):
@@ -470,39 +516,47 @@ class TestXclipSave:
 
     def test_image_extraction_success(self, tmp_path):
         dest = tmp_path / "out.png"
+
         def fake_run(cmd, **kw):
             if "TARGETS" in cmd:
                 return MagicMock(stdout="image/png\ntext/plain\n", returncode=0)
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _xclip_save(dest) is True
         assert dest.stat().st_size > 0
 
     def test_extraction_fails_cleans_up(self, tmp_path):
         dest = tmp_path / "out.png"
+
         def fake_run(cmd, **kw):
             if "TARGETS" in cmd:
                 return MagicMock(stdout="image/png\n", returncode=0)
             raise subprocess.SubprocessError("pipe broke")
+
         with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _xclip_save(dest) is False
         assert not dest.exists()
 
     def test_targets_check_timeout(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run",
-                   side_effect=subprocess.TimeoutExpired("xclip", 3)):
+        with patch(
+            "hermes_cli.clipboard.subprocess.run",
+            side_effect=subprocess.TimeoutExpired("xclip", 3),
+        ):
             assert _xclip_save(tmp_path / "out.png") is False
 
 
 # ── Linux dispatch ──────────────────────────────────────────────────────
+
 
 class TestLinuxSave:
     """Test that _linux_save dispatches correctly to WSL → Wayland → X11."""
 
     def setup_method(self):
         import hermes_cli.clipboard as cb
+
         cb._wsl_detected = None
 
     def test_wsl_tried_first(self, tmp_path):
@@ -517,7 +571,9 @@ class TestLinuxSave:
         with patch("hermes_cli.clipboard._is_wsl", return_value=True):
             with patch("hermes_cli.clipboard._wsl_save", return_value=False):
                 with patch.dict(os.environ, {}, clear=True):
-                    with patch("hermes_cli.clipboard._xclip_save", return_value=True) as m:
+                    with patch(
+                        "hermes_cli.clipboard._xclip_save", return_value=True
+                    ) as m:
                         assert _linux_save(dest) is True
                         m.assert_called_once_with(dest)
 
@@ -525,7 +581,9 @@ class TestLinuxSave:
         dest = tmp_path / "out.png"
         with patch("hermes_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                with patch("hermes_cli.clipboard._wayland_save", return_value=True) as m:
+                with patch(
+                    "hermes_cli.clipboard._wayland_save", return_value=True
+                ) as m:
                     assert _linux_save(dest) is True
                     m.assert_called_once_with(dest)
 
@@ -534,7 +592,9 @@ class TestLinuxSave:
         with patch("hermes_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
                 with patch("hermes_cli.clipboard._wayland_save", return_value=False):
-                    with patch("hermes_cli.clipboard._xclip_save", return_value=True) as m:
+                    with patch(
+                        "hermes_cli.clipboard._xclip_save", return_value=True
+                    ) as m:
                         assert _linux_save(dest) is True
                         m.assert_called_once_with(dest)
 
@@ -549,9 +609,11 @@ class TestLinuxSave:
 
 # ── Native Windows (PowerShell) ─────────────────────────────────────────
 
+
 class TestWindowsHasImage:
     def setup_method(self):
         import hermes_cli.clipboard as cb
+
         cb._ps_exe = False  # reset cache
 
     def test_clipboard_has_image(self):
@@ -588,14 +650,17 @@ class TestWindowsHasImage:
 
     def test_subprocess_exception(self):
         with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run",
-                       side_effect=subprocess.TimeoutExpired("powershell", 5)):
+            with patch(
+                "hermes_cli.clipboard.subprocess.run",
+                side_effect=subprocess.TimeoutExpired("powershell", 5),
+            ):
                 assert _windows_has_image() is False
 
 
 class TestWindowsSave:
     def setup_method(self):
         import hermes_cli.clipboard as cb
+
         cb._ps_exe = False  # reset cache
 
     def test_successful_extraction(self, tmp_path):
@@ -645,14 +710,18 @@ class TestWindowsSave:
         dest = tmp_path / "out.png"
         with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
             with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(stdout="not-valid-base64!!!", returncode=0)
+                mock_run.return_value = MagicMock(
+                    stdout="not-valid-base64!!!", returncode=0
+                )
                 assert _windows_save(dest) is False
 
     def test_timeout(self, tmp_path):
         dest = tmp_path / "out.png"
         with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run",
-                       side_effect=subprocess.TimeoutExpired("powershell", 15)):
+            with patch(
+                "hermes_cli.clipboard.subprocess.run",
+                side_effect=subprocess.TimeoutExpired("powershell", 15),
+            ):
                 assert _windows_save(dest) is False
 
 
@@ -662,12 +731,15 @@ class TestHasClipboardImageWin32:
     def test_dispatches_on_win32(self):
         with patch("hermes_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "win32"
-            with patch("hermes_cli.clipboard._windows_has_image", return_value=True) as m:
+            with patch(
+                "hermes_cli.clipboard._windows_has_image", return_value=True
+            ) as m:
                 assert has_clipboard_image() is True
                 m.assert_called_once()
 
 
 # ── BMP conversion ──────────────────────────────────────────────────────
+
 
 class TestConvertToPng:
     def test_pillow_conversion(self, tmp_path):
@@ -696,6 +768,7 @@ class TestConvertToPng:
             with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
                 # Force ImportError for Pillow
                 import hermes_cli.clipboard as cb
+
                 original = cb._convert_to_png
 
                 def patched_convert(path):
@@ -704,12 +777,18 @@ class TestConvertToPng:
                         tmp = path.with_suffix(".bmp")
                         path.rename(tmp)
                         import subprocess as sp
+
                         r = sp.run(
                             ["convert", str(tmp), "png:" + str(path)],
-                            capture_output=True, timeout=5,
+                            capture_output=True,
+                            timeout=5,
                         )
                         tmp.unlink(missing_ok=True)
-                        return r.returncode == 0 and path.exists() and path.stat().st_size > 0
+                        return (
+                            r.returncode == 0
+                            and path.exists()
+                            and path.stat().st_size > 0
+                        )
                     except Exception:
                         return False
 
@@ -722,7 +801,9 @@ class TestConvertToPng:
         dest.write_bytes(FAKE_BMP)  # it's a BMP but named .png
         # Both Pillow and ImageMagick unavailable
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+            with patch(
+                "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            ):
                 result = _convert_to_png(dest)
                 # Raw BMP is better than nothing — function should return True
                 assert result is True
@@ -739,7 +820,9 @@ class TestConvertToPng:
             return MagicMock(returncode=1)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run_fail):
+            with patch(
+                "hermes_cli.clipboard.subprocess.run", side_effect=fake_run_fail
+            ):
                 _convert_to_png(dest)
 
         # Original file must still exist with original content
@@ -753,7 +836,9 @@ class TestConvertToPng:
         dest.write_bytes(original_data)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+            with patch(
+                "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            ):
                 _convert_to_png(dest)
 
         assert dest.exists(), "Original file was lost when ImageMagick not installed"
@@ -762,12 +847,16 @@ class TestConvertToPng:
     def test_imagemagick_timeout_preserves_original(self, tmp_path):
         """When ImageMagick times out, the original file must not be lost."""
         import subprocess
+
         dest = tmp_path / "img.png"
         original_data = FAKE_BMP
         dest.write_bytes(original_data)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=subprocess.TimeoutExpired("convert", 5)):
+            with patch(
+                "hermes_cli.clipboard.subprocess.run",
+                side_effect=subprocess.TimeoutExpired("convert", 5),
+            ):
                 _convert_to_png(dest)
 
         assert dest.exists(), "Original file was lost after timeout"
@@ -776,9 +865,11 @@ class TestConvertToPng:
 
 # ── has_clipboard_image dispatch ─────────────────────────────────────────
 
+
 class TestHasClipboardImage:
     def setup_method(self):
         import hermes_cli.clipboard as cb
+
         cb._wsl_detected = None
 
     def test_macos_dispatch(self):
@@ -792,7 +883,9 @@ class TestHasClipboardImage:
         with patch("hermes_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
             with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-                with patch("hermes_cli.clipboard._wsl_has_image", return_value=True) as m:
+                with patch(
+                    "hermes_cli.clipboard._wsl_has_image", return_value=True
+                ) as m:
                     assert has_clipboard_image() is True
                     m.assert_called_once()
 
@@ -801,9 +894,13 @@ class TestHasClipboardImage:
         with patch("hermes_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
             with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-                with patch("hermes_cli.clipboard._wsl_has_image", return_value=False) as wsl:
+                with patch(
+                    "hermes_cli.clipboard._wsl_has_image", return_value=False
+                ) as wsl:
                     with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                        with patch("hermes_cli.clipboard._wayland_has_image", return_value=True) as wl:
+                        with patch(
+                            "hermes_cli.clipboard._wayland_has_image", return_value=True
+                        ) as wl:
                             assert has_clipboard_image() is True
                             wsl.assert_called_once()
                             wl.assert_called_once()
@@ -813,7 +910,9 @@ class TestHasClipboardImage:
             mock_sys.platform = "linux"
             with patch("hermes_cli.clipboard._is_wsl", return_value=False):
                 with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                    with patch("hermes_cli.clipboard._wayland_has_image", return_value=True) as m:
+                    with patch(
+                        "hermes_cli.clipboard._wayland_has_image", return_value=True
+                    ) as m:
                         assert has_clipboard_image() is True
                         m.assert_called_once()
 
@@ -822,7 +921,9 @@ class TestHasClipboardImage:
             mock_sys.platform = "linux"
             with patch("hermes_cli.clipboard._is_wsl", return_value=False):
                 with patch.dict(os.environ, {}, clear=True):
-                    with patch("hermes_cli.clipboard._xclip_has_image", return_value=True) as m:
+                    with patch(
+                        "hermes_cli.clipboard._xclip_has_image", return_value=True
+                    ) as m:
                         assert has_clipboard_image() is True
                         m.assert_called_once()
 
@@ -830,6 +931,7 @@ class TestHasClipboardImage:
 # ═════════════════════════════════════════════════════════════════════════
 # Level 2: _preprocess_images_with_vision — image → text via vision tool
 # ═════════════════════════════════════════════════════════════════════════
+
 
 class TestPreprocessImagesWithVision:
     """Test vision-based image pre-processing for the CLI."""
@@ -839,7 +941,11 @@ class TestPreprocessImagesWithVision:
         """Minimal HermesCLI with mocked internals."""
         with patch("cli.load_cli_config") as mock_cfg:
             mock_cfg.return_value = {
-                "model": {"default": "test/model", "base_url": "http://x", "provider": "auto"},
+                "model": {
+                    "default": "test/model",
+                    "base_url": "http://x",
+                    "provider": "auto",
+                },
                 "terminal": {"timeout": 60},
                 "browser": {},
                 "compression": {"enabled": True},
@@ -852,6 +958,7 @@ class TestPreprocessImagesWithVision:
             with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
                 with patch("cli.CLI_CONFIG", mock_cfg.return_value):
                     from cli import HermesCLI
+
                     cli_obj = HermesCLI.__new__(HermesCLI)
                     # Manually init just enough state
                     cli_obj._attached_images = []
@@ -866,20 +973,27 @@ class TestPreprocessImagesWithVision:
     def _mock_vision_success(self, description="A test image with colored pixels."):
         """Return an async mock that simulates a successful vision_analyze_tool call."""
         import json
+
         async def _fake_vision(**kwargs):
             return json.dumps({"success": True, "analysis": description})
+
         return _fake_vision
 
     def _mock_vision_failure(self):
         """Return an async mock that simulates a failed vision_analyze_tool call."""
         import json
+
         async def _fake_vision(**kwargs):
             return json.dumps({"success": False, "analysis": "Error"})
+
         return _fake_vision
 
     def test_single_image_with_text(self, cli, tmp_path):
         img = self._make_image(tmp_path)
-        with patch("tools.vision_tools.vision_analyze_tool", side_effect=self._mock_vision_success()):
+        with patch(
+            "tools.vision_tools.vision_analyze_tool",
+            side_effect=self._mock_vision_success(),
+        ):
             result = cli._preprocess_images_with_vision("Describe this", [img])
 
         assert isinstance(result, str)
@@ -890,7 +1004,10 @@ class TestPreprocessImagesWithVision:
 
     def test_multiple_images(self, cli, tmp_path):
         imgs = [self._make_image(tmp_path, f"img{i}.png") for i in range(3)]
-        with patch("tools.vision_tools.vision_analyze_tool", side_effect=self._mock_vision_success()):
+        with patch(
+            "tools.vision_tools.vision_analyze_tool",
+            side_effect=self._mock_vision_success(),
+        ):
             result = cli._preprocess_images_with_vision("Compare", imgs)
 
         assert isinstance(result, str)
@@ -901,14 +1018,20 @@ class TestPreprocessImagesWithVision:
 
     def test_empty_text_gets_default_question(self, cli, tmp_path):
         img = self._make_image(tmp_path)
-        with patch("tools.vision_tools.vision_analyze_tool", side_effect=self._mock_vision_success()):
+        with patch(
+            "tools.vision_tools.vision_analyze_tool",
+            side_effect=self._mock_vision_success(),
+        ):
             result = cli._preprocess_images_with_vision("", [img])
         assert isinstance(result, str)
         assert "A test image with colored pixels." in result
 
     def test_missing_image_skipped(self, cli, tmp_path):
         missing = tmp_path / "gone.png"
-        with patch("tools.vision_tools.vision_analyze_tool", side_effect=self._mock_vision_success()):
+        with patch(
+            "tools.vision_tools.vision_analyze_tool",
+            side_effect=self._mock_vision_success(),
+        ):
             result = cli._preprocess_images_with_vision("test", [missing])
         # No images analyzed, falls back to default
         assert result == "test"
@@ -916,7 +1039,10 @@ class TestPreprocessImagesWithVision:
     def test_mix_of_existing_and_missing(self, cli, tmp_path):
         real = self._make_image(tmp_path, "real.png")
         missing = tmp_path / "gone.png"
-        with patch("tools.vision_tools.vision_analyze_tool", side_effect=self._mock_vision_success()):
+        with patch(
+            "tools.vision_tools.vision_analyze_tool",
+            side_effect=self._mock_vision_success(),
+        ):
             result = cli._preprocess_images_with_vision("test", [real, missing])
         assert str(real) in result
         assert str(missing) not in result
@@ -924,7 +1050,10 @@ class TestPreprocessImagesWithVision:
 
     def test_vision_failure_includes_path(self, cli, tmp_path):
         img = self._make_image(tmp_path)
-        with patch("tools.vision_tools.vision_analyze_tool", side_effect=self._mock_vision_failure()):
+        with patch(
+            "tools.vision_tools.vision_analyze_tool",
+            side_effect=self._mock_vision_failure(),
+        ):
             result = cli._preprocess_images_with_vision("check this", [img])
         assert isinstance(result, str)
         assert str(img) in result  # path still included for retry
@@ -932,8 +1061,10 @@ class TestPreprocessImagesWithVision:
 
     def test_vision_exception_includes_path(self, cli, tmp_path):
         img = self._make_image(tmp_path)
+
         async def _explode(**kwargs):
             raise RuntimeError("API down")
+
         with patch("tools.vision_tools.vision_analyze_tool", side_effect=_explode):
             result = cli._preprocess_images_with_vision("check this", [img])
         assert isinstance(result, str)
@@ -944,12 +1075,14 @@ class TestPreprocessImagesWithVision:
 # Level 3: _try_attach_clipboard_image — state management
 # ═════════════════════════════════════════════════════════════════════════
 
+
 class TestTryAttachClipboardImage:
     """Test the clipboard → state flow."""
 
     @pytest.fixture
     def cli(self):
         from cli import HermesCLI
+
         cli_obj = HermesCLI.__new__(HermesCLI)
         cli_obj._attached_images = []
         cli_obj._image_counter = 0
@@ -1013,6 +1146,7 @@ class TestVoiceSubmission:
     @pytest.fixture
     def cli(self):
         from cli import HermesCLI
+
         cli_obj = HermesCLI.__new__(HermesCLI)
         cli_obj._attached_images = [Path("/tmp/stale.png")]
         cli_obj._pending_input = queue.Queue()
@@ -1028,7 +1162,10 @@ class TestVoiceSubmission:
 
     def test_voice_transcript_clears_stale_attached_images(self, cli):
         with patch("tools.voice_mode.play_beep"):
-            with patch("tools.voice_mode.transcribe_recording", return_value={"success": True, "transcript": "hello"}):
+            with patch(
+                "tools.voice_mode.transcribe_recording",
+                return_value={"success": True, "transcript": "hello"},
+            ):
                 with patch("os.path.isfile", return_value=False):
                     with patch("cli._cprint"):
                         cli._voice_stop_and_transcribe()
@@ -1040,6 +1177,7 @@ class TestVoiceSubmission:
 # ═════════════════════════════════════════════════════════════════════════
 # Level 4: Queue routing — tuple unpacking in process_loop
 # ═════════════════════════════════════════════════════════════════════════
+
 
 class TestQueueRouting:
     """Test that (text, images) tuples are correctly unpacked and routed."""

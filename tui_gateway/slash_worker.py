@@ -52,8 +52,16 @@ def main():
     os.environ["HERMES_SESSION_KEY"] = args.session_key
     os.environ["HERMES_INTERACTIVE"] = "1"
 
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        cli = HermesCLI(model=args.model or None, compact=True, resume=args.session_key, verbose=False)
+    with (
+        contextlib.redirect_stdout(io.StringIO()),
+        contextlib.redirect_stderr(io.StringIO()),
+    ):
+        cli = HermesCLI(
+            model=args.model or None,
+            compact=True,
+            resume=args.session_key,
+            verbose=False,
+        )
 
     for raw in sys.stdin:
         line = raw.strip()
@@ -68,7 +76,9 @@ def main():
             sys.stdout.write(json.dumps({"id": rid, "ok": True, "output": out}) + "\n")
             sys.stdout.flush()
         except Exception as e:
-            sys.stdout.write(json.dumps({"id": rid, "ok": False, "error": str(e)}) + "\n")
+            sys.stdout.write(
+                json.dumps({"id": rid, "ok": False, "error": str(e)}) + "\n"
+            )
             sys.stdout.flush()
 
 

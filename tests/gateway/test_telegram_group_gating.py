@@ -106,56 +106,112 @@ def test_group_messages_can_require_direct_trigger_via_config():
     adapter = _make_adapter(require_mention=True)
 
     assert adapter._should_process_message(_group_message("hello everyone")) is False
-    assert adapter._should_process_message(_group_message("hi @hermes_bot", entities=[_mention_entity("hi @hermes_bot")])) is True
-    assert adapter._should_process_message(_group_message("replying", reply_to_bot=True)) is True
+    assert (
+        adapter._should_process_message(
+            _group_message(
+                "hi @hermes_bot", entities=[_mention_entity("hi @hermes_bot")]
+            )
+        )
+        is True
+    )
+    assert (
+        adapter._should_process_message(_group_message("replying", reply_to_bot=True))
+        is True
+    )
     # Commands must also respect require_mention when it is enabled
-    assert adapter._should_process_message(_group_message("/status"), is_command=True) is False
+    assert (
+        adapter._should_process_message(_group_message("/status"), is_command=True)
+        is False
+    )
     # Telegram's group command menu sends ``/cmd@botname`` as a single
     # ``bot_command`` entity spanning the whole token (no separate mention
     # entity). We must accept it so the menu works when require_mention is on.
-    assert adapter._should_process_message(
-        _group_message(
-            "/status@hermes_bot",
-            entities=[_bot_command_entity("/status@hermes_bot", "/status@hermes_bot")],
-        ),
-        is_command=True,
-    ) is True
+    assert (
+        adapter._should_process_message(
+            _group_message(
+                "/status@hermes_bot",
+                entities=[
+                    _bot_command_entity("/status@hermes_bot", "/status@hermes_bot")
+                ],
+            ),
+            is_command=True,
+        )
+        is True
+    )
     # A bot_command entity addressed at a different bot must not satisfy
     # the mention gate — Telegram groups can host multiple bots that
     # register the same command name.
-    assert adapter._should_process_message(
-        _group_message(
-            "/status@other_bot",
-            entities=[_bot_command_entity("/status@other_bot", "/status@other_bot")],
-        ),
-        is_command=True,
-    ) is False
+    assert (
+        adapter._should_process_message(
+            _group_message(
+                "/status@other_bot",
+                entities=[
+                    _bot_command_entity("/status@other_bot", "/status@other_bot")
+                ],
+            ),
+            is_command=True,
+        )
+        is False
+    )
     # Bare ``/status`` (no @botname) must still be dropped in groups with
     # require_mention=True — Telegram delivers it only when the bot's
     # privacy mode is off, and even then we should not respond unless the
     # user explicitly addressed the bot.
-    assert adapter._should_process_message(
-        _group_message("/status", entities=[_bot_command_entity("/status", "/status")]),
-        is_command=True,
-    ) is False
+    assert (
+        adapter._should_process_message(
+            _group_message(
+                "/status", entities=[_bot_command_entity("/status", "/status")]
+            ),
+            is_command=True,
+        )
+        is False
+    )
     # And commands still pass unconditionally when require_mention is disabled
     adapter_no_mention = _make_adapter(require_mention=False)
-    assert adapter_no_mention._should_process_message(_group_message("/status"), is_command=True) is True
+    assert (
+        adapter_no_mention._should_process_message(
+            _group_message("/status"), is_command=True
+        )
+        is True
+    )
 
 
 def test_free_response_chats_bypass_mention_requirement():
     adapter = _make_adapter(require_mention=True, free_response_chats=["-200"])
 
-    assert adapter._should_process_message(_group_message("hello everyone", chat_id=-200)) is True
-    assert adapter._should_process_message(_group_message("hello everyone", chat_id=-201)) is False
+    assert (
+        adapter._should_process_message(_group_message("hello everyone", chat_id=-200))
+        is True
+    )
+    assert (
+        adapter._should_process_message(_group_message("hello everyone", chat_id=-201))
+        is False
+    )
 
 
 def test_ignored_threads_drop_group_messages_before_other_gates():
-    adapter = _make_adapter(require_mention=False, free_response_chats=["-200"], ignored_threads=[31, "42"])
+    adapter = _make_adapter(
+        require_mention=False, free_response_chats=["-200"], ignored_threads=[31, "42"]
+    )
 
-    assert adapter._should_process_message(_group_message("hello everyone", chat_id=-200, thread_id=31)) is False
-    assert adapter._should_process_message(_group_message("hello everyone", chat_id=-200, thread_id=42)) is False
-    assert adapter._should_process_message(_group_message("hello everyone", chat_id=-200, thread_id=99)) is True
+    assert (
+        adapter._should_process_message(
+            _group_message("hello everyone", chat_id=-200, thread_id=31)
+        )
+        is False
+    )
+    assert (
+        adapter._should_process_message(
+            _group_message("hello everyone", chat_id=-200, thread_id=42)
+        )
+        is False
+    )
+    assert (
+        adapter._should_process_message(
+            _group_message("hello everyone", chat_id=-200, thread_id=99)
+        )
+        is True
+    )
 
 
 def test_regex_mention_patterns_allow_custom_wake_words():
@@ -167,7 +223,9 @@ def test_regex_mention_patterns_allow_custom_wake_words():
 
 
 def test_invalid_regex_patterns_are_ignored():
-    adapter = _make_adapter(require_mention=True, mention_patterns=[r"(", r"^\s*chompy\b"])
+    adapter = _make_adapter(
+        require_mention=True, mention_patterns=[r"(", r"^\s*chompy\b"]
+    )
 
     assert adapter._should_process_message(_group_message("chompy status")) is True
     assert adapter._should_process_message(_group_message("hello everyone")) is False
@@ -180,9 +238,9 @@ def test_config_bridges_telegram_group_settings(monkeypatch, tmp_path):
         "telegram:\n"
         "  require_mention: true\n"
         "  mention_patterns:\n"
-        "    - \"^\\\\s*chompy\\\\b\"\n"
+        '    - "^\\\\s*chompy\\\\b"\n'
         "  free_response_chats:\n"
-        "    - \"-123\"\n",
+        '    - "-123"\n',
         encoding="utf-8",
     )
 
@@ -195,7 +253,9 @@ def test_config_bridges_telegram_group_settings(monkeypatch, tmp_path):
 
     assert config is not None
     assert __import__("os").environ["TELEGRAM_REQUIRE_MENTION"] == "true"
-    assert json.loads(__import__("os").environ["TELEGRAM_MENTION_PATTERNS"]) == [r"^\s*chompy\b"]
+    assert json.loads(__import__("os").environ["TELEGRAM_MENTION_PATTERNS"]) == [
+        r"^\s*chompy\b"
+    ]
     assert __import__("os").environ["TELEGRAM_FREE_RESPONSE_CHATS"] == "-123"
 
 
@@ -205,12 +265,12 @@ def test_config_bridges_telegram_user_allowlists(monkeypatch, tmp_path):
     (hermes_home / "config.yaml").write_text(
         "telegram:\n"
         "  allow_from:\n"
-        "    - \"111\"\n"
-        "    - \"222\"\n"
+        '    - "111"\n'
+        '    - "222"\n'
         "  group_allow_from:\n"
-        "    - \"333\"\n"
+        '    - "333"\n'
         "  group_allowed_chats:\n"
-        "    - \"-100\"\n",
+        '    - "-100"\n',
         encoding="utf-8",
     )
 
@@ -231,9 +291,7 @@ def test_config_env_overrides_telegram_user_allowlists(monkeypatch, tmp_path):
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
     (hermes_home / "config.yaml").write_text(
-        "telegram:\n"
-        "  allow_from: \"111\"\n"
-        "  group_allow_from: \"222\"\n",
+        'telegram:\n  allow_from: "111"\n  group_allow_from: "222"\n',
         encoding="utf-8",
     )
 
@@ -251,14 +309,21 @@ def test_config_env_overrides_telegram_user_allowlists(monkeypatch, tmp_path):
 def test_dm_allow_from_is_enforced_by_gateway_authorization_not_trigger_gate():
     adapter = _make_adapter(allow_from=["111", "222"])
 
-    assert adapter._should_process_message(_dm_message("hello", from_user_id=111)) is True
-    assert adapter._should_process_message(_dm_message("hello", from_user_id=333)) is True
+    assert (
+        adapter._should_process_message(_dm_message("hello", from_user_id=111)) is True
+    )
+    assert (
+        adapter._should_process_message(_dm_message("hello", from_user_id=333)) is True
+    )
 
 
 def test_group_allow_from_is_enforced_by_gateway_authorization_not_trigger_gate():
     adapter = _make_adapter(group_allow_from=["111"])
 
-    assert adapter._should_process_message(_group_message("hello", from_user_id=333)) is True
+    assert (
+        adapter._should_process_message(_group_message("hello", from_user_id=333))
+        is True
+    )
 
 
 def test_top_level_require_mention_bridges_to_telegram(monkeypatch, tmp_path):
@@ -269,8 +334,7 @@ def test_top_level_require_mention_bridges_to_telegram(monkeypatch, tmp_path):
     hermes_home.mkdir()
     # Intentionally no "telegram:" section — keys are at the top level.
     (hermes_home / "config.yaml").write_text(
-        "require_mention: true\n"
-        "group_sessions_per_user: true\n",
+        "require_mention: true\ngroup_sessions_per_user: true\n",
         encoding="utf-8",
     )
 
@@ -284,21 +348,23 @@ def test_top_level_require_mention_bridges_to_telegram(monkeypatch, tmp_path):
 
     # The adapter's extra dict must also carry the setting so that
     # _telegram_require_mention() works even without the env var.
-    tg_cfg = config.platforms.get(__import__("gateway.config", fromlist=["Platform"]).Platform.TELEGRAM)
+    tg_cfg = config.platforms.get(
+        __import__("gateway.config", fromlist=["Platform"]).Platform.TELEGRAM
+    )
     if tg_cfg is not None:
         assert tg_cfg.extra.get("require_mention") is True
 
 
-def test_top_level_require_mention_does_not_override_telegram_section(monkeypatch, tmp_path):
+def test_top_level_require_mention_does_not_override_telegram_section(
+    monkeypatch, tmp_path
+):
     """When telegram.require_mention is explicitly set, top-level require_mention
     must not override it (platform-specific config takes precedence).
     """
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
     (hermes_home / "config.yaml").write_text(
-        "require_mention: true\n"
-        "telegram:\n"
-        "  require_mention: false\n",
+        "require_mention: true\ntelegram:\n  require_mention: false\n",
         encoding="utf-8",
     )
 
@@ -316,10 +382,7 @@ def test_config_bridges_telegram_ignored_threads(monkeypatch, tmp_path):
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
     (hermes_home / "config.yaml").write_text(
-        "telegram:\n"
-        "  ignored_threads:\n"
-        "    - 31\n"
-        "    - \"42\"\n",
+        'telegram:\n  ignored_threads:\n    - 31\n    - "42"\n',
         encoding="utf-8",
     )
 

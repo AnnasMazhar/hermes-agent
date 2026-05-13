@@ -6,6 +6,7 @@ ignored) and must fire on BOTH the CLI-interactive path and the async gateway
 path, so external tools like macOS notifiers can be alerted regardless of
 which surface the user is on.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -64,7 +65,9 @@ class TestCliPathFiresHooks:
 
         with patch("hermes_cli.plugins.invoke_hook", side_effect=fake_invoke_hook):
             result = check_all_command_guards(
-                "rm -rf /tmp/test-hook", "local", approval_callback=cb,
+                "rm -rf /tmp/test-hook",
+                "local",
+                approval_callback=cb,
             )
 
         assert result["approved"] is True
@@ -81,7 +84,9 @@ class TestCliPathFiresHooks:
         assert pre_kwargs["pattern_key"]  # non-empty primary pattern
         assert pre_kwargs["description"]
 
-        post_kwargs = next(kw for name, kw in captured if name == "post_approval_response")
+        post_kwargs = next(
+            kw for name, kw in captured if name == "post_approval_response"
+        )
         assert post_kwargs["choice"] == "once"
         assert post_kwargs["surface"] == "cli"
         assert post_kwargs["command"] == "rm -rf /tmp/test-hook"
@@ -103,11 +108,15 @@ class TestCliPathFiresHooks:
 
         with patch("hermes_cli.plugins.invoke_hook", side_effect=fake_invoke_hook):
             result = check_all_command_guards(
-                "rm -rf /tmp/test-deny", "local", approval_callback=cb,
+                "rm -rf /tmp/test-deny",
+                "local",
+                approval_callback=cb,
             )
 
         assert result["approved"] is False
-        post_kwargs = next(kw for name, kw in captured if name == "post_approval_response")
+        post_kwargs = next(
+            kw for name, kw in captured if name == "post_approval_response"
+        )
         assert post_kwargs["choice"] == "deny"
 
     def test_plugin_hook_crash_does_not_break_approval(
@@ -129,7 +138,9 @@ class TestCliPathFiresHooks:
 
         with patch("hermes_cli.plugins.invoke_hook", side_effect=boom):
             result = check_all_command_guards(
-                "rm -rf /tmp/test-crash", "local", approval_callback=cb,
+                "rm -rf /tmp/test-crash",
+                "local",
+                approval_callback=cb,
             )
 
         # User's approval was still honored despite the plugin crashing
@@ -141,5 +152,3 @@ class TestGatewayPathFiresHooks:
     gateway notify callback is registered. The agent thread blocks on the
     approval event until resolve_gateway_approval() is called from another
     thread."""
-
-

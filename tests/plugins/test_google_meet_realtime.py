@@ -66,8 +66,8 @@ def _install_fake_websockets(monkeypatch, fake_ws):
     def _connect(url, **kwargs):
         captured["url"] = url
         captured["kwargs"] = kwargs
-        captured["headers"] = (
-            kwargs.get("additional_headers") or kwargs.get("extra_headers")
+        captured["headers"] = kwargs.get("additional_headers") or kwargs.get(
+            "extra_headers"
         )
         return fake_ws
 
@@ -147,7 +147,11 @@ def test_speak_sends_create_and_response_and_writes_audio(monkeypatch, tmp_path)
 
     # Frames sent after session.update: conversation.item.create then response.create.
     types_sent = [f["type"] for f in ws.sent]
-    assert types_sent == ["session.update", "conversation.item.create", "response.create"]
+    assert types_sent == [
+        "session.update",
+        "conversation.item.create",
+        "response.create",
+    ]
 
     item = ws.sent[1]["item"]
     assert item["role"] == "user"
@@ -168,10 +172,12 @@ def test_speak_sends_create_and_response_and_writes_audio(monkeypatch, tmp_path)
 def test_speak_raises_on_error_frame(monkeypatch, tmp_path):
     from plugins.google_meet.realtime.openai_client import RealtimeSession
 
-    ws = _FakeWS(recv_frames=[
-        {"type": "response.created"},
-        {"type": "error", "error": {"message": "bad juju"}},
-    ])
+    ws = _FakeWS(
+        recv_frames=[
+            {"type": "response.created"},
+            {"type": "error", "error": {"message": "bad juju"}},
+        ]
+    )
     _install_fake_websockets(monkeypatch, ws)
 
     sess = RealtimeSession(api_key="sk-test", audio_sink_path=tmp_path / "o.pcm")
@@ -240,8 +246,10 @@ def test_speaker_run_until_stopped_processes_queue(tmp_path):
     queue = tmp_path / "queue.jsonl"
     processed = tmp_path / "processed.jsonl"
     queue.write_text(
-        json.dumps({"id": "a", "text": "hello one"}) + "\n"
-        + json.dumps({"id": "b", "text": "hello two"}) + "\n"
+        json.dumps({"id": "a", "text": "hello one"})
+        + "\n"
+        + json.dumps({"id": "b", "text": "hello two"})
+        + "\n"
     )
 
     stub = _StubSession()

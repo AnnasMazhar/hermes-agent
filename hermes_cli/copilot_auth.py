@@ -76,9 +76,7 @@ def resolve_copilot_token() -> tuple[str, str]:
         if val:
             valid, msg = validate_copilot_token(val)
             if not valid:
-                logger.warning(
-                    "Token from %s is not supported: %s", env_var, msg
-                )
+                logger.warning("Token from %s is not supported: %s", env_var, msg)
                 continue
             return val, env_var
 
@@ -127,8 +125,9 @@ def _try_gh_cli_token() -> Optional[str]:
     hostname = os.getenv("COPILOT_GH_HOST", "").strip()
 
     # Build a clean env so gh doesn't short-circuit on GITHUB_TOKEN / GH_TOKEN
-    clean_env = {k: v for k, v in os.environ.items()
-                 if k not in ("GITHUB_TOKEN", "GH_TOKEN")}
+    clean_env = {
+        k: v for k, v in os.environ.items() if k not in ("GITHUB_TOKEN", "GH_TOKEN")
+    }
 
     for gh_path in _gh_cli_candidates():
         cmd = [gh_path, "auth", "token"]
@@ -151,6 +150,7 @@ def _try_gh_cli_token() -> Optional[str]:
 
 
 # ─── OAuth Device Code Flow ────────────────────────────────────────────────
+
 
 def copilot_device_code_login(
     *,
@@ -195,7 +195,9 @@ def copilot_device_code_login(
         print(f"  ✗ Failed to start device authorization: {exc}")
         return None
 
-    verification_uri = device_data.get("verification_uri", "https://github.com/login/device")
+    verification_uri = device_data.get(
+        "verification_uri", "https://github.com/login/device"
+    )
     user_code = device_data.get("user_code", "")
     device_code = device_data.get("device_code", "")
     interval = max(device_data.get("interval", _DEVICE_CODE_POLL_INTERVAL), 1)
@@ -291,10 +293,13 @@ _EXCHANGE_USER_AGENT = "GitHubCopilotChat/0.26.7"
 def _token_fingerprint(raw_token: str) -> str:
     """Short fingerprint of a raw token for cache keying (avoids storing full token)."""
     import hashlib
+
     return hashlib.sha256(raw_token.encode()).hexdigest()[:16]
 
 
-def exchange_copilot_token(raw_token: str, *, timeout: float = 10.0) -> tuple[str, float]:
+def exchange_copilot_token(
+    raw_token: str, *, timeout: float = 10.0
+) -> tuple[str, float]:
     """Exchange a raw GitHub token for a short-lived Copilot API token.
 
     Calls ``GET https://api.github.com/copilot_internal/v2/token`` with
@@ -369,6 +374,7 @@ def get_copilot_api_token(raw_token: str) -> str:
 
 
 # ─── Copilot API Headers ───────────────────────────────────────────────────
+
 
 def copilot_request_headers(
     *,

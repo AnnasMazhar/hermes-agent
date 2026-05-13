@@ -115,16 +115,14 @@ async def handle_ws(ws: Any) -> None:
 
     transport = WSTransport(ws, asyncio.get_running_loop())
 
-    await transport.write_async(
-        {
-            "jsonrpc": "2.0",
-            "method": "event",
-            "params": {
-                "type": "gateway.ready",
-                "payload": {"skin": server.resolve_skin()},
-            },
-        }
-    )
+    await transport.write_async({
+        "jsonrpc": "2.0",
+        "method": "event",
+        "params": {
+            "type": "gateway.ready",
+            "payload": {"skin": server.resolve_skin()},
+        },
+    })
 
     try:
         while True:
@@ -140,13 +138,11 @@ async def handle_ws(ws: Any) -> None:
             try:
                 req = json.loads(line)
             except json.JSONDecodeError:
-                ok = await transport.write_async(
-                    {
-                        "jsonrpc": "2.0",
-                        "error": {"code": -32700, "message": "parse error"},
-                        "id": None,
-                    }
-                )
+                ok = await transport.write_async({
+                    "jsonrpc": "2.0",
+                    "error": {"code": -32700, "message": "parse error"},
+                    "id": None,
+                })
                 if not ok:
                     break
                 continue

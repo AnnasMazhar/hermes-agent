@@ -36,9 +36,9 @@ from typing import Any, Dict
 # Hardcoded defaults — these match the pre-existing values, so adding
 # this module is behaviour-preserving for users who don't set
 # ``tool_output`` in config.yaml.
-DEFAULT_MAX_BYTES = 50_000       # terminal_tool.MAX_OUTPUT_CHARS
-DEFAULT_MAX_LINES = 2000         # file_operations.MAX_LINES
-DEFAULT_MAX_LINE_LENGTH = 2000   # file_operations.MAX_LINE_LENGTH
+DEFAULT_MAX_BYTES = 50_000  # terminal_tool.MAX_OUTPUT_CHARS
+DEFAULT_MAX_LINES = 2000  # file_operations.MAX_LINES
+DEFAULT_MAX_LINE_LENGTH = 2000  # file_operations.MAX_LINE_LENGTH
 
 
 def _coerce_positive_int(value: Any, default: int) -> int:
@@ -61,6 +61,7 @@ def get_tool_output_limits() -> Dict[str, int]:
     """
     try:
         from hermes_cli.config import load_config
+
         cfg = load_config() or {}
         section = cfg.get("tool_output") if isinstance(cfg, dict) else None
         if not isinstance(section, dict):

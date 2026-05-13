@@ -52,6 +52,7 @@ class DDGSSearchProvider(WebSearchProvider):
         """
         try:
             import ddgs  # noqa: F401
+
             return True
         except ImportError:
             return False
@@ -82,17 +83,17 @@ class DDGSSearchProvider(WebSearchProvider):
                     if i >= safe_limit:
                         break
                     url = str(hit.get("href") or hit.get("url") or "")
-                    web_results.append(
-                        {
-                            "title": str(hit.get("title", "")),
-                            "url": url,
-                            "description": str(hit.get("body", "")),
-                            "position": i + 1,
-                        }
-                    )
+                    web_results.append({
+                        "title": str(hit.get("title", "")),
+                        "url": url,
+                        "description": str(hit.get("body", "")),
+                        "position": i + 1,
+                    })
         except Exception as exc:  # noqa: BLE001 — ddgs raises its own exceptions
             logger.warning("DDGS search error: %s", exc)
             return {"success": False, "error": f"DuckDuckGo search failed: {exc}"}
 
-        logger.info("DDGS search '%s': %d results (limit %d)", query, len(web_results), limit)
+        logger.info(
+            "DDGS search '%s': %d results (limit %d)", query, len(web_results), limit
+        )
         return {"success": True, "data": {"web": web_results}}

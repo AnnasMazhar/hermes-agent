@@ -27,12 +27,13 @@ def kanban_home(tmp_path, monkeypatch):
 # Workspace flag parsing
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "value,expected",
     [
-        ("scratch",              ("scratch", None)),
-        ("worktree",              ("worktree", None)),
-        ("dir:/tmp/work",         ("dir", "/tmp/work")),
+        ("scratch", ("scratch", None)),
+        ("worktree", ("worktree", None)),
+        ("dir:/tmp/work", ("dir", "/tmp/work")),
     ],
 )
 def test_parse_workspace_flag_valid(value, expected):
@@ -60,10 +61,15 @@ def test_parse_workspace_flag_rejects(bad):
 # run_slash smoke tests (end-to-end via the same entry both CLI and gateway use)
 # ---------------------------------------------------------------------------
 
+
 def test_run_slash_no_args_shows_usage(kanban_home):
     out = kc.run_slash("")
     assert "kanban" in out.lower()
-    assert "create" in out.lower() or "subcommand" in out.lower() or "action" in out.lower()
+    assert (
+        "create" in out.lower()
+        or "subcommand" in out.lower()
+        or "action" in out.lower()
+    )
 
 
 def test_run_slash_create_and_list(kanban_home):
@@ -79,6 +85,7 @@ def test_run_slash_create_with_parent_and_cascade(kanban_home):
     out1 = kc.run_slash("create 'parent' --assignee alice")
     # Extract the "t_xxxx" id from "Created t_xxxx (ready, ...)"
     import re
+
     m = re.search(r"(t_[a-f0-9]+)", out1)
     assert m
     p = m.group(1)
@@ -95,6 +102,7 @@ def test_run_slash_create_with_parent_and_cascade(kanban_home):
 def test_run_slash_show_includes_comments(kanban_home):
     out = kc.run_slash("create 'x'")
     import re
+
     tid = re.search(r"(t_[a-f0-9]+)", out).group(1)
     kc.run_slash(f"comment {tid} 'source is paywalled'")
     show = kc.run_slash(f"show {tid}")
@@ -104,6 +112,7 @@ def test_run_slash_show_includes_comments(kanban_home):
 def test_run_slash_block_unblock_cycle(kanban_home):
     out = kc.run_slash("create 'x' --assignee alice")
     import re
+
     tid = re.search(r"(t_[a-f0-9]+)", out).group(1)
     # Claim first so block() finds it running
     kc.run_slash(f"claim {tid}")
@@ -129,6 +138,7 @@ def test_run_slash_dispatch_dry_run_counts(kanban_home):
 def test_run_slash_context_output_format(kanban_home):
     out = kc.run_slash("create 'tech spec' --assignee alice --body 'write an RFC'")
     import re
+
     tid = re.search(r"(t_[a-f0-9]+)", out).group(1)
     kc.run_slash(f"comment {tid} 'remember to include performance section'")
     ctx = kc.run_slash(f"context {tid}")
@@ -155,6 +165,7 @@ def test_run_slash_usage_error_returns_message(kanban_home):
 def test_run_slash_assign_reassigns(kanban_home):
     out = kc.run_slash("create 'x' --assignee alice")
     import re
+
     tid = re.search(r"(t_[a-f0-9]+)", out).group(1)
     assert "Assigned" in kc.run_slash(f"assign {tid} bob")
     show = kc.run_slash(f"show {tid}")
@@ -165,6 +176,7 @@ def test_run_slash_link_unlink(kanban_home):
     a = kc.run_slash("create 'a'")
     b = kc.run_slash("create 'b'")
     import re
+
     ta = re.search(r"(t_[a-f0-9]+)", a).group(1)
     tb = re.search(r"(t_[a-f0-9]+)", b).group(1)
     assert "Linked" in kc.run_slash(f"link {ta} {tb}")
@@ -177,6 +189,7 @@ def test_run_slash_link_unlink(kanban_home):
 # ---------------------------------------------------------------------------
 # Integration with the COMMAND_REGISTRY
 # ---------------------------------------------------------------------------
+
 
 def test_kanban_is_resolvable():
     from hermes_cli.commands import resolve_command
@@ -213,6 +226,7 @@ def test_kanban_not_gateway_only():
 # ---------------------------------------------------------------------------
 # reclaim + reassign CLI smoke tests
 # ---------------------------------------------------------------------------
+
 
 def test_run_slash_reclaim_running_task(kanban_home):
     import re
@@ -292,6 +306,7 @@ def test_run_slash_reassign_with_reclaim_flag(kanban_home):
 # /kanban specify — slash surface (same entry point CLI + gateway use)
 # ---------------------------------------------------------------------------
 
+
 def test_run_slash_specify_end_to_end(kanban_home, monkeypatch):
     """The /kanban specify slash command routes through run_slash, which
     both the interactive CLI and every gateway platform use. This test
@@ -301,6 +316,7 @@ def test_run_slash_specify_end_to_end(kanban_home, monkeypatch):
     # Create a triage task via the same slash surface.
     create_out = kc.run_slash("create 'rough idea' --triage")
     import re
+
     m = re.search(r"(t_[a-f0-9]+)", create_out)
     assert m, f"no task id in: {create_out!r}"
     tid = m.group(1)
@@ -308,9 +324,9 @@ def test_run_slash_specify_end_to_end(kanban_home, monkeypatch):
     # Mock the auxiliary client so we don't hit a real provider.
     resp = MagicMock()
     resp.choices = [MagicMock()]
-    resp.choices[0].message.content = (
-        '{"title": "Spec: rough idea", "body": "**Goal**\\nShip it."}'
-    )
+    resp.choices[
+        0
+    ].message.content = '{"title": "Spec: rough idea", "body": "**Goal**\\nShip it."}'
     fake_client = MagicMock()
     fake_client.chat.completions.create = MagicMock(return_value=resp)
     monkeypatch.setattr(

@@ -71,7 +71,8 @@ class TestSetupLogging:
         root = logging.getLogger()
 
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -83,7 +84,8 @@ class TestSetupLogging:
         root = logging.getLogger()
 
         error_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "errors.log" in getattr(h, "baseFilename", "")
         ]
@@ -92,11 +94,14 @@ class TestSetupLogging:
 
     def test_idempotent_no_duplicate_handlers(self, hermes_home):
         hermes_logging.setup_logging(hermes_home=hermes_home)
-        hermes_logging.setup_logging(hermes_home=hermes_home)  # second call — should be no-op
+        hermes_logging.setup_logging(
+            hermes_home=hermes_home
+        )  # second call — should be no-op
 
         root = logging.getLogger()
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -110,7 +115,8 @@ class TestSetupLogging:
 
         root = logging.getLogger()
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -121,7 +127,8 @@ class TestSetupLogging:
 
         root = logging.getLogger()
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -134,7 +141,8 @@ class TestSetupLogging:
 
         root = logging.getLogger()
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -193,6 +201,7 @@ class TestSetupLogging:
     def test_reads_config_yaml(self, hermes_home):
         """setup_logging reads logging.level from config.yaml."""
         import yaml
+
         config = {"logging": {"level": "DEBUG", "max_size_mb": 2, "backup_count": 1}}
         (hermes_home / "config.yaml").write_text(yaml.dump(config))
 
@@ -200,7 +209,8 @@ class TestSetupLogging:
 
         root = logging.getLogger()
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -211,6 +221,7 @@ class TestSetupLogging:
     def test_explicit_params_override_config(self, hermes_home):
         """Explicit function params take precedence over config.yaml."""
         import yaml
+
         config = {"logging": {"level": "DEBUG"}}
         (hermes_home / "config.yaml").write_text(yaml.dump(config))
 
@@ -218,7 +229,8 @@ class TestSetupLogging:
 
         root = logging.getLogger()
         agent_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "agent.log" in getattr(h, "baseFilename", "")
         ]
@@ -244,7 +256,8 @@ class TestGatewayMode:
         root = logging.getLogger()
 
         gw_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "gateway.log" in getattr(h, "baseFilename", "")
         ]
@@ -255,7 +268,8 @@ class TestGatewayMode:
         root = logging.getLogger()
 
         gw_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "gateway.log" in getattr(h, "baseFilename", "")
         ]
@@ -268,7 +282,8 @@ class TestGatewayMode:
 
         root = logging.getLogger()
         gw_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "gateway.log" in getattr(h, "baseFilename", "")
         ]
@@ -283,7 +298,9 @@ class TestGatewayMode:
         assert gw_log.exists()
         assert "gateway connected after cli init" in gw_log.read_text()
 
-    def test_gateway_log_created_after_cli_init_without_duplicate_handlers(self, hermes_home):
+    def test_gateway_log_created_after_cli_init_without_duplicate_handlers(
+        self, hermes_home
+    ):
         """Repeated gateway setup calls do not attach duplicate gateway handlers."""
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="cli")
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gateway")
@@ -291,7 +308,8 @@ class TestGatewayMode:
 
         root = logging.getLogger()
         gw_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, RotatingFileHandler)
             and "gateway.log" in getattr(h, "baseFilename", "")
         ]
@@ -390,9 +408,12 @@ class TestSessionContext:
         assert "untagged message" in content
         # Should not have any [xxx] session tag
         import re
+
         for line in content.splitlines():
             if "untagged message" in line:
-                assert not re.search(r"\[.+?\]", line.split("INFO")[1].split("test.no_session")[0])
+                assert not re.search(
+                    r"\[.+?\]", line.split("INFO")[1].split("test.no_session")[0]
+                )
 
     def test_clear_session_context(self, hermes_home):
         """After clearing, session tag disappears."""
@@ -498,9 +519,7 @@ class TestComponentFilter:
 
     def test_passes_matching_prefix(self):
         f = hermes_logging._ComponentFilter(("gateway",))
-        record = logging.LogRecord(
-            "gateway.run", logging.INFO, "", 0, "msg", (), None
-        )
+        record = logging.LogRecord("gateway.run", logging.INFO, "", 0, "msg", (), None)
         assert f.filter(record) is True
 
     def test_passes_nested_matching_prefix(self):
@@ -519,18 +538,18 @@ class TestComponentFilter:
 
     def test_multiple_prefixes(self):
         f = hermes_logging._ComponentFilter(("agent", "run_agent", "model_tools"))
-        assert f.filter(logging.LogRecord(
-            "agent.compressor", logging.INFO, "", 0, "", (), None
-        ))
-        assert f.filter(logging.LogRecord(
-            "run_agent", logging.INFO, "", 0, "", (), None
-        ))
-        assert f.filter(logging.LogRecord(
-            "model_tools", logging.INFO, "", 0, "", (), None
-        ))
-        assert not f.filter(logging.LogRecord(
-            "tools.browser", logging.INFO, "", 0, "", (), None
-        ))
+        assert f.filter(
+            logging.LogRecord("agent.compressor", logging.INFO, "", 0, "", (), None)
+        )
+        assert f.filter(
+            logging.LogRecord("run_agent", logging.INFO, "", 0, "", (), None)
+        )
+        assert f.filter(
+            logging.LogRecord("model_tools", logging.INFO, "", 0, "", (), None)
+        )
+        assert not f.filter(
+            logging.LogRecord("tools.browser", logging.INFO, "", 0, "", (), None)
+        )
 
 
 class TestComponentPrefixes:
@@ -567,7 +586,8 @@ class TestSetupVerboseLogging:
 
         root = logging.getLogger()
         verbose_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, logging.StreamHandler)
             and not isinstance(h, RotatingFileHandler)
             and getattr(h, "_hermes_verbose", False)
@@ -582,7 +602,8 @@ class TestSetupVerboseLogging:
 
         root = logging.getLogger()
         verbose_handlers = [
-            h for h in root.handlers
+            h
+            for h in root.handlers
             if isinstance(h, logging.StreamHandler)
             and not isinstance(h, RotatingFileHandler)
             and getattr(h, "_hermes_verbose", False)
@@ -599,8 +620,11 @@ class TestAddRotatingHandler:
         formatter = logging.Formatter("%(message)s")
 
         hermes_logging._add_rotating_handler(
-            logger, log_path,
-            level=logging.INFO, max_bytes=1024, backup_count=1,
+            logger,
+            log_path,
+            level=logging.INFO,
+            max_bytes=1024,
+            backup_count=1,
             formatter=formatter,
         )
 
@@ -617,19 +641,24 @@ class TestAddRotatingHandler:
         formatter = logging.Formatter("%(message)s")
 
         hermes_logging._add_rotating_handler(
-            logger, log_path,
-            level=logging.INFO, max_bytes=1024, backup_count=1,
+            logger,
+            log_path,
+            level=logging.INFO,
+            max_bytes=1024,
+            backup_count=1,
             formatter=formatter,
         )
         hermes_logging._add_rotating_handler(
-            logger, log_path,
-            level=logging.INFO, max_bytes=1024, backup_count=1,
+            logger,
+            log_path,
+            level=logging.INFO,
+            max_bytes=1024,
+            backup_count=1,
             formatter=formatter,
         )
 
         rotating_handlers = [
-            h for h in logger.handlers
-            if isinstance(h, RotatingFileHandler)
+            h for h in logger.handlers if isinstance(h, RotatingFileHandler)
         ]
         assert len(rotating_handlers) == 1
         # Clean up
@@ -646,8 +675,11 @@ class TestAddRotatingHandler:
         component_filter = hermes_logging._ComponentFilter(("test",))
 
         hermes_logging._add_rotating_handler(
-            logger, log_path,
-            level=logging.INFO, max_bytes=1024, backup_count=1,
+            logger,
+            log_path,
+            level=logging.INFO,
+            max_bytes=1024,
+            backup_count=1,
             formatter=formatter,
             log_filter=component_filter,
         )
@@ -668,8 +700,11 @@ class TestAddRotatingHandler:
         formatter = logging.Formatter("%(session_tag)s%(message)s")
 
         hermes_logging._add_rotating_handler(
-            logger, log_path,
-            level=logging.INFO, max_bytes=1024, backup_count=1,
+            logger,
+            log_path,
+            level=logging.INFO,
+            max_bytes=1024,
+            backup_count=1,
             formatter=formatter,
         )
 
@@ -700,8 +735,11 @@ class TestAddRotatingHandler:
         try:
             with patch("hermes_cli.config.is_managed", return_value=True):
                 hermes_logging._add_rotating_handler(
-                    logger, log_path,
-                    level=logging.INFO, max_bytes=1024, backup_count=1,
+                    logger,
+                    log_path,
+                    level=logging.INFO,
+                    max_bytes=1024,
+                    backup_count=1,
                     formatter=formatter,
                 )
         finally:
@@ -724,8 +762,11 @@ class TestAddRotatingHandler:
         try:
             with patch("hermes_cli.config.is_managed", return_value=True):
                 hermes_logging._add_rotating_handler(
-                    logger, log_path,
-                    level=logging.INFO, max_bytes=1, backup_count=1,
+                    logger,
+                    log_path,
+                    level=logging.INFO,
+                    max_bytes=1,
+                    backup_count=1,
                     formatter=formatter,
                 )
                 handler = next(
@@ -756,6 +797,7 @@ class TestReadLoggingConfig:
 
     def test_reads_logging_section(self, hermes_home):
         import yaml
+
         config = {"logging": {"level": "DEBUG", "max_size_mb": 10, "backup_count": 5}}
         (hermes_home / "config.yaml").write_text(yaml.dump(config))
 
@@ -766,6 +808,7 @@ class TestReadLoggingConfig:
 
     def test_handles_missing_logging_section(self, hermes_home):
         import yaml
+
         config = {"model": "test"}
         (hermes_home / "config.yaml").write_text(yaml.dump(config))
 

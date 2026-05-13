@@ -44,6 +44,7 @@ def _send_update(
 # Tool progress callback
 # ------------------------------------------------------------------
 
+
 def make_tool_progress_cb(
     conn: acp.Client,
     session_id: str,
@@ -63,7 +64,13 @@ def make_tool_progress_cb(
     ``reasoning.available``) are silently ignored.
     """
 
-    def _tool_progress(event_type: str, name: str = None, preview: str = None, args: Any = None, **kwargs) -> None:
+    def _tool_progress(
+        event_type: str,
+        name: str = None,
+        preview: str = None,
+        args: Any = None,
+        **kwargs,
+    ) -> None:
         # Only emit ACP ToolCallStart for tool.started; ignore other event types
         if event_type != "tool.started":
             return
@@ -92,7 +99,9 @@ def make_tool_progress_cb(
 
                 snapshot = capture_local_edit_snapshot(name, args)
             except Exception:
-                logger.debug("Failed to capture ACP edit snapshot for %s", name, exc_info=True)
+                logger.debug(
+                    "Failed to capture ACP edit snapshot for %s", name, exc_info=True
+                )
         tool_call_meta[tc_id] = {"args": args, "snapshot": snapshot}
 
         update = build_tool_start(tc_id, name, args)
@@ -104,6 +113,7 @@ def make_tool_progress_cb(
 # ------------------------------------------------------------------
 # Thinking callback
 # ------------------------------------------------------------------
+
 
 def make_thinking_cb(
     conn: acp.Client,
@@ -124,6 +134,7 @@ def make_thinking_cb(
 # ------------------------------------------------------------------
 # Step callback
 # ------------------------------------------------------------------
+
 
 def make_step_cb(
     conn: acp.Client,
@@ -177,6 +188,7 @@ def make_step_cb(
 # ------------------------------------------------------------------
 # Agent message callback
 # ------------------------------------------------------------------
+
 
 def make_message_cb(
     conn: acp.Client,

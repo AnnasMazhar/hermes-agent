@@ -30,6 +30,7 @@ class TestGeneric400Heuristic:
             patch("run_agent.OpenAI"),
         ):
             from run_agent import AIAgent
+
             a = AIAgent(
                 api_key="test-key-12345",
                 base_url="https://openrouter.ai/api/v1",
@@ -53,13 +54,21 @@ class TestGeneric400Heuristic:
         api_messages = [{"role": "user", "content": "hi"}]
 
         # Simulate the phrase matching
-        is_context_length_error = any(phrase in error_msg for phrase in [
-            'context length', 'context size', 'maximum context',
-            'token limit', 'too many tokens', 'reduce the length',
-            'exceeds the limit', 'context window',
-            'request entity too large',
-            'prompt is too long',
-        ])
+        is_context_length_error = any(
+            phrase in error_msg
+            for phrase in [
+                "context length",
+                "context size",
+                "maximum context",
+                "token limit",
+                "too many tokens",
+                "reduce the length",
+                "exceeds the limit",
+                "context window",
+                "request entity too large",
+                "prompt is too long",
+            ]
+        )
         assert not is_context_length_error
 
         # The heuristic should NOT trigger for small sessions
@@ -77,9 +86,14 @@ class TestGeneric400Heuristic:
         approx_tokens = 100000  # > 40% of 200k
         api_messages = [{"role": "user", "content": "hi"}] * 20
 
-        is_context_length_error = any(phrase in error_msg for phrase in [
-            'context length', 'context size', 'maximum context',
-        ])
+        is_context_length_error = any(
+            phrase in error_msg
+            for phrase in [
+                "context length",
+                "context size",
+                "maximum context",
+            ]
+        )
         assert not is_context_length_error
 
         # Heuristic check
@@ -118,19 +132,28 @@ class TestGeneric400Heuristic:
         """Descriptive context-length errors should still be caught by
         the existing phrase matching (not the heuristic)."""
         error_msg = "prompt is too long: 250000 tokens > 200000 maximum"
-        is_context_length_error = any(phrase in error_msg for phrase in [
-            'context length', 'context size', 'maximum context',
-            'token limit', 'too many tokens', 'reduce the length',
-            'exceeds the limit', 'context window',
-            'request entity too large',
-            'prompt is too long',
-        ])
+        is_context_length_error = any(
+            phrase in error_msg
+            for phrase in [
+                "context length",
+                "context size",
+                "maximum context",
+                "token limit",
+                "too many tokens",
+                "reduce the length",
+                "exceeds the limit",
+                "context window",
+                "request entity too large",
+                "prompt is too long",
+            ]
+        )
         assert is_context_length_error
 
 
 # ---------------------------------------------------------------------------
 # Test 2: Gateway skips persistence on failed agent results
 # ---------------------------------------------------------------------------
+
 
 class TestGatewaySkipsPersistenceOnFailure:
     """When the agent returns failed=True with no final_response,
@@ -206,6 +229,7 @@ class TestCompressionExhaustedFlag:
 # Test 3: Context-overflow error messages
 # ---------------------------------------------------------------------------
 
+
 class TestContextOverflowErrorMessages:
     """The gateway should produce helpful error messages when the failure
     looks like a context overflow."""
@@ -221,10 +245,17 @@ class TestContextOverflowErrorMessages:
             "context window exceeded",
         ]
         for error_str in keywords:
-            _is_ctx_fail = any(p in error_str.lower() for p in (
-                "context", "token", "too large", "too long",
-                "exceed", "payload",
-            ))
+            _is_ctx_fail = any(
+                p in error_str.lower()
+                for p in (
+                    "context",
+                    "token",
+                    "too large",
+                    "too long",
+                    "exceed",
+                    "payload",
+                )
+            )
             assert _is_ctx_fail, f"Should detect: {error_str}"
 
     def test_detects_generic_400_with_large_history(self):
@@ -233,13 +264,17 @@ class TestContextOverflowErrorMessages:
         error_str = "error code: 400 - {'type': 'error', 'message': 'Error'}"
         history_len = 100  # Large session
 
-        _is_ctx_fail = any(p in error_str.lower() for p in (
-            "context", "token", "too large", "too long",
-            "exceed", "payload",
-        )) or (
-            "400" in error_str.lower()
-            and history_len > 50
-        )
+        _is_ctx_fail = any(
+            p in error_str.lower()
+            for p in (
+                "context",
+                "token",
+                "too large",
+                "too long",
+                "exceed",
+                "payload",
+            )
+        ) or ("400" in error_str.lower() and history_len > 50)
         assert _is_ctx_fail
 
     def test_unrelated_error_not_flagged(self):
@@ -247,19 +282,24 @@ class TestContextOverflowErrorMessages:
         error_str = "invalid api key: authentication failed"
         history_len = 10
 
-        _is_ctx_fail = any(p in error_str.lower() for p in (
-            "context", "token", "too large", "too long",
-            "exceed", "payload",
-        )) or (
-            "400" in error_str.lower()
-            and history_len > 50
-        )
+        _is_ctx_fail = any(
+            p in error_str.lower()
+            for p in (
+                "context",
+                "token",
+                "too large",
+                "too long",
+                "exceed",
+                "payload",
+            )
+        ) or ("400" in error_str.lower() and history_len > 50)
         assert not _is_ctx_fail
 
 
 # ---------------------------------------------------------------------------
 # Test 4: Agent skips persistence for large failed sessions
 # ---------------------------------------------------------------------------
+
 
 class TestAgentSkipsPersistenceForLargeFailedSessions:
     """When a 400 error occurs and the session is large, the agent
@@ -271,7 +311,9 @@ class TestAgentSkipsPersistenceForLargeFailedSessions:
         approx_tokens = 60000  # > 50000 threshold
         api_messages = [{"role": "user", "content": "x"}] * 10
 
-        should_skip = status_code == 400 and (approx_tokens > 50000 or len(api_messages) > 80)
+        should_skip = status_code == 400 and (
+            approx_tokens > 50000 or len(api_messages) > 80
+        )
         assert should_skip
 
     def test_small_session_400_persists_normally(self):
@@ -280,7 +322,9 @@ class TestAgentSkipsPersistenceForLargeFailedSessions:
         approx_tokens = 5000  # < 50000
         api_messages = [{"role": "user", "content": "x"}] * 10  # < 80
 
-        should_skip = status_code == 400 and (approx_tokens > 50000 or len(api_messages) > 80)
+        should_skip = status_code == 400 and (
+            approx_tokens > 50000 or len(api_messages) > 80
+        )
         assert not should_skip
 
     def test_non_400_error_persists_normally(self):
@@ -289,5 +333,7 @@ class TestAgentSkipsPersistenceForLargeFailedSessions:
         approx_tokens = 100000  # Large session, but not a 400
         api_messages = [{"role": "user", "content": "x"}] * 100
 
-        should_skip = status_code == 400 and (approx_tokens > 50000 or len(api_messages) > 80)
+        should_skip = status_code == 400 and (
+            approx_tokens > 50000 or len(api_messages) > 80
+        )
         assert not should_skip

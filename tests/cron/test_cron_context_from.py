@@ -18,6 +18,7 @@ def cron_env(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
     import cron.jobs as jobs_mod
+
     monkeypatch.setattr(jobs_mod, "HERMES_DIR", hermes_home)
     monkeypatch.setattr(jobs_mod, "CRON_DIR", hermes_home / "cron")
     monkeypatch.setattr(jobs_mod, "JOBS_FILE", hermes_home / "cron" / "jobs.json")
@@ -168,7 +169,9 @@ class TestBuildJobPromptContextFrom:
         job_a = create_job(prompt="Find data", schedule="every 1h")
         out_dir = OUTPUT_DIR / job_a["id"]
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "2026-04-22_10-00-00.md").write_text("Context data", encoding="utf-8")
+        (out_dir / "2026-04-22_10-00-00.md").write_text(
+            "Context data", encoding="utf-8"
+        )
 
         job_b = create_job(
             prompt="Process the data above",
@@ -215,6 +218,7 @@ class TestBuildJobPromptContextFrom:
 
         # Simulate file deleted between glob() and read_text()
         original_read = Path.read_text
+
         def mock_read_text(self, *args, **kwargs):
             if self.suffix == ".md":
                 raise FileNotFoundError("file deleted mid-read")
@@ -243,6 +247,7 @@ class TestBuildJobPromptContextFrom:
 
         # Simulate permission error on read
         original_read = Path.read_text
+
         def mock_read_text(self, *args, **kwargs):
             if self.suffix == ".md":
                 raise PermissionError("permission denied")
@@ -268,7 +273,6 @@ class TestBuildJobPromptContextFrom:
         assert "etc/passwd" not in prompt
 
 
-
 class TestUpdateContextFrom:
     """Verify the cronjob tool's `update` action wires context_from through.
 
@@ -285,11 +289,13 @@ class TestUpdateContextFrom:
         job_b = create_job(prompt="Summarize", schedule="every 2h")
         assert job_b.get("context_from") is None
 
-        result = json.loads(cronjob(
-            action="update",
-            job_id=job_b["id"],
-            context_from=job_a["id"],
-        ))
+        result = json.loads(
+            cronjob(
+                action="update",
+                job_id=job_b["id"],
+                context_from=job_a["id"],
+            )
+        )
         assert result["success"] is True
 
         reloaded = get_job(job_b["id"])
@@ -303,15 +309,19 @@ class TestUpdateContextFrom:
         job_a = create_job(prompt="Find news", schedule="every 1h")
         job_a2 = create_job(prompt="Find weather", schedule="every 1h")
         job_b = create_job(
-            prompt="Summarize", schedule="every 2h", context_from=job_a["id"],
+            prompt="Summarize",
+            schedule="every 2h",
+            context_from=job_a["id"],
         )
         assert job_b["context_from"] == [job_a["id"]]
 
-        result = json.loads(cronjob(
-            action="update",
-            job_id=job_b["id"],
-            context_from=[job_a2["id"]],
-        ))
+        result = json.loads(
+            cronjob(
+                action="update",
+                job_id=job_b["id"],
+                context_from=[job_a2["id"]],
+            )
+        )
         assert result["success"] is True
         assert get_job(job_b["id"])["context_from"] == [job_a2["id"]]
 
@@ -322,15 +332,19 @@ class TestUpdateContextFrom:
 
         job_a = create_job(prompt="Find news", schedule="every 1h")
         job_b = create_job(
-            prompt="Summarize", schedule="every 2h", context_from=job_a["id"],
+            prompt="Summarize",
+            schedule="every 2h",
+            context_from=job_a["id"],
         )
         assert get_job(job_b["id"])["context_from"] == [job_a["id"]]
 
-        result = json.loads(cronjob(
-            action="update",
-            job_id=job_b["id"],
-            context_from=[],
-        ))
+        result = json.loads(
+            cronjob(
+                action="update",
+                job_id=job_b["id"],
+                context_from=[],
+            )
+        )
         assert result["success"] is True
         assert get_job(job_b["id"])["context_from"] is None
 
@@ -341,14 +355,18 @@ class TestUpdateContextFrom:
 
         job_a = create_job(prompt="Find news", schedule="every 1h")
         job_b = create_job(
-            prompt="Summarize", schedule="every 2h", context_from=job_a["id"],
+            prompt="Summarize",
+            schedule="every 2h",
+            context_from=job_a["id"],
         )
 
-        result = json.loads(cronjob(
-            action="update",
-            job_id=job_b["id"],
-            context_from="",
-        ))
+        result = json.loads(
+            cronjob(
+                action="update",
+                job_id=job_b["id"],
+                context_from="",
+            )
+        )
         assert result["success"] is True
         assert get_job(job_b["id"])["context_from"] is None
 
@@ -359,11 +377,13 @@ class TestUpdateContextFrom:
 
         job_b = create_job(prompt="Summarize", schedule="every 2h")
 
-        result = json.loads(cronjob(
-            action="update",
-            job_id=job_b["id"],
-            context_from=["deadbeef0000"],
-        ))
+        result = json.loads(
+            cronjob(
+                action="update",
+                job_id=job_b["id"],
+                context_from=["deadbeef0000"],
+            )
+        )
         assert result["success"] is False
         assert "not found" in result["error"]
 
@@ -375,15 +395,19 @@ class TestUpdateContextFrom:
 
         job_a = create_job(prompt="Find news", schedule="every 1h")
         job_b = create_job(
-            prompt="Summarize", schedule="every 2h", context_from=job_a["id"],
+            prompt="Summarize",
+            schedule="every 2h",
+            context_from=job_a["id"],
         )
 
         # Update an unrelated field
-        result = json.loads(cronjob(
-            action="update",
-            job_id=job_b["id"],
-            prompt="Summarize v2",
-        ))
+        result = json.loads(
+            cronjob(
+                action="update",
+                job_id=job_b["id"],
+                prompt="Summarize v2",
+            )
+        )
         assert result["success"] is True
         reloaded = get_job(job_b["id"])
         assert reloaded["prompt"] == "Summarize v2"

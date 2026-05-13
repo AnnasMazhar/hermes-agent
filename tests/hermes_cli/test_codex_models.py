@@ -13,16 +13,14 @@ def test_get_codex_model_ids_prioritizes_default_and_cache(tmp_path, monkeypatch
     codex_home.mkdir(parents=True, exist_ok=True)
     (codex_home / "config.toml").write_text('model = "gpt-5.2-codex"\n')
     (codex_home / "models_cache.json").write_text(
-        json.dumps(
-            {
-                "models": [
-                    {"slug": "gpt-5.3-codex", "priority": 20, "supported_in_api": True},
-                    {"slug": "gpt-5.1-codex", "priority": 5, "supported_in_api": True},
-                    {"slug": "gpt-5.4", "priority": 1, "supported_in_api": True},
-                    {"slug": "gpt-5-hidden-codex", "priority": 2, "visibility": "hidden"},
-                ]
-            }
-        )
+        json.dumps({
+            "models": [
+                {"slug": "gpt-5.3-codex", "priority": 20, "supported_in_api": True},
+                {"slug": "gpt-5.1-codex", "priority": 5, "supported_in_api": True},
+                {"slug": "gpt-5.4", "priority": 1, "supported_in_api": True},
+                {"slug": "gpt-5-hidden-codex", "priority": 2, "visibility": "hidden"},
+            ]
+        })
     )
     monkeypatch.setenv("CODEX_HOME", str(codex_home))
 
@@ -42,6 +40,7 @@ def test_setup_wizard_codex_import_resolves():
     # This mirrors the exact import used in hermes_cli/setup.py line 873.
     # A prior bug had 'get_codex_models' (wrong) instead of 'get_codex_model_ids'.
     from hermes_cli.codex_models import get_codex_model_ids as setup_import
+
     assert callable(setup_import)
 
 
@@ -109,7 +108,9 @@ def test_model_command_uses_runtime_access_token_for_codex_list(monkeypatch):
     assert captured["current_model"] == "openai/gpt-5.4"
 
 
-def test_model_command_prompts_to_reuse_or_reauthenticate_codex_session(monkeypatch, capsys):
+def test_model_command_prompts_to_reuse_or_reauthenticate_codex_session(
+    monkeypatch, capsys
+):
     from hermes_cli.main import _model_flow_openai_codex
 
     captured = {"login_calls": 0}
@@ -178,7 +179,9 @@ def test_model_command_uses_existing_codex_session_without_relogin(monkeypatch):
     )
     monkeypatch.setattr(
         "hermes_cli.auth._login_openai_codex",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not reauthenticate")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("should not reauthenticate")
+        ),
     )
 
     _model_flow_openai_codex({}, current_model="gpt-5.4")
@@ -290,23 +293,33 @@ class TestNormalizeModelForProvider:
     def test_default_model_replaced(self):
         """No model configured (empty default) gets swapped for codex."""
         import cli as _cli_mod
+
         _clean_config = {
             "model": {
                 "default": "",
                 "base_url": "",
                 "provider": "auto",
             },
-            "display": {"compact": False, "tool_progress": "all", "resume_display": "full"},
+            "display": {
+                "compact": False,
+                "tool_progress": "all",
+                "resume_display": "full",
+            },
             "agent": {},
             "terminal": {"env_type": "local"},
         }
         # Don't pass model= so _model_is_default is True
         with (
             patch("cli.get_tool_definitions", return_value=[]),
-            patch.dict("os.environ", {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}, clear=False),
+            patch.dict(
+                "os.environ",
+                {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""},
+                clear=False,
+            ),
             patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
         ):
             from cli import HermesCLI
+
             cli = HermesCLI()
 
         assert cli._model_is_default is True
@@ -322,22 +335,32 @@ class TestNormalizeModelForProvider:
     def test_default_fallback_when_api_fails(self):
         """No model configured falls back to gpt-5.3-codex when API unreachable."""
         import cli as _cli_mod
+
         _clean_config = {
             "model": {
                 "default": "",
                 "base_url": "",
                 "provider": "auto",
             },
-            "display": {"compact": False, "tool_progress": "all", "resume_display": "full"},
+            "display": {
+                "compact": False,
+                "tool_progress": "all",
+                "resume_display": "full",
+            },
             "agent": {},
             "terminal": {"env_type": "local"},
         }
         with (
             patch("cli.get_tool_definitions", return_value=[]),
-            patch.dict("os.environ", {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}, clear=False),
+            patch.dict(
+                "os.environ",
+                {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""},
+                clear=False,
+            ),
             patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
         ):
             from cli import HermesCLI
+
             cli = HermesCLI()
 
         with patch(

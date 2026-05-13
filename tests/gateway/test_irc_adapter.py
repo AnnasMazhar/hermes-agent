@@ -24,7 +24,6 @@ _standalone_send = _irc_mod._standalone_send
 
 
 class TestIRCProtocolHelpers:
-
     def test_parse_simple_command(self):
         msg = _parse_irc_message("PING :server.example.com")
         assert msg["command"] == "PING"
@@ -58,7 +57,6 @@ class TestIRCProtocolHelpers:
 
 
 class TestIRCAdapterInit:
-
     def test_init_from_env(self, monkeypatch):
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_PORT", "6667")
@@ -67,6 +65,7 @@ class TestIRCAdapterInit:
         monkeypatch.setenv("IRC_USE_TLS", "false")
 
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(enabled=True)
         adapter = IRCAdapter(cfg)
 
@@ -78,10 +77,17 @@ class TestIRCAdapterInit:
 
     def test_init_from_config_extra(self, monkeypatch):
         # Clear any env vars
-        for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
+        for key in (
+            "IRC_SERVER",
+            "IRC_PORT",
+            "IRC_NICKNAME",
+            "IRC_CHANNEL",
+            "IRC_USE_TLS",
+        ):
             monkeypatch.delenv(key, raising=False)
 
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -104,6 +110,7 @@ class TestIRCAdapterInit:
         monkeypatch.setenv("IRC_SERVER", "env-server.net")
 
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(
             enabled=True,
             extra={"server": "config-server.net", "channel": "#ch"},
@@ -113,12 +120,18 @@ class TestIRCAdapterInit:
 
 
 class TestIRCAdapterSend:
-
     @pytest.fixture
     def adapter(self, monkeypatch):
-        for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
+        for key in (
+            "IRC_SERVER",
+            "IRC_PORT",
+            "IRC_NICKNAME",
+            "IRC_CHANNEL",
+            "IRC_USE_TLS",
+        ):
             monkeypatch.delenv(key, raising=False)
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -169,12 +182,18 @@ class TestIRCAdapterSend:
 
 
 class TestIRCAdapterMessageParsing:
-
     @pytest.fixture
     def adapter(self, monkeypatch):
-        for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
+        for key in (
+            "IRC_SERVER",
+            "IRC_PORT",
+            "IRC_NICKNAME",
+            "IRC_CHANNEL",
+            "IRC_USE_TLS",
+        ):
             monkeypatch.delenv(key, raising=False)
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -305,9 +324,16 @@ class TestIRCAdapterMessageParsing:
     @pytest.mark.asyncio
     async def test_allowed_users_case_insensitive(self, monkeypatch):
         """Allowlist should match nicks case-insensitively."""
-        for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
+        for key in (
+            "IRC_SERVER",
+            "IRC_PORT",
+            "IRC_NICKNAME",
+            "IRC_CHANNEL",
+            "IRC_USE_TLS",
+        ):
             monkeypatch.delenv(key, raising=False)
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -338,9 +364,16 @@ class TestIRCAdapterMessageParsing:
     @pytest.mark.asyncio
     async def test_unauthorized_user_blocked(self, monkeypatch):
         """Nicks not in allowlist should be ignored."""
-        for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
+        for key in (
+            "IRC_SERVER",
+            "IRC_PORT",
+            "IRC_NICKNAME",
+            "IRC_CHANNEL",
+            "IRC_USE_TLS",
+        ):
             monkeypatch.delenv(key, raising=False)
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -384,12 +417,12 @@ class TestIRCAdapterMessageParsing:
 
 
 class TestIRCAdapterSplitting:
-
     def test_split_respects_byte_limit(self):
         """Multi-byte characters should not exceed IRC byte limit."""
         # 100 japanese chars = 300 bytes in utf-8
         text = "あ" * 100
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(enabled=True, extra={"server": "x", "channel": "#x"})
         adapter = IRCAdapter(cfg)
         adapter._current_nick = "bot"
@@ -401,6 +434,7 @@ class TestIRCAdapterSplitting:
     def test_split_prefers_word_boundary(self):
         text = "hello world foo bar baz qux"
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(enabled=True, extra={"server": "x", "channel": "#x"})
         adapter = IRCAdapter(cfg)
         adapter._current_nick = "bot"
@@ -411,7 +445,6 @@ class TestIRCAdapterSplitting:
 
 
 class TestIRCProtocolHelpersExtra:
-
     def test_parse_malformed_no_space(self):
         """A line starting with : but no space should not crash."""
         msg = _parse_irc_message(":justaprefix")
@@ -427,7 +460,6 @@ class TestIRCProtocolHelpersExtra:
 
 
 class TestIRCAdapterMarkdown:
-
     def test_strip_bold(self):
         assert IRCAdapter._strip_markdown("**bold**") == "bold"
 
@@ -450,7 +482,6 @@ class TestIRCAdapterMarkdown:
 
 
 class TestIRCRequirements:
-
     def test_check_requirements_with_env(self, monkeypatch):
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#test")
@@ -470,6 +501,7 @@ class TestIRCRequirements:
         for key in ("IRC_SERVER", "IRC_CHANNEL"):
             monkeypatch.delenv(key, raising=False)
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(extra={"server": "irc.test.net", "channel": "#test"})
         assert validate_config(cfg) is True
 
@@ -477,6 +509,7 @@ class TestIRCRequirements:
         for key in ("IRC_SERVER", "IRC_CHANNEL"):
             monkeypatch.delenv(key, raising=False)
         from gateway.config import PlatformConfig
+
         cfg = PlatformConfig(extra={})
         assert validate_config(cfg) is False
 
@@ -500,7 +533,11 @@ class TestIRCPluginRegistration:
         register(ctx)
         ctx.register_platform.assert_called_once()
         call_kwargs = ctx.register_platform.call_args
-        assert call_kwargs[1]["name"] == "irc" or call_kwargs[0][0] == "irc" if call_kwargs[0] else call_kwargs[1]["name"] == "irc"
+        assert (
+            call_kwargs[1]["name"] == "irc" or call_kwargs[0][0] == "irc"
+            if call_kwargs[0]
+            else call_kwargs[1]["name"] == "irc"
+        )
 
 
 # ── _standalone_send (out-of-process cron delivery) ──────────────────────
@@ -550,9 +587,10 @@ class _FakeIRCConnection:
 
 
 class TestIRCStandaloneSend:
-
     @pytest.mark.asyncio
-    async def test_standalone_send_completes_handshake_and_sends_privmsg(self, monkeypatch):
+    async def test_standalone_send_completes_handshake_and_sends_privmsg(
+        self, monkeypatch
+    ):
         from gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
@@ -581,8 +619,10 @@ class TestIRCStandaloneSend:
         # NICK uses the cron-suffixed identity to avoid colliding with the
         # long-running gateway adapter that may already hold the nickname.
         assert any(line.startswith("NICK hermesbot-cron") for line in sent_lines)
-        assert any(line.startswith("USER hermesbot-cron 0 * :Hermes Agent (cron)")
-                   for line in sent_lines)
+        assert any(
+            line.startswith("USER hermesbot-cron 0 * :Hermes Agent (cron)")
+            for line in sent_lines
+        )
         assert any(line == "PRIVMSG #cron :hello from cron" for line in sent_lines)
         assert any(line.startswith("QUIT ") for line in sent_lines)
 
@@ -603,7 +643,9 @@ class TestIRCStandaloneSend:
         assert "IRC_SERVER" in result["error"] or "IRC_CHANNEL" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_standalone_send_returns_error_on_registration_timeout(self, monkeypatch):
+    async def test_standalone_send_returns_error_on_registration_timeout(
+        self, monkeypatch
+    ):
         from gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
@@ -636,7 +678,10 @@ class TestIRCStandaloneSend:
         )
 
         assert "error" in result
-        assert "registration" in result["error"].lower() or "timeout" in result["error"].lower()
+        assert (
+            "registration" in result["error"].lower()
+            or "timeout" in result["error"].lower()
+        )
 
     @pytest.mark.asyncio
     async def test_standalone_send_rejects_crlf_in_chat_id(self, monkeypatch):
@@ -717,8 +762,18 @@ class TestIRCStandaloneSend:
 
         assert result["success"] is True
         sent_lines = b"".join(conn.writes).decode("utf-8").splitlines()
-        join_idx = next((i for i, line in enumerate(sent_lines) if line.startswith("JOIN #cron")), None)
-        privmsg_idx = next((i for i, line in enumerate(sent_lines) if line.startswith("PRIVMSG #cron")), None)
+        join_idx = next(
+            (i for i, line in enumerate(sent_lines) if line.startswith("JOIN #cron")),
+            None,
+        )
+        privmsg_idx = next(
+            (
+                i
+                for i, line in enumerate(sent_lines)
+                if line.startswith("PRIVMSG #cron")
+            ),
+            None,
+        )
         assert join_idx is not None, "JOIN must be sent for channel targets"
         assert privmsg_idx is not None
         assert join_idx < privmsg_idx, "JOIN must precede PRIVMSG"
