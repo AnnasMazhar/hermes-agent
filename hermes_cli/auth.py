@@ -5067,7 +5067,8 @@ def _minimax_pkce_pair() -> tuple:
 
     verifier = secrets.token_urlsafe(64)[:96]
     challenge = (
-        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+        base64
+        .urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
         .decode()
         .rstrip("=")
     )

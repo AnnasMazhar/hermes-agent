@@ -71,7 +71,11 @@ pip install -e .
 
 ```python
 from llava.model.builder import load_pretrained_model
-from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
+from llava.mm_utils import (
+    get_model_name_from_path,
+    process_images,
+    tokenizer_image_token,
+)
 from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
 from llava.conversation import conv_templates
 from PIL import Image
@@ -82,7 +86,7 @@ model_path = "liuhaotian/llava-v1.5-7b"
 tokenizer, model, image_processor, context_len = load_pretrained_model(
     model_path=model_path,
     model_base=None,
-    model_name=get_model_name_from_path(model_path)
+    model_name=get_model_name_from_path(model_path),
 )
 
 # Load image
@@ -97,7 +101,11 @@ conv.append_message(conv.roles[1], None)
 prompt = conv.get_prompt()
 
 # Generate response
-input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(model.device)
+input_ids = (
+    tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
+    .unsqueeze(0)
+    .to(model.device)
+)
 
 with torch.inference_mode():
     output_ids = model.generate(
@@ -105,7 +113,7 @@ with torch.inference_mode():
         images=image_tensor,
         do_sample=True,
         temperature=0.2,
-        max_new_tokens=512
+        max_new_tokens=512,
     )
 
 response = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
@@ -236,11 +244,11 @@ tokenizer, model, image_processor, context_len = load_pretrained_model(
     model_path="liuhaotian/llava-v1.5-13b",
     model_base=None,
     model_name=get_model_name_from_path("liuhaotian/llava-v1.5-13b"),
-    load_4bit=True  # Reduces VRAM ~4×
+    load_4bit=True,  # Reduces VRAM ~4×
 )
 
 # 8-bit quantization
-load_8bit=True  # Reduces VRAM ~2×
+load_8bit = True  # Reduces VRAM ~2×
 ```
 
 ## Best practices
@@ -288,10 +296,12 @@ LLaVA achieves competitive scores on:
 ```python
 from langchain.llms.base import LLM
 
+
 class LLaVALLM(LLM):
     def _call(self, prompt, stop=None):
         # Custom LLaVA inference
         return response
+
 
 llm = LLaVALLM()
 ```
@@ -301,14 +311,14 @@ llm = LLaVALLM()
 ```python
 import gradio as gr
 
+
 def chat(image, text, history):
     response = ask_llava(model, image, text)
     return response
 
+
 demo = gr.ChatInterface(
-    chat,
-    additional_inputs=[gr.Image(type="pil")],
-    title="LLaVA Chat"
+    chat, additional_inputs=[gr.Image(type="pil")], title="LLaVA Chat"
 )
 demo.launch()
 ```

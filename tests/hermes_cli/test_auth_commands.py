@@ -22,7 +22,8 @@ def _jwt_with_email(email: str) -> str:
         base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}').rstrip(b"=").decode()
     )
     payload = (
-        base64.urlsafe_b64encode(json.dumps({"email": email}).encode())
+        base64
+        .urlsafe_b64encode(json.dumps({"email": email}).encode())
         .rstrip(b"=")
         .decode()
     )
@@ -656,9 +657,11 @@ def test_auth_list_does_not_call_mutating_select(monkeypatch, capsys):
 
     monkeypatch.setattr(
         "hermes_cli.auth_commands.load_pool",
-        lambda provider: _Pool()
-        if provider == "openrouter"
-        else type("_EmptyPool", (), {"entries": lambda self: []})(),
+        lambda provider: (
+            _Pool()
+            if provider == "openrouter"
+            else type("_EmptyPool", (), {"entries": lambda self: []})()
+        ),
     )
 
     class _Args:

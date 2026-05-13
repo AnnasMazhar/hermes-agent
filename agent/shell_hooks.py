@@ -852,7 +852,8 @@ def script_mtime_iso(command: str) -> Optional[str]:
     try:
         expanded = os.path.expanduser(path)
         return (
-            datetime.fromtimestamp(
+            datetime
+            .fromtimestamp(
                 os.path.getmtime(expanded),
                 tz=timezone.utc,
             )

@@ -62,7 +62,8 @@ class TestPkce:
 
         verifier, challenge = _generate_pkce_pair()
         expected = (
-            base64.urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest())
+            base64
+            .urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest())
             .rstrip(b"=")
             .decode("ascii")
         )

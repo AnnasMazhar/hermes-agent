@@ -618,9 +618,11 @@ def test_run_doctor_termux_does_not_mark_browser_available_without_agent_browser
     monkeypatch.setattr(
         doctor_mod.shutil,
         "which",
-        lambda cmd: "/data/data/com.termux/files/usr/bin/node"
-        if cmd in {"node", "npm"}
-        else None,
+        lambda cmd: (
+            "/data/data/com.termux/files/usr/bin/node"
+            if cmd in {"node", "npm"}
+            else None
+        ),
     )
 
     fake_model_tools = types.SimpleNamespace(

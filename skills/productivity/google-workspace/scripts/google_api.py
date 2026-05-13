@@ -253,7 +253,8 @@ def gmail_search(args):
 
     service = build_service("gmail", "v1")
     results = (
-        service.users()
+        service
+        .users()
         .messages()
         .list(userId="me", q=args.query, maxResults=args.max)
         .execute()
@@ -266,7 +267,8 @@ def gmail_search(args):
     output = []
     for msg_meta in messages:
         msg = (
-            service.users()
+            service
+            .users()
             .messages()
             .get(
                 userId="me",
@@ -312,7 +314,8 @@ def gmail_get(args):
 
     service = build_service("gmail", "v1")
     msg = (
-        service.users()
+        service
+        .users()
         .messages()
         .get(userId="me", id=args.message_id, format="full")
         .execute()
@@ -438,7 +441,8 @@ def gmail_reply(args):
 
     service = build_service("gmail", "v1")
     original = (
-        service.users()
+        service
+        .users()
         .messages()
         .get(
             userId="me",
@@ -522,7 +526,8 @@ def gmail_modify(args):
 
     service = build_service("gmail", "v1")
     result = (
-        service.users()
+        service
+        .users()
         .messages()
         .modify(userId="me", id=args.message_id, body=body)
         .execute()
@@ -577,7 +582,8 @@ def calendar_list(args):
 
     service = build_service("calendar", "v3")
     results = (
-        service.events()
+        service
+        .events()
         .list(
             calendarId=args.calendar,
             timeMin=time_min,
@@ -690,7 +696,8 @@ def drive_search(args):
 
     service = build_service("drive", "v3")
     results = (
-        service.files()
+        service
+        .files()
         .list(
             q=query,
             pageSize=args.max,
@@ -741,7 +748,8 @@ def drive_upload(args):
     service = build_service("drive", "v3")
     media = MediaFileUpload(str(local_path), mimetype=mime, resumable=True)
     result = (
-        service.files()
+        service
+        .files()
         .create(
             body=metadata,
             media_body=media,
@@ -912,7 +920,8 @@ def drive_share(args):
 
     service = build_service("drive", "v3")
     result = (
-        service.permissions()
+        service
+        .permissions()
         .create(
             fileId=args.file_id,
             body=permission,
@@ -1008,7 +1017,8 @@ def contacts_list(args):
 
     service = build_service("people", "v1")
     results = (
-        service.people()
+        service
+        .people()
         .connections()
         .list(
             resourceName="people/me",
@@ -1046,7 +1056,8 @@ def sheets_get(args):
 
     service = build_service("sheets", "v4")
     result = (
-        service.spreadsheets()
+        service
+        .spreadsheets()
         .values()
         .get(
             spreadsheetId=args.sheet_id,
@@ -1084,7 +1095,8 @@ def sheets_update(args):
 
     service = build_service("sheets", "v4")
     result = (
-        service.spreadsheets()
+        service
+        .spreadsheets()
         .values()
         .update(
             spreadsheetId=args.sheet_id,
@@ -1130,7 +1142,8 @@ def sheets_append(args):
 
     service = build_service("sheets", "v4")
     result = (
-        service.spreadsheets()
+        service
+        .spreadsheets()
         .values()
         .append(
             spreadsheetId=args.sheet_id,
@@ -1172,7 +1185,8 @@ def sheets_create(args):
 
     service = build_service("sheets", "v4")
     result = (
-        service.spreadsheets()
+        service
+        .spreadsheets()
         .create(
             body=body,
             fields="spreadsheetId,properties,spreadsheetUrl",

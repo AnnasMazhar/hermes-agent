@@ -43,7 +43,8 @@ def _build_request(method: str, uri: str, paths=None, queries=None, body=None):
     http_method = HttpMethod.GET if method == "GET" else HttpMethod.POST
 
     builder = (
-        BaseRequest.builder()
+        BaseRequest
+        .builder()
         .http_method(http_method)
         .uri(uri)
         .token_types({AccessTokenType.TENANT})

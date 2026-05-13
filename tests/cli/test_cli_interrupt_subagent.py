@@ -117,9 +117,10 @@ class TestCLISubagentInterrupt(unittest.TestCase):
                     mock_instance._active_children_lock = threading.Lock()
                     mock_instance.quiet_mode = True
                     mock_instance.run_conversation = mock_child_run_conversation
-                    mock_instance.interrupt = lambda msg=None: setattr(
-                        mock_instance, "_interrupt_requested", True
-                    ) or setattr(mock_instance, "_interrupt_message", msg)
+                    mock_instance.interrupt = lambda msg=None: (
+                        setattr(mock_instance, "_interrupt_requested", True)
+                        or setattr(mock_instance, "_interrupt_message", msg)
+                    )
                     mock_instance.tools = []
                     MockAgent.return_value = mock_instance
 

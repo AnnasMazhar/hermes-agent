@@ -31,9 +31,9 @@ class TestChromeDebugLaunch:
         with (
             patch(
                 "hermes_cli.browser_connect.shutil.which",
-                side_effect=lambda name: r"C:\Chrome\chrome.exe"
-                if name == "chrome.exe"
-                else None,
+                side_effect=lambda name: (
+                    r"C:\Chrome\chrome.exe" if name == "chrome.exe" else None
+                ),
             ),
             patch(
                 "hermes_cli.browser_connect.os.path.isfile",
@@ -85,9 +85,9 @@ class TestChromeDebugLaunch:
         with (
             patch(
                 "hermes_cli.browser_connect.shutil.which",
-                side_effect=lambda name: "/usr/bin/chromium"
-                if name == "chromium"
-                else None,
+                side_effect=lambda name: (
+                    "/usr/bin/chromium" if name == "chromium" else None
+                ),
             ),
             patch(
                 "hermes_cli.browser_connect.os.path.isfile",

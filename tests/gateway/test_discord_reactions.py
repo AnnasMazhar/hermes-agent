@@ -28,8 +28,8 @@ def _ensure_discord_mock():
     discord_mod.ForumChannel = type("ForumChannel", (), {})
     discord_mod.Interaction = object
     discord_mod.app_commands = SimpleNamespace(
-        describe=lambda **kwargs: (lambda fn: fn),
-        choices=lambda **kwargs: (lambda fn: fn),
+        describe=lambda **kwargs: lambda fn: fn,
+        choices=lambda **kwargs: lambda fn: fn,
         Choice=lambda **kwargs: SimpleNamespace(**kwargs),
     )
 

@@ -177,8 +177,8 @@ def test_config_enabled_hard_stop_concurrent_path_does_not_submit_blocked_calls_
         name,
         args,
     ))
-    agent.tool_progress_callback = (
-        lambda event, name, preview, args, **kw: progress_events.append((
+    agent.tool_progress_callback = lambda event, name, preview, args, **kw: (
+        progress_events.append((
             event,
             name,
             args,

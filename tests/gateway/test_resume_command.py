@@ -207,8 +207,8 @@ class TestHandleResumeCommand:
             current_session_id="current_session_001",
             event=event,
         )
-        runner.session_store.load_transcript.side_effect = (
-            lambda session_id: [{"role": "user", "content": "hello from continuation"}]
+        runner.session_store.load_transcript.side_effect = lambda session_id: (
+            [{"role": "user", "content": "hello from continuation"}]
             if session_id == "compressed_child"
             else []
         )

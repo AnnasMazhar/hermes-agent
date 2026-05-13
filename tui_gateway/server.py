@@ -1629,13 +1629,13 @@ def _agent_cbs(sid: str) -> dict:
         tool_complete_callback=lambda tc_id, name, args, result: _on_tool_complete(
             sid, tc_id, name, args, result
         ),
-        tool_progress_callback=lambda event_type,
-        name=None,
-        preview=None,
-        args=None,
-        **kwargs: _on_tool_progress(sid, event_type, name, preview, args, **kwargs),
-        tool_gen_callback=lambda name: _tool_progress_enabled(sid)
-        and _emit("tool.generating", sid, {"name": name}),
+        tool_progress_callback=lambda event_type, name=None, preview=None, args=None, **kwargs: (
+            _on_tool_progress(sid, event_type, name, preview, args, **kwargs)
+        ),
+        tool_gen_callback=lambda name: (
+            _tool_progress_enabled(sid)
+            and _emit("tool.generating", sid, {"name": name})
+        ),
         thinking_callback=lambda text: _emit("thinking.delta", sid, {"text": text}),
         reasoning_callback=lambda text: _emit("reasoning.delta", sid, {"text": text}),
         status_callback=lambda kind, text=None: _status_update(

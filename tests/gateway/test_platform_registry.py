@@ -87,9 +87,11 @@ class TestPlatformRegistry:
         return PlatformEntry(
             name=name,
             label=name.title(),
-            adapter_factory=lambda cfg, _m=adapter_mock: _m
-            if factory_ok
-            else (_ for _ in ()).throw(RuntimeError("factory error")),
+            adapter_factory=lambda cfg, _m=adapter_mock: (
+                _m
+                if factory_ok
+                else (_ for _ in ()).throw(RuntimeError("factory error"))
+            ),
             check_fn=lambda: check_ok,
             validate_config=lambda cfg: validate_ok,
             required_env=[],

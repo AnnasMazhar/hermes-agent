@@ -44,9 +44,9 @@ def _ensure_discord_mock():
                 self.parent = parent
 
         discord_mod.app_commands = SimpleNamespace(
-            describe=lambda **kwargs: (lambda fn: fn),
-            choices=lambda **kwargs: (lambda fn: fn),
-            autocomplete=lambda **kwargs: (lambda fn: fn),
+            describe=lambda **kwargs: lambda fn: fn,
+            choices=lambda **kwargs: lambda fn: fn,
+            autocomplete=lambda **kwargs: lambda fn: fn,
             Choice=lambda **kwargs: SimpleNamespace(**kwargs),
             Group=_FakeGroup,
             Command=_FakeCommand,
@@ -68,7 +68,7 @@ def _ensure_discord_mock():
     _app = getattr(sys.modules["discord"], "app_commands", None)
     if _app is not None and not hasattr(_app, "autocomplete"):
         try:
-            _app.autocomplete = lambda **kwargs: (lambda fn: fn)
+            _app.autocomplete = lambda **kwargs: lambda fn: fn
         except Exception:
             pass
 

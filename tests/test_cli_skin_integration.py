@@ -156,7 +156,9 @@ class TestCompactBannerSkinIntegration:
             patch.dict(
                 _build_compact_banner.__globals__,
                 {
-                    "format_banner_version_label": lambda: "Hermes Agent v1.0 (test) · upstream abc12345"
+                    "format_banner_version_label": lambda: (
+                        "Hermes Agent v1.0 (test) · upstream abc12345"
+                    )
                 },
             ),
         ):

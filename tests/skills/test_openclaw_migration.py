@@ -467,7 +467,8 @@ def test_migrator_can_rename_conflicting_imported_skill(tmp_path: Path):
     )
     assert renamed_skill.exists()
     assert (
-        existing_skill.joinpath("SKILL.md")
+        existing_skill
+        .joinpath("SKILL.md")
         .read_text(encoding="utf-8")
         .endswith("existing\n")
     )
@@ -515,7 +516,8 @@ def test_migrator_can_overwrite_conflicting_imported_skill_with_backup(tmp_path:
     report = migrator.migrate()
 
     assert (
-        existing_skill.joinpath("SKILL.md")
+        existing_skill
+        .joinpath("SKILL.md")
         .read_text(encoding="utf-8")
         .endswith("fresh\n")
     )

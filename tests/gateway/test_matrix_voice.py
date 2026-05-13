@@ -121,8 +121,8 @@ class TestMatrixVoiceMessageDetection:
         self.adapter._dm_rooms = {}
         self.adapter._message_handler = AsyncMock()
         # Mock _mxc_to_http to return a fake HTTP URL
-        self.adapter._mxc_to_http = (
-            lambda url: f"https://matrix.example.org/_matrix/media/v3/download/{url[6:]}"
+        self.adapter._mxc_to_http = lambda url: (
+            f"https://matrix.example.org/_matrix/media/v3/download/{url[6:]}"
         )
         # Mock client for authenticated download — download_media returns bytes directly
         self.adapter._client = MagicMock()
@@ -237,8 +237,8 @@ class TestMatrixVoiceCacheFallback:
         self.adapter._startup_ts = 0.0
         self.adapter._dm_rooms = {}
         self.adapter._message_handler = AsyncMock()
-        self.adapter._mxc_to_http = (
-            lambda url: f"https://matrix.example.org/_matrix/media/v3/download/{url[6:]}"
+        self.adapter._mxc_to_http = lambda url: (
+            f"https://matrix.example.org/_matrix/media/v3/download/{url[6:]}"
         )
         self.adapter._client = MagicMock()
         self.adapter._client.state_store = _make_state_store()

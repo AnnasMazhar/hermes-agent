@@ -57,9 +57,9 @@ class TestEnsureSingularityAvailable:
         with (
             patch(
                 "shutil.which",
-                side_effect=lambda n: "/usr/bin/apptainer"
-                if n == "apptainer"
-                else None,
+                side_effect=lambda n: (
+                    "/usr/bin/apptainer" if n == "apptainer" else None
+                ),
             ),
             patch("subprocess.run", return_value=fake_result),
         ):
@@ -72,9 +72,9 @@ class TestEnsureSingularityAvailable:
         with (
             patch(
                 "shutil.which",
-                side_effect=lambda n: "/usr/bin/apptainer"
-                if n == "apptainer"
-                else None,
+                side_effect=lambda n: (
+                    "/usr/bin/apptainer" if n == "apptainer" else None
+                ),
             ),
             patch("subprocess.run", return_value=fake_result),
         ):
@@ -86,9 +86,9 @@ class TestEnsureSingularityAvailable:
         with (
             patch(
                 "shutil.which",
-                side_effect=lambda n: "/usr/bin/apptainer"
-                if n == "apptainer"
-                else None,
+                side_effect=lambda n: (
+                    "/usr/bin/apptainer" if n == "apptainer" else None
+                ),
             ),
             patch(
                 "subprocess.run", side_effect=subprocess.TimeoutExpired("apptainer", 10)

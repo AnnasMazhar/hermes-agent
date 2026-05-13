@@ -712,7 +712,7 @@ class InsightsEngine:
         if sessions_with_duration:
             longest = max(
                 sessions_with_duration,
-                key=lambda s: (s["ended_at"] - s["started_at"]),
+                key=lambda s: s["ended_at"] - s["started_at"],
             )
             dur = longest["ended_at"] - longest["started_at"]
             top.append({

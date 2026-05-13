@@ -77,14 +77,17 @@ import pandas as pd
 df = pd.DataFrame({"text": ["Good document", "Bad doc", "Excellent text"]})
 dataset = DocumentDataset(df)
 
+
 # Quality filtering
 def quality_score(doc):
     return len(doc["text"].split()) > 5  # Filter short docs
+
 
 filtered = ScoreFilter(quality_score)(dataset)
 
 # Deduplication
 from nemo_curator.modules import ExactDuplicates
+
 deduped = ExactDuplicates()(filtered)
 
 # Save
@@ -100,7 +103,7 @@ from nemo_curator.filters import (
     WordCountFilter,
     RepeatedLinesFilter,
     UrlRatioFilter,
-    NonAlphaNumericFilter
+    NonAlphaNumericFilter,
 )
 
 # Apply 30+ heuristic filters
@@ -134,9 +137,9 @@ from nemo_curator.modules import FuzzyDuplicates
 fuzzy_dedup = FuzzyDuplicates(
     id_field="id",
     text_field="text",
-    num_hashes=260,      # MinHash parameters
+    num_hashes=260,  # MinHash parameters
     num_buckets=20,
-    hash_method="md5"
+    hash_method="md5",
 )
 
 deduped = fuzzy_dedup(dataset)
@@ -151,7 +154,7 @@ semantic_dedup = SemanticDuplicates(
     id_field="id",
     text_field="text",
     embedding_model="sentence-transformers/all-MiniLM-L6-v2",
-    threshold=0.8  # Cosine similarity threshold
+    threshold=0.8,  # Cosine similarity threshold
 )
 
 deduped = semantic_dedup(dataset)
@@ -166,7 +169,7 @@ from nemo_curator.modifiers import PIIRedactor
 # Redact personally identifiable information
 pii_redactor = PIIRedactor(
     supported_entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "PERSON", "LOCATION"],
-    anonymize_action="replace"  # or "redact"
+    anonymize_action="replace",  # or "redact"
 )
 
 redacted = Modify(pii_redactor)(dataset)
@@ -179,9 +182,7 @@ from nemo_curator.classifiers import QualityClassifier
 
 # Quality classification
 quality_clf = QualityClassifier(
-    model_path="nvidia/quality-classifier-deberta",
-    batch_size=256,
-    device="cuda"
+    model_path="nvidia/quality-classifier-deberta", batch_size=256, device="cuda"
 )
 
 # Filter low-quality documents
@@ -216,11 +217,7 @@ deduped = FuzzyDuplicates(...)(dataset)
 ### Image curation
 
 ```python
-from nemo_curator.image import (
-    AestheticFilter,
-    NSFWFilter,
-    CLIPEmbedder
-)
+from nemo_curator.image import AestheticFilter, NSFWFilter, CLIPEmbedder
 
 # Aesthetic scoring
 aesthetic_filter = AestheticFilter(threshold=5.0)
@@ -238,11 +235,7 @@ image_embeddings = clip_embedder(safe_images)
 ### Video curation
 
 ```python
-from nemo_curator.video import (
-    SceneDetector,
-    ClipExtractor,
-    InternVideo2Embedder
-)
+from nemo_curator.video import SceneDetector, ClipExtractor, InternVideo2Embedder
 
 # Detect scenes
 scene_detector = SceneDetector(threshold=27.0)
@@ -260,11 +253,7 @@ video_embeddings = video_embedder(clips)
 ### Audio curation
 
 ```python
-from nemo_curator.audio import (
-    ASRInference,
-    WERFilter,
-    DurationFilter
-)
+from nemo_curator.audio import ASRInference, WERFilter, DurationFilter
 
 # ASR transcription
 asr = ASRInference(model="nvidia/stt_en_fastconformer_hybrid_large_pc")
@@ -299,19 +288,15 @@ pipeline = [
     RepeatedLinesFilter(max_repeated_line_fraction=0.2),
     SymbolToWordRatioFilter(max_symbol_to_word_ratio=0.3),
     UrlRatioFilter(max_url_ratio=0.3),
-
     # 2. Language filtering
     LanguageIdentificationFilter(target_languages=["en"]),
-
     # 3. Deduplication
     ExactDuplicates(id_field="id", text_field="text"),
     FuzzyDuplicates(id_field="id", text_field="text", num_hashes=260),
-
     # 4. PII redaction
     PIIRedactor(),
-
     # 5. NSFW filtering
-    NSFWClassifier(threshold=0.8)
+    NSFWClassifier(threshold=0.8),
 ]
 
 # Execute

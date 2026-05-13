@@ -138,12 +138,14 @@ class TestSystemdServiceRefresh:
         monkeypatch.setattr(
             gateway_cli,
             "_wait_for_systemd_service_restart",
-            lambda system=False, previous_pid=None: calls.append((
-                "wait",
-                system,
-                previous_pid,
-            ))
-            or True,
+            lambda system=False, previous_pid=None: (
+                calls.append((
+                    "wait",
+                    system,
+                    previous_pid,
+                ))
+                or True
+            ),
         )
 
         def fake_run(cmd, check=True, **kwargs):
@@ -364,9 +366,11 @@ class TestGeneratedSystemdUnits:
         monkeypatch.setattr(
             gateway_cli.shutil,
             "which",
-            lambda cmd: "/home/test/.nvm/versions/node/v24.14.0/bin/node"
-            if cmd == "node"
-            else None,
+            lambda cmd: (
+                "/home/test/.nvm/versions/node/v24.14.0/bin/node"
+                if cmd == "node"
+                else None
+            ),
         )
 
         unit = gateway_cli.generate_systemd_unit(system=False)
@@ -878,12 +882,14 @@ class TestGatewaySystemServiceRouting:
         monkeypatch.setattr(
             gateway_cli,
             "_wait_for_systemd_service_restart",
-            lambda system=False, previous_pid=None: calls.append((
-                "wait",
-                system,
-                previous_pid,
-            ))
-            or True,
+            lambda system=False, previous_pid=None: (
+                calls.append((
+                    "wait",
+                    system,
+                    previous_pid,
+                ))
+                or True
+            ),
         )
 
         gateway_cli.systemd_restart()
@@ -930,18 +936,21 @@ class TestGatewaySystemServiceRouting:
         monkeypatch.setattr(
             gateway_cli,
             "_run_systemctl",
-            lambda args, **kwargs: calls.append(args)
-            or SimpleNamespace(stdout="", returncode=0),
+            lambda args, **kwargs: (
+                calls.append(args) or SimpleNamespace(stdout="", returncode=0)
+            ),
         )
         monkeypatch.setattr(
             gateway_cli,
             "_wait_for_systemd_service_restart",
-            lambda system=False, previous_pid=None: calls.append((
-                "wait",
-                system,
-                previous_pid,
-            ))
-            or True,
+            lambda system=False, previous_pid=None: (
+                calls.append((
+                    "wait",
+                    system,
+                    previous_pid,
+                ))
+                or True
+            ),
         )
 
         gateway_cli.systemd_restart()
@@ -2758,8 +2767,9 @@ class TestSystemScopeWizardPreCheck:
         monkeypatch.setattr(
             gateway_cli,
             "get_systemd_unit_path",
-            lambda system=False: (sys_dir if system else usr_dir)
-            / "hermes-gateway.service",
+            lambda system=False: (
+                (sys_dir if system else usr_dir) / "hermes-gateway.service"
+            ),
         )
 
     def test_non_root_with_only_system_unit_returns_true(self, tmp_path, monkeypatch):
@@ -2861,8 +2871,9 @@ class TestGatewayCommandCatchesSystemScopeError:
         monkeypatch.setattr(
             gateway_cli,
             "get_systemd_unit_path",
-            lambda system=False: (sys_dir if system else usr_dir)
-            / "hermes-gateway.service",
+            lambda system=False: (
+                (sys_dir if system else usr_dir) / "hermes-gateway.service"
+            ),
         )
         monkeypatch.setattr(gateway_cli.os, "geteuid", lambda: 1000)
         monkeypatch.setattr(gateway_cli, "supports_systemd_services", lambda: True)

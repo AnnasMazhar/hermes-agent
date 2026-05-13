@@ -219,7 +219,8 @@ def main(argv: list[str] | None = None) -> int:
 
             if mtype == "status":
                 qr = (
-                    mdata.get("status", {})
+                    mdata
+                    .get("status", {})
                     .get("exec_info", {})
                     .get("queue_remaining", "?")
                 )

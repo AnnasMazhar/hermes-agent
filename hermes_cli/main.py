@@ -3152,7 +3152,8 @@ def _model_flow_custom(config):
     if context_length_str:
         try:
             context_length = int(
-                context_length_str.replace(",", "")
+                context_length_str
+                .replace(",", "")
                 .replace("k", "000")
                 .replace("K", "000")
             )
@@ -8765,7 +8766,8 @@ def _report_dashboard_status() -> int:
                 if os.path.exists(cmdline_path):
                     with open(cmdline_path, "rb") as f:
                         cmdline = (
-                            f.read()
+                            f
+                            .read()
                             .replace(b"\x00", b" ")
                             .decode("utf-8", errors="replace")
                             .strip()

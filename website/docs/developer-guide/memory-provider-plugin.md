@@ -30,6 +30,7 @@ Your plugin implements the `MemoryProvider` abstract base class from `agent/memo
 ```python
 from agent.memory_provider import MemoryProvider
 
+
 class MyMemoryProvider(MemoryProvider):
     @property
     def name(self) -> str:
@@ -93,9 +94,9 @@ def get_config_schema(self):
         {
             "key": "api_key",
             "description": "My Provider API key",
-            "secret": True,           # → written to .env
+            "secret": True,  # → written to .env
             "required": True,
-            "env_var": "MY_API_KEY",   # explicit env var name
+            "env_var": "MY_API_KEY",  # explicit env var name
             "url": "https://my-provider.com/keys",  # where to get it
         },
         {
@@ -125,6 +126,7 @@ def save_config(self, values: dict, hermes_home: str) -> None:
     """Write non-secret config to your native location."""
     import json
     from pathlib import Path
+
     config_path = Path(hermes_home) / "my-provider.json"
     config_path.write_text(json.dumps(values, indent=2))
 ```
@@ -174,6 +176,7 @@ All storage paths **must** use the `hermes_home` kwarg from `initialize()`, not 
 ```python
 # CORRECT — profile-scoped
 from hermes_constants import get_hermes_home
+
 data_dir = get_hermes_home() / "my-provider"
 
 # WRONG — shared across all profiles
@@ -218,6 +221,7 @@ Memory provider plugins can register their own CLI subcommand tree (e.g. `hermes
 ```python
 # plugins/memory/my-provider/cli.py
 
+
 def my_command(args):
     """Handler dispatched by argparse."""
     sub = getattr(args, "my_command", None)
@@ -227,6 +231,7 @@ def my_command(args):
         print("Showing config...")
     else:
         print("Usage: hermes my-provider <status|config>")
+
 
 def register_cli(subparser) -> None:
     """Build the hermes my-provider argparse tree.

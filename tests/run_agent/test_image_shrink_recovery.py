@@ -130,8 +130,9 @@ class TestShrinkImagePartsHelper:
         resize_hits = {"count": 0}
         monkeypatch.setattr(
             "tools.vision_tools._resize_image_for_vision",
-            lambda *a, **kw: resize_hits.__setitem__("count", resize_hits["count"] + 1)
-            or small_url,
+            lambda *a, **kw: (
+                resize_hits.__setitem__("count", resize_hits["count"] + 1) or small_url
+            ),
             raising=False,
         )
 
@@ -236,8 +237,9 @@ class TestShrinkImagePartsHelper:
         resize_hits = {"count": 0}
         monkeypatch.setattr(
             "tools.vision_tools._resize_image_for_vision",
-            lambda *a, **kw: resize_hits.__setitem__("count", resize_hits["count"] + 1)
-            or "shrunk",
+            lambda *a, **kw: (
+                resize_hits.__setitem__("count", resize_hits["count"] + 1) or "shrunk"
+            ),
             raising=False,
         )
 

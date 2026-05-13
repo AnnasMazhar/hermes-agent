@@ -23,7 +23,7 @@ def _ensure_discord_mock():
     discord_mod.Thread = type("Thread", (), {})
     discord_mod.ForumChannel = type("ForumChannel", (), {})
     discord_mod.ui = SimpleNamespace(
-        View=object, button=lambda *a, **k: (lambda fn: fn), Button=object
+        View=object, button=lambda *a, **k: lambda fn: fn, Button=object
     )
     discord_mod.ButtonStyle = SimpleNamespace(
         success=1, primary=2, secondary=2, danger=3, green=1, grey=2, blurple=2, red=3
@@ -38,8 +38,8 @@ def _ensure_discord_mock():
     discord_mod.Interaction = object
     discord_mod.Embed = MagicMock
     discord_mod.app_commands = SimpleNamespace(
-        describe=lambda **kwargs: (lambda fn: fn),
-        choices=lambda **kwargs: (lambda fn: fn),
+        describe=lambda **kwargs: lambda fn: fn,
+        choices=lambda **kwargs: lambda fn: fn,
         Choice=lambda **kwargs: SimpleNamespace(**kwargs),
     )
 

@@ -180,7 +180,7 @@ def _ensure_discord_mock() -> None:
         View=_FakeView,
         Select=_FakeSelect,
         Button=_FakeButton,
-        button=lambda *a, **k: (lambda fn: fn),
+        button=lambda *a, **k: lambda fn: fn,
     )
     discord_mod.ButtonStyle = SimpleNamespace(
         success=1,
@@ -222,8 +222,8 @@ def _ensure_discord_mock() -> None:
             self.parent = parent
 
     discord_mod.app_commands = SimpleNamespace(
-        describe=lambda **kwargs: (lambda fn: fn),
-        choices=lambda **kwargs: (lambda fn: fn),
+        describe=lambda **kwargs: lambda fn: fn,
+        choices=lambda **kwargs: lambda fn: fn,
         Choice=lambda **kwargs: SimpleNamespace(**kwargs),
         Group=_FakeGroup,
         Command=_FakeCommand,

@@ -1074,7 +1074,8 @@ def _generate_pkce() -> tuple:
 
     verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode()
     challenge = (
-        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+        base64
+        .urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
         .rstrip(b"=")
         .decode()
     )

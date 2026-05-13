@@ -29,6 +29,7 @@ python environments/your_env.py process \
 
 ```python
 import json
+
 for line in open("/tmp/test_output.jsonl"):
     data = json.loads(line)
     print(f"Scores: {data.get('scores', [])}")
@@ -92,6 +93,7 @@ JSON results saved to the eval directory:
 
 ```python
 import json
+
 data = json.load(open("/tmp/eval_results/metrics.json"))
 for metric, value in data["results"]["all"].items():
     print(f"{metric}: {value}")
@@ -128,12 +130,13 @@ python environments/your_env.py process \
 
 ```python
 import json
+
 scores = []
 for line in open("data/trajectories.jsonl"):
     data = json.loads(line)
     scores.extend(data.get("scores", []))
 
-print(f"Total: {len(scores)}, Mean: {sum(scores)/len(scores):.3f}")
+print(f"Total: {len(scores)}, Mean: {sum(scores) / len(scores):.3f}")
 for bucket in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]:
     count = sum(1 for s in scores if abs(s - bucket) < 0.1)
     print(f"  {bucket:.1f}: {'█' * count} ({count})")
@@ -179,6 +182,7 @@ Verify imports and config before spending money on API calls:
 
 ```python
 from environments.your_env import YourEnv
+
 print(f"Name: {YourEnv.name}")
 cfg, servers = YourEnv.config_init()
 print(f"Toolsets: {cfg.enabled_toolsets}")

@@ -1677,7 +1677,8 @@ class FeishuAdapter(BasePlatformAdapter):
         if EventDispatcherHandler is None:
             return None
         return (
-            EventDispatcherHandler.builder(
+            EventDispatcherHandler
+            .builder(
                 self._encrypt_key,
                 self._verification_token,
             )
@@ -3094,12 +3095,14 @@ class FeishuAdapter(BasePlatformAdapter):
             )
 
             body = (
-                CreateMessageReactionRequestBody.builder()
+                CreateMessageReactionRequestBody
+                .builder()
                 .reaction_type({"emoji_type": emoji_type})
                 .build()
             )
             request = (
-                CreateMessageReactionRequest.builder()
+                CreateMessageReactionRequest
+                .builder()
                 .message_id(message_id)
                 .request_body(body)
                 .build()
@@ -3133,7 +3136,8 @@ class FeishuAdapter(BasePlatformAdapter):
             from lark_oapi.api.im.v1 import DeleteMessageReactionRequest
 
             request = (
-                DeleteMessageReactionRequest.builder()
+                DeleteMessageReactionRequest
+                .builder()
                 .message_id(message_id)
                 .reaction_id(reaction_id)
                 .build()
@@ -4334,7 +4338,8 @@ class FeishuAdapter(BasePlatformAdapter):
             return None
         try:
             req = (
-                BaseRequest.builder()
+                BaseRequest
+                .builder()
                 .http_method(HttpMethod.GET)
                 .uri("/open-apis/bot/v3/bots/basic_batch")
                 .queries([("bot_ids", oid) for oid in bot_ids])
@@ -4600,7 +4605,8 @@ class FeishuAdapter(BasePlatformAdapter):
         # uses via probe_bot().
         try:
             req = (
-                BaseRequest.builder()
+                BaseRequest
+                .builder()
                 .http_method(HttpMethod.GET)
                 .uri("/open-apis/bot/v3/info")
                 .token_types({AccessTokenType.TENANT})
@@ -4985,7 +4991,8 @@ class FeishuAdapter(BasePlatformAdapter):
 
     def _build_lark_client(self, domain: Any) -> Any:
         return (
-            lark.Client.builder()
+            lark.Client
+            .builder()
             .app_id(self._app_id)
             .app_secret(self._app_secret)
             .domain(domain)
@@ -5095,7 +5102,8 @@ class FeishuAdapter(BasePlatformAdapter):
     ) -> Any:
         if "GetMessageResourceRequest" in globals():
             return (
-                GetMessageResourceRequest.builder()
+                GetMessageResourceRequest
+                .builder()
                 .message_id(message_id)
                 .file_key(file_key)
                 .type(resource_type)
@@ -5117,7 +5125,8 @@ class FeishuAdapter(BasePlatformAdapter):
     ) -> Any:
         if "ReplyMessageRequestBody" in globals():
             return (
-                ReplyMessageRequestBody.builder()
+                ReplyMessageRequestBody
+                .builder()
                 .content(content)
                 .msg_type(msg_type)
                 .reply_in_thread(reply_in_thread)
@@ -5135,7 +5144,8 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_reply_message_request(message_id: str, request_body: Any) -> Any:
         if "ReplyMessageRequest" in globals():
             return (
-                ReplyMessageRequest.builder()
+                ReplyMessageRequest
+                .builder()
                 .message_id(message_id)
                 .request_body(request_body)
                 .build()
@@ -5146,7 +5156,8 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_update_message_body(*, msg_type: str, content: str) -> Any:
         if "UpdateMessageRequestBody" in globals():
             return (
-                UpdateMessageRequestBody.builder()
+                UpdateMessageRequestBody
+                .builder()
                 .msg_type(msg_type)
                 .content(content)
                 .build()
@@ -5157,7 +5168,8 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_update_message_request(message_id: str, request_body: Any) -> Any:
         if "UpdateMessageRequest" in globals():
             return (
-                UpdateMessageRequest.builder()
+                UpdateMessageRequest
+                .builder()
                 .message_id(message_id)
                 .request_body(request_body)
                 .build()
@@ -5170,7 +5182,8 @@ class FeishuAdapter(BasePlatformAdapter):
     ) -> Any:
         if "CreateMessageRequestBody" in globals():
             return (
-                CreateMessageRequestBody.builder()
+                CreateMessageRequestBody
+                .builder()
                 .receive_id(receive_id)
                 .msg_type(msg_type)
                 .content(content)
@@ -5188,7 +5201,8 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_create_message_request(receive_id_type: str, request_body: Any) -> Any:
         if "CreateMessageRequest" in globals():
             return (
-                CreateMessageRequest.builder()
+                CreateMessageRequest
+                .builder()
                 .receive_id_type(receive_id_type)
                 .request_body(request_body)
                 .build()
@@ -5201,7 +5215,8 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_image_upload_body(*, image_type: str, image: Any) -> Any:
         if "CreateImageRequestBody" in globals():
             return (
-                CreateImageRequestBody.builder()
+                CreateImageRequestBody
+                .builder()
                 .image_type(image_type)
                 .image(image)
                 .build()
@@ -5218,7 +5233,8 @@ class FeishuAdapter(BasePlatformAdapter):
     def _build_file_upload_body(*, file_type: str, file_name: str, file: Any) -> Any:
         if "CreateFileRequestBody" in globals():
             return (
-                CreateFileRequestBody.builder()
+                CreateFileRequestBody
+                .builder()
                 .file_type(file_type)
                 .file_name(file_name)
                 .file(file)
@@ -5464,7 +5480,8 @@ def _build_onboard_client(app_id: str, app_secret: str, domain: str) -> Any:
     """Build a lark Client for the given credentials and domain."""
     sdk_domain = LARK_DOMAIN if domain == "lark" else FEISHU_DOMAIN
     return (
-        lark.Client.builder()
+        lark.Client
+        .builder()
         .app_id(app_id)
         .app_secret(app_secret)
         .domain(sdk_domain)
@@ -5489,7 +5506,8 @@ def _probe_bot_sdk(app_id: str, app_secret: str, domain: str) -> Optional[dict]:
     try:
         client = _build_onboard_client(app_id, app_secret, domain)
         req = (
-            BaseRequest.builder()
+            BaseRequest
+            .builder()
             .http_method(HttpMethod.GET)
             .uri("/open-apis/bot/v3/info")
             .token_types({AccessTokenType.TENANT})

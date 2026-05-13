@@ -52,7 +52,8 @@ def _setup_hermes_auth(
 def _jwt_with_exp(exp_epoch: int) -> str:
     payload = {"exp": exp_epoch}
     encoded = (
-        base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8"))
+        base64
+        .urlsafe_b64encode(json.dumps(payload).encode("utf-8"))
         .rstrip(b"=")
         .decode("utf-8")
     )

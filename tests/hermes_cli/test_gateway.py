@@ -524,8 +524,9 @@ class TestStopProfileGateway:
         )
         monkeypatch.setattr(
             "gateway.status._pid_exists",
-            lambda pid: calls.__setitem__("alive_probes", calls["alive_probes"] + 1)
-            or True,
+            lambda pid: (
+                calls.__setitem__("alive_probes", calls["alive_probes"] + 1) or True
+            ),
         )
         monkeypatch.setattr("time.sleep", lambda _: None)
         monkeypatch.setattr(

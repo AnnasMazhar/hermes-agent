@@ -3357,7 +3357,8 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
 
                 # Generate a kebab-case key from the display name
                 key = (
-                    old_name.strip()
+                    old_name
+                    .strip()
                     .lower()
                     .replace(" ", "-")
                     .replace("(", "")

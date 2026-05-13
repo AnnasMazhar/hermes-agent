@@ -257,8 +257,10 @@ python environments/benchmarks/terminalbench_2/terminalbench2_env.py evaluate \
 ```python
 from environments.hermes_base_env import HermesAgentBaseEnv, HermesAgentEnvConfig
 
+
 class MyEnvConfig(HermesAgentEnvConfig):
     pass  # Add custom fields as needed
+
 
 class MyEnv(HermesAgentBaseEnv):
     name = "my-env"
@@ -294,6 +296,7 @@ class MyEnv(HermesAgentBaseEnv):
     async def evaluate(self, *args, **kwargs):
         # Periodic evaluation logic
         ...
+
 
 if __name__ == "__main__":
     MyEnv.cli()

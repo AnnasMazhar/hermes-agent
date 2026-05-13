@@ -99,9 +99,11 @@ class TestIsContainer:
         _real_open = builtins.open
         monkeypatch.setattr(
             "builtins.open",
-            lambda p, *a, **kw: _real_open(str(cgroup_file), *a, **kw)
-            if p == "/proc/1/cgroup"
-            else _real_open(p, *a, **kw),
+            lambda p, *a, **kw: (
+                _real_open(str(cgroup_file), *a, **kw)
+                if p == "/proc/1/cgroup"
+                else _real_open(p, *a, **kw)
+            ),
         )
         assert is_container() is True
 
@@ -116,9 +118,11 @@ class TestIsContainer:
         _real_open = builtins.open
         monkeypatch.setattr(
             "builtins.open",
-            lambda p, *a, **kw: _real_open(str(cgroup_file), *a, **kw)
-            if p == "/proc/1/cgroup"
-            else _real_open(p, *a, **kw),
+            lambda p, *a, **kw: (
+                _real_open(str(cgroup_file), *a, **kw)
+                if p == "/proc/1/cgroup"
+                else _real_open(p, *a, **kw)
+            ),
         )
         assert is_container() is False
 

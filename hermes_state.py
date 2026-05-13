@@ -962,7 +962,8 @@ class SessionDB:
             return exact["id"]
 
         escaped = (
-            session_id_or_prefix.replace("\\", "\\\\")
+            session_id_or_prefix
+            .replace("\\", "\\\\")
             .replace("%", "\\%")
             .replace("_", "\\_")
         )
@@ -2064,7 +2065,8 @@ class SessionDB:
                 # Short CJK query (1-2 chars) — trigram needs ≥3 CJK chars.
                 # Fall back to LIKE substring search.
                 escaped = (
-                    raw_query.replace("\\", "\\\\")
+                    raw_query
+                    .replace("\\", "\\\\")
                     .replace("%", "\\%")
                     .replace("_", "\\_")
                 )

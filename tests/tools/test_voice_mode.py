@@ -255,9 +255,11 @@ class TestDetectAudioEnvironment:
         monkeypatch.delenv("SSH_CONNECTION", raising=False)
         monkeypatch.setattr(
             "tools.voice_mode.shutil.which",
-            lambda cmd: "/data/data/com.termux/files/usr/bin/termux-microphone-record"
-            if cmd == "termux-microphone-record"
-            else None,
+            lambda cmd: (
+                "/data/data/com.termux/files/usr/bin/termux-microphone-record"
+                if cmd == "termux-microphone-record"
+                else None
+            ),
         )
         monkeypatch.setattr("tools.voice_mode._termux_api_app_installed", lambda: True)
         monkeypatch.setattr(

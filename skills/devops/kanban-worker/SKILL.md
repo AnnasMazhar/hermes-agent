@@ -66,8 +66,17 @@ kanban_complete(
     metadata={
         "pr_number": 123,
         "findings": [
-            {"severity": "critical", "file": "api/search.py", "line": 42, "issue": "raw SQL concat"},
-            {"severity": "high", "file": "api/settings.py", "issue": "missing CSRF middleware"},
+            {
+                "severity": "critical",
+                "file": "api/search.py",
+                "line": 42,
+                "issue": "raw SQL concat",
+            },
+            {
+                "severity": "high",
+                "file": "api/settings.py",
+                "issue": "missing CSRF middleware",
+            },
         ],
         "approved": False,
     },
@@ -96,7 +105,7 @@ kanban_complete(
 # BAD — claiming ids you don't have captured return values for.
 kanban_complete(
     summary="Created remediation cards t_a1b2c3d4, t_deadbeef",  # hallucinated
-    created_cards=["t_a1b2c3d4", "t_deadbeef"],                   # → gate rejects
+    created_cards=["t_a1b2c3d4", "t_deadbeef"],  # → gate rejects
 )
 ```
 
@@ -113,7 +122,9 @@ kanban_comment(
     task_id=os.environ["HERMES_KANBAN_TASK"],
     body="Full context: I have user IPs from Cloudflare headers but some users are behind NATs with thousands of peers. Keying on IP alone causes false positives.",
 )
-kanban_block(reason="Rate limit key choice: IP (simple, NAT-unsafe) or user_id (requires auth, skips anonymous endpoints)?")
+kanban_block(
+    reason="Rate limit key choice: IP (simple, NAT-unsafe) or user_id (requires auth, skips anonymous endpoints)?"
+)
 ```
 
 The block message is what appears in the dashboard / gateway notifier. The comment is the deeper context a human reads when they open the task.

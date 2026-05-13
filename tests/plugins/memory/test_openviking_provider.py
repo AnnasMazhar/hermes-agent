@@ -159,8 +159,8 @@ def test_tool_add_resource_uploads_existing_local_directory_and_cleans_zip(tmp_p
     provider = OpenVikingMemoryProvider()
     provider._client = MagicMock()
     uploaded_paths = []
-    provider._client.upload_temp_file.side_effect = (
-        lambda path: uploaded_paths.append(path) or "upload_docs.zip"
+    provider._client.upload_temp_file.side_effect = lambda path: (
+        uploaded_paths.append(path) or "upload_docs.zip"
     )
     provider._client.post.return_value = {
         "status": "ok",
@@ -198,8 +198,8 @@ def test_tool_add_resource_cleans_local_directory_zip_when_add_fails(tmp_path):
     provider = OpenVikingMemoryProvider()
     provider._client = MagicMock()
     uploaded_paths = []
-    provider._client.upload_temp_file.side_effect = (
-        lambda path: uploaded_paths.append(path) or "upload_docs.zip"
+    provider._client.upload_temp_file.side_effect = lambda path: (
+        uploaded_paths.append(path) or "upload_docs.zip"
     )
     provider._client.post.side_effect = RuntimeError("add failed")
 

@@ -733,8 +733,10 @@ class TestCheckpoint:
                 proc.wait(timeout=5)
 
                 assert _wait_until(
-                    lambda: registry.get("proc_live") is not None
-                    and registry.get("proc_live").exited,
+                    lambda: (
+                        registry.get("proc_live") is not None
+                        and registry.get("proc_live").exited
+                    ),
                     timeout=5,
                 )
 

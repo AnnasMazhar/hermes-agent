@@ -66,9 +66,14 @@ The fastest path — auto-detect the current model, test strategies in order of 
 ```python
 # In execute_code:
 import os
-exec(open(os.path.expanduser(
-    "~/.hermes/skills/red-teaming/godmode/scripts/load_godmode.py"
-)).read())
+
+exec(
+    open(
+        os.path.expanduser(
+            "~/.hermes/skills/red-teaming/godmode/scripts/load_godmode.py"
+        )
+    ).read()
+)
 
 # Auto-detect model from config and jailbreak it
 result = auto_jailbreak()

@@ -15895,8 +15895,8 @@ class GatewayRunner:
                         else None,
                     }
                     if self._is_telegram_topic_lane(source):
-                        maybe_auto_title_kwargs["title_callback"] = (
-                            lambda title: self._schedule_telegram_topic_title_rename(
+                        maybe_auto_title_kwargs["title_callback"] = lambda title: (
+                            self._schedule_telegram_topic_title_rename(
                                 source,
                                 effective_session_id,
                                 title,

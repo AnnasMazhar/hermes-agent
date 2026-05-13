@@ -511,7 +511,8 @@ def _quote_command_tts_placeholder(value: str, quote_context: Optional[str]) -> 
         return value.replace("'", r"'\''")
     if quote_context == '"':
         return (
-            value.replace("\\", "\\\\")
+            value
+            .replace("\\", "\\\\")
             .replace('"', r"\"")
             .replace("$", r"\$")
             .replace("`", r"\`")

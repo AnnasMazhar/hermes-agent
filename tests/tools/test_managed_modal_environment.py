@@ -65,9 +65,9 @@ def _install_fake_tools_package(*, credential_mounts=None):
 
     interrupt_event = threading.Event()
     sys.modules["tools.interrupt"] = types.SimpleNamespace(
-        set_interrupt=lambda value=True: interrupt_event.set()
-        if value
-        else interrupt_event.clear(),
+        set_interrupt=lambda value=True: (
+            interrupt_event.set() if value else interrupt_event.clear()
+        ),
         is_interrupted=lambda: interrupt_event.is_set(),
         _interrupt_event=interrupt_event,
     )

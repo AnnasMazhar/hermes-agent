@@ -1122,8 +1122,8 @@ class TestPartialToolCallWarning:
             raise _StallError("simulated upstream stall")
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = (
-            lambda *a, **kw: _stalling_stream()
+        mock_client.chat.completions.create.side_effect = lambda *a, **kw: (
+            _stalling_stream()
         )
         mock_create.return_value = mock_client
 
@@ -1186,8 +1186,8 @@ class TestPartialToolCallWarning:
             raise _StallError("simulated upstream stall")
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = (
-            lambda *a, **kw: _stalling_stream()
+        mock_client.chat.completions.create.side_effect = lambda *a, **kw: (
+            _stalling_stream()
         )
         mock_create.return_value = mock_client
 
@@ -1366,8 +1366,8 @@ class TestSilentRetryMidToolCall:
             raise _httpx.RemoteProtocolError("peer closed connection")
 
         mock_client = MagicMock()
-        mock_client.chat.completions.create.side_effect = (
-            lambda *a, **kw: _always_fails()
+        mock_client.chat.completions.create.side_effect = lambda *a, **kw: (
+            _always_fails()
         )
         mock_create.return_value = mock_client
 

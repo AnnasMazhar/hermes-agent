@@ -201,8 +201,8 @@ class TestSkillsShSource:
     @patch.object(GitHubSource, "fetch")
     def test_fetch_accepts_common_skills_sh_prefix_typo(self, mock_fetch):
         expected_identifier = "anthropics/skills/frontend-design"
-        mock_fetch.side_effect = (
-            lambda identifier: SkillBundle(
+        mock_fetch.side_effect = lambda identifier: (
+            SkillBundle(
                 name="frontend-design",
                 files={"SKILL.md": "# Frontend Design"},
                 source="github",
@@ -268,8 +268,8 @@ class TestSkillsShSource:
     @patch.object(GitHubSource, "inspect")
     def test_inspect_accepts_common_skills_sh_prefix_typo(self, mock_inspect):
         expected_identifier = "anthropics/skills/frontend-design"
-        mock_inspect.side_effect = (
-            lambda identifier: SkillMeta(
+        mock_inspect.side_effect = lambda identifier: (
+            SkillMeta(
                 name="frontend-design",
                 description="Distinctive frontend interfaces.",
                 source="github",
@@ -303,8 +303,8 @@ class TestSkillsShSource:
             repo="vercel-labs/agent-skills",
             path="skills/react-best-practices",
         )
-        mock_inspect.side_effect = (
-            lambda identifier: resolved if identifier == resolved.identifier else None
+        mock_inspect.side_effect = lambda identifier: (
+            resolved if identifier == resolved.identifier else None
         )
         mock_list_skills.return_value = [resolved]
 
@@ -341,8 +341,8 @@ class TestSkillsShSource:
             repo="vercel-labs/json-render",
             path="skills/react",
         )
-        mock_inspect.side_effect = (
-            lambda identifier: resolved if identifier == resolved.identifier else None
+        mock_inspect.side_effect = lambda identifier: (
+            resolved if identifier == resolved.identifier else None
         )
         mock_list_skills.return_value = [resolved]
         mock_get.return_value = MagicMock(
@@ -392,10 +392,8 @@ class TestSkillsShSource:
             identifier="vercel-labs/json-render/skills/react",
             trust_level="community",
         )
-        mock_fetch.side_effect = (
-            lambda identifier: resolved_bundle
-            if identifier == resolved_bundle.identifier
-            else None
+        mock_fetch.side_effect = lambda identifier: (
+            resolved_bundle if identifier == resolved_bundle.identifier else None
         )
         mock_list_skills.return_value = [resolved_meta]
         mock_get.return_value = MagicMock(
@@ -444,10 +442,8 @@ class TestSkillsShSource:
             identifier=resolved_identifier,
             trust_level="community",
         )
-        mock_fetch.side_effect = (
-            lambda identifier: resolved_bundle
-            if identifier == resolved_identifier
-            else None
+        mock_fetch.side_effect = lambda identifier: (
+            resolved_bundle if identifier == resolved_identifier else None
         )
 
         bundle = self._source().fetch("skills-sh/owner/repo/product-designer")
@@ -520,8 +516,8 @@ class TestSkillsShSource:
             identifier="owner/repo/cli-tool/components/skills/development/my-skill",
             trust_level="community",
         )
-        mock_fetch.side_effect = (
-            lambda ident: resolved_bundle if "cli-tool/components" in ident else None
+        mock_fetch.side_effect = lambda ident: (
+            resolved_bundle if "cli-tool/components" in ident else None
         )
 
         bundle = self._source().fetch("skills-sh/owner/repo/my-skill")

@@ -76,7 +76,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     projects = sorted(
         info["projects"],
-        key=lambda p: (p.get("last_touch") or 0),
+        key=lambda p: p.get("last_touch") or 0,
         reverse=True,
     )
     if projects:

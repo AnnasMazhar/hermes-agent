@@ -2003,8 +2003,8 @@ def test_prompt_submit_expands_context_refs(monkeypatch):
             self._target()
 
     fake_ctx = types.ModuleType("agent.context_references")
-    fake_ctx.preprocess_context_references = (
-        lambda message, **kwargs: types.SimpleNamespace(
+    fake_ctx.preprocess_context_references = lambda message, **kwargs: (
+        types.SimpleNamespace(
             blocked=False,
             message="expanded prompt",
             warnings=[],

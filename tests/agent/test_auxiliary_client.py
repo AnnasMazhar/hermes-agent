@@ -199,7 +199,8 @@ class TestReadCodexAccessToken:
 
         # Build a JWT with exp in the past
         header = (
-            base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
+            base64
+            .urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
             .rstrip(b"=")
             .decode()
         )
@@ -232,7 +233,8 @@ class TestReadCodexAccessToken:
         import time as _time
 
         header = (
-            base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
+            base64
+            .urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
             .rstrip(b"=")
             .decode()
         )
@@ -392,7 +394,8 @@ class TestExpiredCodexFallback:
 
         # Expired Codex JWT
         header = (
-            base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
+            base64
+            .urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
             .rstrip(b"=")
             .decode()
         )
@@ -432,7 +435,8 @@ class TestExpiredCodexFallback:
         import time as _time
 
         header = (
-            base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
+            base64
+            .urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
             .rstrip(b"=")
             .decode()
         )
@@ -470,7 +474,8 @@ class TestExpiredCodexFallback:
         import time as _time
 
         header = (
-            base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
+            base64
+            .urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
             .rstrip(b"=")
             .decode()
         )
@@ -532,7 +537,8 @@ class TestExpiredCodexFallback:
         import base64
 
         header = (
-            base64.urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
+            base64
+            .urlsafe_b64encode(b'{"alg":"RS256","typ":"JWT"}')
             .rstrip(b"=")
             .decode()
         )
@@ -2350,9 +2356,9 @@ class TestVisionAutoSkipsKimiCoding:
         )
         monkeypatch.setattr(
             "agent.auxiliary_client._resolve_strict_vision_backend",
-            lambda p, m=None: (fake_or_client, "gemini")
-            if p == "openrouter"
-            else (None, None),
+            lambda p, m=None: (
+                (fake_or_client, "gemini") if p == "openrouter" else (None, None)
+            ),
         )
 
         provider, client, _ = resolve_vision_provider_client()

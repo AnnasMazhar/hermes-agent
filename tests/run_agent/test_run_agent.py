@@ -2160,23 +2160,22 @@ class TestConcurrentToolExecution:
         messages = []
         starts = []
         completes = []
-        agent.tool_start_callback = (
-            lambda tool_call_id, function_name, function_args: starts.append((
+        agent.tool_start_callback = lambda tool_call_id, function_name, function_args: (
+            starts.append((
                 tool_call_id,
                 function_name,
                 function_args,
             ))
         )
         agent.tool_complete_callback = (
-            lambda tool_call_id,
-            function_name,
-            function_args,
-            function_result: completes.append((
-                tool_call_id,
-                function_name,
-                function_args,
-                function_result,
-            ))
+            lambda tool_call_id, function_name, function_args, function_result: (
+                completes.append((
+                    tool_call_id,
+                    function_name,
+                    function_args,
+                    function_result,
+                ))
+            )
         )
 
         with patch("run_agent.handle_function_call", return_value='{"success": true}'):
@@ -2198,23 +2197,22 @@ class TestConcurrentToolExecution:
         messages = []
         starts = []
         completes = []
-        agent.tool_start_callback = (
-            lambda tool_call_id, function_name, function_args: starts.append((
+        agent.tool_start_callback = lambda tool_call_id, function_name, function_args: (
+            starts.append((
                 tool_call_id,
                 function_name,
                 function_args,
             ))
         )
         agent.tool_complete_callback = (
-            lambda tool_call_id,
-            function_name,
-            function_args,
-            function_result: completes.append((
-                tool_call_id,
-                function_name,
-                function_args,
-                function_result,
-            ))
+            lambda tool_call_id, function_name, function_args, function_result: (
+                completes.append((
+                    tool_call_id,
+                    function_name,
+                    function_args,
+                    function_result,
+                ))
+            )
         )
 
         with patch(

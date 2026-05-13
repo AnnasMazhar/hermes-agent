@@ -1126,8 +1126,8 @@ def test_interim_commentary_is_not_marked_already_streamed_without_callbacks(
     observed = {}
 
     agent._fire_stream_delta("short version: yes")
-    agent.interim_assistant_callback = (
-        lambda text, *, already_streamed=False: observed.update({
+    agent.interim_assistant_callback = lambda text, *, already_streamed=False: (
+        observed.update({
             "text": text,
             "already_streamed": already_streamed,
         })
@@ -1155,8 +1155,8 @@ def test_interim_commentary_is_not_marked_already_streamed_when_stream_callback_
 
     agent.stream_delta_callback = failing_callback
     agent._fire_stream_delta("short version: yes")
-    agent.interim_assistant_callback = (
-        lambda text, *, already_streamed=False: observed.update({
+    agent.interim_assistant_callback = lambda text, *, already_streamed=False: (
+        observed.update({
             "text": text,
             "already_streamed": already_streamed,
         })
@@ -1179,8 +1179,8 @@ def test_interim_commentary_preserves_assistant_content(monkeypatch):
     code).  Streaming-path leak prevention happens delta-by-delta upstream."""
     agent = _build_agent(monkeypatch)
     observed = {}
-    agent.interim_assistant_callback = (
-        lambda text, *, already_streamed=False: observed.update({
+    agent.interim_assistant_callback = lambda text, *, already_streamed=False: (
+        observed.update({
             "text": text,
             "already_streamed": already_streamed,
         })

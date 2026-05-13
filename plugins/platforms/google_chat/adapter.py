@@ -669,10 +669,13 @@ class GoogleChatAdapter(BasePlatformAdapter):
         for space in candidate_spaces:
             try:
                 members = await asyncio.to_thread(
-                    lambda s=space: self._chat_api.spaces()
-                    .members()
-                    .list(parent=s, pageSize=50)
-                    .execute(http=self._new_authed_http())
+                    lambda s=space: (
+                        self._chat_api
+                        .spaces()
+                        .members()
+                        .list(parent=s, pageSize=50)
+                        .execute(http=self._new_authed_http())
+                    )
                 )
             except HttpError as exc:
                 logger.debug(
@@ -1869,7 +1872,8 @@ class GoogleChatAdapter(BasePlatformAdapter):
 
         def _do_delete() -> None:
             (
-                self._chat_api.spaces()
+                self._chat_api
+                .spaces()
                 .messages()
                 .delete(name=message_id)
                 .execute(http=self._new_authed_http())
@@ -1907,7 +1911,8 @@ class GoogleChatAdapter(BasePlatformAdapter):
 
         def _do_patch() -> Dict[str, Any]:
             return (
-                self._chat_api.spaces()
+                self._chat_api
+                .spaces()
                 .messages()
                 .patch(name=message_name, updateMask=update_mask, body=patch_body)
                 .execute(http=self._new_authed_http())
@@ -2156,7 +2161,8 @@ class GoogleChatAdapter(BasePlatformAdapter):
 
         def _do_create() -> Dict[str, Any]:
             return (
-                self._chat_api.spaces()
+                self._chat_api
+                .spaces()
                 .messages()
                 .create(**kwargs)
                 .execute(http=self._new_authed_http())
@@ -2752,7 +2758,8 @@ class GoogleChatAdapter(BasePlatformAdapter):
         def _upload() -> Dict[str, Any]:
             media = MediaFileUpload(path, mimetype=mime, resumable=False)
             return (
-                chat_api.media()
+                chat_api
+                .media()
                 .upload(
                     parent=chat_id,
                     body={"filename": filename},
@@ -2880,9 +2887,12 @@ class GoogleChatAdapter(BasePlatformAdapter):
         """Return {name, type, chat_id} for a space."""
         try:
             info = await asyncio.to_thread(
-                lambda: self._chat_api.spaces()
-                .get(name=chat_id)
-                .execute(http=self._new_authed_http())
+                lambda: (
+                    self._chat_api
+                    .spaces()
+                    .get(name=chat_id)
+                    .execute(http=self._new_authed_http())
+                )
             )
         except HttpError as exc:
             logger.debug(

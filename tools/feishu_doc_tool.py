@@ -86,7 +86,8 @@ def _handle_feishu_doc_read(args: dict, **kwargs) -> str:
         return tool_error("lark_oapi not installed")
 
     request = (
-        BaseRequest.builder()
+        BaseRequest
+        .builder()
         .http_method(HttpMethod.GET)
         .uri(_RAW_CONTENT_URI)
         .token_types({AccessTokenType.TENANT})

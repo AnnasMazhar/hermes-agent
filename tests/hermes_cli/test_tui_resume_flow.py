@@ -280,11 +280,13 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
         sys.modules,
         "hermes_cli.oneshot",
         types.SimpleNamespace(
-            run_oneshot=lambda prompt, **kwargs: captured.update({
-                "prompt": prompt,
-                **kwargs,
-            })
-            or 0
+            run_oneshot=lambda prompt, **kwargs: (
+                captured.update({
+                    "prompt": prompt,
+                    **kwargs,
+                })
+                or 0
+            )
         ),
     )
 

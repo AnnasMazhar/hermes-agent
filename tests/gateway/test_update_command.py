@@ -223,9 +223,9 @@ class TestHandleUpdateCommand:
             patch("gateway.run.__file__", fake_file),
             patch(
                 "shutil.which",
-                side_effect=lambda x: "/usr/bin/hermes"
-                if x == "hermes"
-                else "/usr/bin/setsid",
+                side_effect=lambda x: (
+                    "/usr/bin/hermes" if x == "hermes" else "/usr/bin/setsid"
+                ),
             ),
             patch("subprocess.Popen"),
         ):
@@ -263,9 +263,9 @@ class TestHandleUpdateCommand:
             patch("gateway.run.__file__", fake_file),
             patch(
                 "shutil.which",
-                side_effect=lambda x: "/usr/bin/hermes"
-                if x == "hermes"
-                else "/usr/bin/setsid",
+                side_effect=lambda x: (
+                    "/usr/bin/hermes" if x == "hermes" else "/usr/bin/setsid"
+                ),
             ),
             patch("subprocess.Popen"),
         ):

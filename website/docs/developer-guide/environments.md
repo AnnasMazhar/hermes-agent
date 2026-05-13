@@ -120,12 +120,12 @@ Returns an `AgentResult`:
 ```python
 @dataclass
 class AgentResult:
-    messages: List[Dict[str, Any]]       # Full conversation history
-    turns_used: int                       # Number of LLM calls made
-    finished_naturally: bool              # True if model stopped on its own
+    messages: List[Dict[str, Any]]  # Full conversation history
+    turns_used: int  # Number of LLM calls made
+    finished_naturally: bool  # True if model stopped on its own
     reasoning_per_turn: List[Optional[str]]  # Extracted reasoning content
-    tool_errors: List[ToolError]          # Errors encountered during tool dispatch
-    managed_state: Optional[Dict]         # VLLM ManagedServer state (Phase 2)
+    tool_errors: List[ToolError]  # Errors encountered during tool dispatch
+    managed_state: Optional[Dict]  # VLLM ManagedServer state (Phase 2)
 ```
 
 ### Tool Context
@@ -168,7 +168,9 @@ For **Phase 2** (VLLM ManagedServer), the server returns raw text without struct
 ```python
 from environments.tool_call_parsers import get_parser
 
-parser = get_parser("hermes")  # or "mistral", "llama3_json", "qwen", "deepseek_v3", etc.
+parser = get_parser(
+    "hermes"
+)  # or "mistral", "llama3_json", "qwen", "deepseek_v3", etc.
 content, tool_calls = parser.parse(raw_model_output)
 ```
 
@@ -352,8 +354,10 @@ Uses ManagedServer for exact token IDs + logprobs via `/generate`. A client-side
 from environments.hermes_base_env import HermesAgentBaseEnv, HermesAgentEnvConfig
 from atroposlib.envs.server_handling.server_manager import APIServerConfig
 
+
 class MyEnvConfig(HermesAgentEnvConfig):
     my_custom_field: str = "default_value"
+
 
 class MyEnv(HermesAgentBaseEnv):
     name = "my-env"
@@ -366,15 +370,18 @@ class MyEnv(HermesAgentBaseEnv):
             terminal_backend="modal",
             max_agent_turns=30,
         )
-        server_configs = [APIServerConfig(
-            base_url="https://openrouter.ai/api/v1",
-            model_name="anthropic/claude-sonnet-4.6",
-            server_type="openai",
-        )]
+        server_configs = [
+            APIServerConfig(
+                base_url="https://openrouter.ai/api/v1",
+                model_name="anthropic/claude-sonnet-4.6",
+                server_type="openai",
+            )
+        ]
         return env_config, server_configs
 
     async def setup(self):
         from datasets import load_dataset
+
         self.dataset = list(load_dataset("my-dataset", split="train"))
         self.iter = 0
 
@@ -394,6 +401,7 @@ class MyEnv(HermesAgentBaseEnv):
     async def evaluate(self, *args, **kwargs):
         # Periodic evaluation during training
         pass
+
 
 if __name__ == "__main__":
     MyEnv.cli()

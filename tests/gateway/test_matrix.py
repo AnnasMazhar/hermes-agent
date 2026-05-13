@@ -2127,8 +2127,8 @@ class TestMatrixImageOnlyMediaNormalization:
         self.adapter._is_dm_room = AsyncMock(return_value=True)
         self.adapter._get_display_name = AsyncMock(return_value="Alice")
         self.adapter._background_read_receipt = MagicMock()
-        self.adapter._mxc_to_http = (
-            lambda url: "https://matrix.example.org/_matrix/media/v3/download/example/30.png"
+        self.adapter._mxc_to_http = lambda url: (
+            "https://matrix.example.org/_matrix/media/v3/download/example/30.png"
         )
 
     @pytest.mark.asyncio

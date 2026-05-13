@@ -1955,7 +1955,8 @@ def _strip_leaked_bracketed_paste_wrappers(text: str) -> str:
         return text
 
     text = (
-        text.replace("\x1b[200~", "")
+        text
+        .replace("\x1b[200~", "")
         .replace("\x1b[201~", "")
         .replace("^[[200~", "")
         .replace("^[[201~", "")
@@ -11817,10 +11818,12 @@ class HermesCLI:
         # in those IDEs and arrives here as ('escape', 'g') — register it as
         # a fallback so the editor handoff works inside Cursor/VSCode too.
         _editor_filter = Condition(
-            lambda: not self._clarify_state
-            and not self._approval_state
-            and not self._sudo_state
-            and not self._secret_state
+            lambda: (
+                not self._clarify_state
+                and not self._approval_state
+                and not self._sudo_state
+                and not self._secret_state
+            )
         )
 
         @kb.add("c-g", filter=_editor_filter)
@@ -11998,11 +12001,13 @@ class HermesCLI:
         # Buffer.auto_up/auto_down handle both: cursor movement when multi-line,
         # history browsing when on the first/last line (or single-line input).
         _normal_input = Condition(
-            lambda: not self._clarify_state
-            and not self._approval_state
-            and not self._sudo_state
-            and not self._secret_state
-            and not self._model_picker_state
+            lambda: (
+                not self._clarify_state
+                and not self._approval_state
+                and not self._sudo_state
+                and not self._secret_state
+                and not self._model_picker_state
+            )
         )
 
         @kb.add("up", filter=_normal_input)

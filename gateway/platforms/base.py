@@ -1039,7 +1039,8 @@ class MessageEvent:
         args = parts[1] if len(parts) > 1 else ""
         # iOS auto-corrects -- to — (em dash) and - to – (en dash)
         args = (
-            args.replace("\u2014\u2014", "--")
+            args
+            .replace("\u2014\u2014", "--")
             .replace("\u2014", "--")
             .replace("\u2013", "-")
         )

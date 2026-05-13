@@ -345,8 +345,8 @@ def test_401_credential_refresh_recovers(monkeypatch):
             self._interruptible_api_call = _fake_api_call
             # Also patch streaming path — run_conversation now prefers
             # streaming for health checking even without stream consumers.
-            self._interruptible_streaming_api_call = (
-                lambda api_kwargs, **kw: _fake_api_call(api_kwargs)
+            self._interruptible_streaming_api_call = lambda api_kwargs, **kw: (
+                _fake_api_call(api_kwargs)
             )
             return super().run_conversation(
                 user_message, conversation_history=conversation_history, task_id=task_id

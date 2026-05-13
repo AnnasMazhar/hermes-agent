@@ -397,7 +397,8 @@ def _normalize_retain_tags(value: Any) -> List[str]:
 def _utc_timestamp() -> str:
     """Return current UTC timestamp in ISO-8601 with milliseconds and Z suffix."""
     return (
-        datetime.now(timezone.utc)
+        datetime
+        .now(timezone.utc)
         .isoformat(timespec="milliseconds")
         .replace("+00:00", "Z")
     )

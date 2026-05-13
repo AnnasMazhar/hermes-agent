@@ -76,6 +76,7 @@ async def setup(self) -> None:
     # Try HuggingFace first, fallback to built-in samples
     try:
         from datasets import load_dataset
+
         ds = load_dataset("your/dataset", split="test")
         self._items = [...]
     except Exception:
@@ -159,7 +160,7 @@ async def evaluate(self, *args, **kwargs) -> None:
     tools, valid_names = self._resolve_tools_for_group()
     samples = []
 
-    for item in self._eval_items[:self.config.eval_size]:
+    for item in self._eval_items[: self.config.eval_size]:
         task_id = str(uuid.uuid4())
         messages = []
         if self.config.system_prompt:
@@ -187,8 +188,12 @@ async def evaluate(self, *args, **kwargs) -> None:
         samples.append({"prompt": ..., "response": ..., "reward": reward})
 
     eval_metrics = {"eval/mean_reward": ...}
-    await self.evaluate_log(metrics=eval_metrics, samples=samples,
-                            start_time=start_time, end_time=time.time())
+    await self.evaluate_log(
+        metrics=eval_metrics,
+        samples=samples,
+        start_time=start_time,
+        end_time=time.time(),
+    )
 ```
 
 ### 6. `wandb_log()` — Custom metrics logging
@@ -290,13 +295,14 @@ class MyEnv(HermesAgentBaseEnv):
     env_config_cls = MyEnvConfig
 
     @classmethod
-    def config_init(cls): ...          # Default server + env config
-    async def setup(self): ...         # Load dataset + train/eval split
-    async def get_next_item(self): ... # Cycle through training items
-    def format_prompt(self, item): ... # Item → user message string
+    def config_init(cls): ...  # Default server + env config
+    async def setup(self): ...  # Load dataset + train/eval split
+    async def get_next_item(self): ...  # Cycle through training items
+    def format_prompt(self, item): ...  # Item → user message string
     async def compute_reward(self, item, result, ctx): ...  # Score rollout
     async def evaluate(self, *args, **kwargs): ...  # Full agent loop eval
-    async def wandb_log(self, metrics=None): ...    # Custom metrics + super()
+    async def wandb_log(self, metrics=None): ...  # Custom metrics + super()
+
 
 if __name__ == "__main__":
     MyEnv.cli()

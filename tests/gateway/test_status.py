@@ -130,7 +130,9 @@ class TestGatewayPidState:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda pid: "/venv/bin/python /repo/hermes_cli/main.py gateway run --replace",
+            lambda pid: (
+                "/venv/bin/python /repo/hermes_cli/main.py gateway run --replace"
+            ),
         )
 
         assert status.acquire_gateway_runtime_lock() is True

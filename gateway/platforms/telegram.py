@@ -964,7 +964,8 @@ class TelegramAdapter(BasePlatformAdapter):
 
             # Navigate to platforms.telegram.extra.dm_topics
             dm_topics = (
-                config.get("platforms", {})
+                config
+                .get("platforms", {})
                 .get("telegram", {})
                 .get("extra", {})
                 .get("dm_topics", [])
@@ -4333,7 +4334,8 @@ class TelegramAdapter(BasePlatformAdapter):
                 config = _yaml.safe_load(f) or {}
 
             dm_topics = (
-                config.get("platforms", {})
+                config
+                .get("platforms", {})
                 .get("telegram", {})
                 .get("extra", {})
                 .get("dm_topics", [])
