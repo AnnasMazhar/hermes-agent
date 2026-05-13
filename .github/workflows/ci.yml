@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4
+      - uses: astral-sh/setup-uv@6b9c6063abd6010835c3544edc914d3eb8de545b  # v5
+        with:
+          version: "0.7.3"
+      - run: uv python install 3.11
+      - name: Install ruff
+        run: uv tool install ruff
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4
+      - uses: astral-sh/setup-uv@6b9c6063abd6010835c3544edc914d3eb8de545b  # v5
+        with:
+          version: "0.7.3"
+      - run: uv python install 3.11
+      - name: Install bandit
+        run: uv tool install "bandit[toml]"
+      - name: Bandit security scan
+        run: bandit -r agent/ tools/ gateway/ cron/ hermes_cli/ -c pyproject.toml
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4
+      - uses: astral-sh/setup-uv@6b9c6063abd6010835c3544edc914d3eb8de545b  # v5
+        with:
+          version: "0.7.3"
+      - run: uv python install 3.11
+      - name: Install dependencies
+        run: |
+          uv venv .venv --python 3.11
+          source .venv/bin/activate
+          uv pip install -e ".[all,dev]"
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/ -x --ignore=tests/integration --ignore=tests/e2e --tb=short --timeout=60
