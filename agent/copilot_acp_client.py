@@ -73,8 +73,8 @@ def _resolve_home_dir() -> str:
         import pwd
 
         resolved = pwd.getpwuid(
-            os.getuid()
-        ).pw_dir.strip()  # windows-footgun: ok — POSIX fallback inside try/except (pwd import fails on Windows)
+            os.getuid()  # windows-footgun: ok — POSIX fallback inside try/except (pwd import fails on Windows)
+        ).pw_dir.strip()
         if resolved:
             return resolved
     except Exception:

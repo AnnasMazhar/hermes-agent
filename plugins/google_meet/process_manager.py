@@ -313,8 +313,8 @@ def stop(*, reason: str = "requested") -> Dict[str, Any]:
         if _pid_alive(pid):
             try:
                 os.kill(
-                    pid, signal.SIGKILL
-                )  # windows-footgun: ok — POSIX-only plugin (google_meet registers no-op on Windows; see __init__.py)
+                    pid, getattr(signal, 'SIGKILL', signal.SIGTERM)  # windows-footgun: ok — POSIX-only plugin (google_meet registers no-op on Windows; see __init__.py)
+                )
             except ProcessLookupError:
                 pass
 
