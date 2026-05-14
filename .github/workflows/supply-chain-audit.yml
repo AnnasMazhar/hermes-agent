@@ -1,7 +1,7 @@
 name: Supply Chain Audit
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
     paths:
       - '**/*.py'
@@ -33,6 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Scan diff for critical patterns
@@ -130,7 +131,7 @@ jobs:
           ---
           *Scanner only fires on high-signal indicators: .pth files, base64+exec/eval combos, subprocess with encoded commands, or install-hook files. Low-signal warnings were removed intentionally — if you're seeing this comment, the finding is worth inspecting.*"
 
-          gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY" || echo "::warning::Could not post PR comment (expected for fork PRs — GITHUB_TOKEN is read-only)"
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
 
       - name: Fail on critical findings
         if: steps.scan.outputs.found == 'true'

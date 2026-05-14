@@ -1,7 +1,7 @@
 name: Contributor Attribution Check
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
     paths:
       # Only run when code files change (not docs-only PRs)
@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   check-attribution:
@@ -18,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0  # Full history needed for git log
 
       - name: Check for unmapped contributor emails
