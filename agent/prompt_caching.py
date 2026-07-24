@@ -81,6 +81,43 @@ def _build_marker(ttl: str) -> Dict[str, str]:
     return marker
 
 
+def stabilize_tool_order(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Sort tools alphabetically by function name for byte-stable cache prefix."""
+    return sorted(tools, key=lambda t: t.get("function", {}).get("name", ""))
+
+
+def apply_tool_schema_caching(
+    tools: List[Dict[str, Any]],
+    cache_ttl: str = "5m",
+    skip_if: bool = False,
+) -> List[Dict[str, Any]]:
+    """Add cache_control to the tools array for Anthropic prefix caching.
+
+    Places cache_control on the LAST tool definition.  Anthropic caches
+    everything up to and including the marked position.
+
+    This makes the ~20-30K token tool schema block cacheable at ~90% discount.
+
+    Args:
+        tools: List of tool definitions (OpenAI or Anthropic format).
+        cache_ttl: Cache TTL string (default "5m").
+        skip_if: If True, return tools unmodified (env-var rollback).
+
+    Returns:
+        Tools list with cache_control marker on last entry.
+    """
+    if skip_if or not tools:
+        return tools
+
+    tools = copy.deepcopy(tools)
+    tools = stabilize_tool_order(tools)
+
+    marker = _build_marker(cache_ttl)
+    tools[-1]["cache_control"] = marker
+
+    return tools
+
+
 def apply_anthropic_cache_control(
     api_messages: List[Dict[str, Any]],
     cache_ttl: str = "5m",

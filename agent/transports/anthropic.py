@@ -60,9 +60,11 @@ class AnthropicTransport(ProviderTransport):
             fast_mode: bool
             drop_context_1m_beta: bool
         """
+        import os
         from agent.anthropic_adapter import build_anthropic_kwargs
+        from agent.prompt_caching import apply_tool_schema_caching
 
-        return build_anthropic_kwargs(
+        kwargs = build_anthropic_kwargs(
             model=model,
             messages=messages,
             tools=tools,
@@ -76,6 +78,15 @@ class AnthropicTransport(ProviderTransport):
             fast_mode=params.get("fast_mode", False),
             drop_context_1m_beta=params.get("drop_context_1m_beta", False),
         )
+
+        # Apply cache_control to the tool schema block for prefix caching.
+        if kwargs.get("tools"):
+            skip = os.environ.get("HERMES_SKIP_TOOL_CACHING", "0") == "1"
+            kwargs["tools"] = apply_tool_schema_caching(
+                kwargs["tools"], skip_if=skip
+            )
+
+        return kwargs
 
     def normalize_response(self, response: Any, **kwargs) -> NormalizedResponse:
         """Normalize Anthropic response to NormalizedResponse.

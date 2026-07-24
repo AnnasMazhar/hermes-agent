@@ -391,6 +391,11 @@ def _hermetic_environment(tmp_path, monkeypatch):
     # tests opt back in by patching the security config directly.
     monkeypatch.setenv("TIRITH_ENABLED", "false")
 
+    # Tool schema caching adds cache_control markers to tool definitions,
+    # which breaks tests that assert exact tool structure. Disable in tests
+    # by default; caching-specific tests opt back in by unsetting this.
+    monkeypatch.setenv("HERMES_SKIP_TOOL_CACHING", "1")
+
     # 5. Reset plugin singleton so tests don't leak plugins from
     #    ~/.hermes/plugins/ (which, per step 3, is now empty — but the
     #    singleton might still be cached from a previous test).

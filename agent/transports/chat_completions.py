@@ -371,6 +371,15 @@ class ChatCompletionsTransport(ProviderTransport):
             # etc.) compatible, in addition to direct moonshot.ai endpoints.
             if is_moonshot_model(model):
                 tools = sanitize_moonshot_tools(tools)
+
+            # Apply cache_control to the tool schema block for prefix caching.
+            # Anthropic honors this on proxied requests (OpenRouter, etc.);
+            # non-Anthropic providers silently ignore the extra key.
+            import os
+            if os.environ.get("HERMES_SKIP_TOOL_CACHING", "0") != "1":
+                from agent.prompt_caching import apply_tool_schema_caching
+                tools = apply_tool_schema_caching(tools)
+
             api_kwargs["tools"] = tools
 
         # max_tokens resolution — priority: ephemeral > user > provider default
