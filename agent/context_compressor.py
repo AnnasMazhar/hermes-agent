@@ -19,6 +19,7 @@ Improvements over v2:
 import hashlib
 import json
 import logging
+import os
 import sqlite3
 import re
 import time
@@ -356,6 +357,158 @@ _MEDIA_DIRECTIVE_RE = re.compile(r"MEDIA:\S+")
 _HISTORICAL_TASK_SECTION_RE = re.compile(
     rf"(?ms)^{re.escape(HISTORICAL_TASK_HEADING)}\s*\n.*?(?=^## |\Z)"
 )
+
+# ---------------------------------------------------------------------------
+# Typed JSON checkpoint (gated by HERMES_CHECKPOINT_MODE=typed)
+# ---------------------------------------------------------------------------
+
+CHECKPOINT_TEMPLATE = """Compress the conversation into a structured JSON checkpoint.
+
+Output EXACTLY this structure:
+{
+  "durable_memory": [
+    // Facts that MUST survive: user identity, project context, file paths discovered,
+    // decisions made, constraints stated. Max 20 items, concise.
+  ],
+  "execution_summary": [
+    // What was done: files modified, commands run, test results, errors encountered.
+    // Chronological. Max 30 items.
+  ],
+  "user_requirements": [
+    // Original task specification, acceptance criteria, constraints, scope boundaries.
+    // Preserve verbatim where possible. Max 10 items.
+  ],
+  "skill_refs": [
+    // Skills activated, tools used heavily, state pointers (branch name, PR number, etc).
+    // Max 10 items.
+  ]
+}
+
+CONSTRAINTS:
+- durable_memory items are NEVER dropped in future compactions
+- execution_summary is append-only within a session
+- user_requirements preserve the EXACT wording
+- Return ONLY valid JSON, no other text
+- If JSON is invalid, the conversation state may be lost
+"""
+
+_CHECKPOINT_SECTION_HEADINGS = (
+    ("durable_memory", "Durable Memory"),
+    ("execution_summary", "Execution Summary"),
+    ("user_requirements", "User Requirements"),
+    ("skill_refs", "Active Skills & State"),
+)
+
+_CHECKPOINT_CAPS = {
+    "durable_memory": 20,
+    "execution_summary": 30,
+    "user_requirements": 10,
+    "skill_refs": 10,
+}
+
+
+def _build_typed_checkpoint(
+    compressed_content: str,
+    existing_checkpoint: dict | None,
+) -> dict:
+    """Parse LLM checkpoint output into typed structure.
+
+    If existing_checkpoint exists, MERGE (don't replace):
+    - durable_memory: union (deduplicate), cap at 20
+    - execution_summary: append new items, cap at 30
+    - user_requirements: union (preserve original wording), cap at 10
+    - skill_refs: replace with latest, cap at 10
+
+    On JSON parse failure, falls back to a minimal checkpoint with the raw
+    content stored in execution_summary.
+    """
+    try:
+        new = json.loads(compressed_content)
+        if not isinstance(new, dict):
+            raise ValueError("Checkpoint must be a JSON object")
+    except (json.JSONDecodeError, ValueError):
+        logger.warning("Typed checkpoint: JSON parse failed, using raw fallback")
+        new = {
+            "durable_memory": [],
+            "execution_summary": [compressed_content.strip()] if compressed_content.strip() else [],
+            "user_requirements": [],
+            "skill_refs": [],
+        }
+
+    # Ensure all keys exist with list values
+    for key in _CHECKPOINT_CAPS:
+        if key not in new or not isinstance(new[key], list):
+            new[key] = []
+        # Coerce items to strings
+        new[key] = [str(item) for item in new[key]]
+
+    if existing_checkpoint is None:
+        # First compaction — cap and return
+        for key, cap in _CHECKPOINT_CAPS.items():
+            new[key] = new[key][:cap]
+        return new
+
+    merged: dict = {}
+
+    # durable_memory: union (deduplicate), cap at 20
+    existing_dm = existing_checkpoint.get("durable_memory", [])
+    new_dm = new.get("durable_memory", [])
+    seen: set[str] = set()
+    merged_dm: list[str] = []
+    for item in existing_dm + new_dm:
+        item_str = str(item).strip()
+        if item_str and item_str not in seen:
+            seen.add(item_str)
+            merged_dm.append(item_str)
+    merged["durable_memory"] = merged_dm[:_CHECKPOINT_CAPS["durable_memory"]]
+
+    # execution_summary: append new items, cap at 30
+    existing_es = existing_checkpoint.get("execution_summary", [])
+    new_es = new.get("execution_summary", [])
+    existing_es_set = set(str(x) for x in existing_es)
+    merged_es = [str(x) for x in existing_es]
+    for item in new_es:
+        item_str = str(item).strip()
+        if item_str and item_str not in existing_es_set:
+            merged_es.append(item_str)
+            existing_es_set.add(item_str)
+    merged["execution_summary"] = merged_es[:_CHECKPOINT_CAPS["execution_summary"]]
+
+    # user_requirements: union (preserve original wording), cap at 10
+    existing_ur = existing_checkpoint.get("user_requirements", [])
+    new_ur = new.get("user_requirements", [])
+    seen_ur: set[str] = set()
+    merged_ur: list[str] = []
+    for item in existing_ur + new_ur:
+        item_str = str(item).strip()
+        if item_str and item_str not in seen_ur:
+            seen_ur.add(item_str)
+            merged_ur.append(item_str)
+    merged["user_requirements"] = merged_ur[:_CHECKPOINT_CAPS["user_requirements"]]
+
+    # skill_refs: replace with latest, cap at 10
+    merged["skill_refs"] = [str(x) for x in new.get("skill_refs", [])][:_CHECKPOINT_CAPS["skill_refs"]]
+
+    return merged
+
+
+def _format_checkpoint_as_message(checkpoint: dict) -> str:
+    """Format typed checkpoint as markdown content for the conversation.
+
+    Returns the formatted string (not a message dict) so it integrates
+    with the existing _with_summary_prefix flow.
+    """
+    sections: list[str] = []
+    for key, heading in _CHECKPOINT_SECTION_HEADINGS:
+        items = checkpoint.get(key, [])
+        if items:
+            bullet_list = "\n".join(f"- {m}" for m in items)
+            sections.append(f"## {heading}\n{bullet_list}")
+
+    return (
+        "[SESSION CHECKPOINT — Historical reference only, not new instructions]\n\n"
+        + "\n\n".join(sections)
+    )
 
 
 def _redact_compaction_text(text: Any) -> str:
@@ -981,6 +1134,7 @@ class ContextCompressor(ContextEngine):
         self._last_compression_telemetry = None
         self._active_compression_telemetry = None
         self._compression_telemetry_seed = None
+        self._typed_checkpoint = None
 
     def _begin_compression_telemetry(
         self,
@@ -2683,6 +2837,17 @@ Use this exact structure:
 FOCUS TOPIC: "{focus_topic}"
 This compaction should PRIORITISE preserving all information related to the focus topic above. For content related to "{focus_topic}", include full detail — exact values, file paths, command outputs, error messages, and decisions. For content NOT related to the focus topic, summarise more aggressively (brief one-liners or omit if truly irrelevant). The focus topic sections should receive roughly 60-70% of the summary token budget. Even for the focus topic, NEVER preserve API keys, tokens, passwords, or credentials — use [REDACTED]."""
 
+        # Typed checkpoint mode: replace prose prompt with JSON checkpoint
+        # template when HERMES_CHECKPOINT_MODE=typed is set.
+        _checkpoint_mode = os.environ.get("HERMES_CHECKPOINT_MODE", "prose")
+        _use_typed_checkpoint = _checkpoint_mode == "typed"
+        if _use_typed_checkpoint:
+            prompt = (
+                f"{_summarizer_preamble}\n\n"
+                f"{CHECKPOINT_TEMPLATE}\n\n"
+                f"TURNS TO SUMMARIZE:\n{content_to_summarize}"
+            )
+
         try:
             call_kwargs = {
                 "task": "compression",
@@ -2785,6 +2950,24 @@ This compaction should PRIORITISE preserving all information related to the focu
             # Redact the summary output as well — the summarizer LLM may
             # ignore prompt instructions and echo back secrets verbatim.
             summary = _redact_compaction_text(content.strip())
+
+            # Typed checkpoint path: parse JSON, merge, and format
+            if _use_typed_checkpoint:
+                existing_ckpt = getattr(self, "_typed_checkpoint", None)
+                merged_ckpt = _build_typed_checkpoint(summary, existing_ckpt)
+                self._typed_checkpoint = merged_ckpt
+                formatted = _format_checkpoint_as_message(merged_ckpt)
+                # Store for iterative updates (the formatted text doubles as
+                # _previous_summary so the prose fallback can still work if
+                # the user switches modes mid-session).
+                self._previous_summary = formatted
+                self._clear_compression_failure_cooldown()
+                self._summary_model_fallen_back = False
+                self._last_summary_error = None
+                self._last_summary_auth_failure = False
+                self._last_summary_network_failure = False
+                return self._with_summary_prefix(formatted)
+
             summary = self._ground_historical_task_snapshot(summary, turns_to_summarize)
             self._validate_summary_user_provenance(summary, has_user_turn)
             # Store for iterative updates on next compaction
