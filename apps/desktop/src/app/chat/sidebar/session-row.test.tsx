@@ -31,8 +31,14 @@ vi.mock('@/i18n', () => ({
           needsInput: 'Needs input',
           sessionActions: 'Session actions',
           sessionRunning: 'Running',
+          todoProgress: 'Plan progress',
           waitingForAnswer: 'Waiting for answer'
-        }
+        },
+        projects: {
+          home: 'Home'
+        },
+        messageCount: (count: number) => `${count} messages`,
+        toolCallCount: (count: number) => `${count} tool calls`
       },
       assistant: {
         thread: {
@@ -386,5 +392,44 @@ describe('SidebarSessionRow', () => {
     const avatar = handoffAvatar(container)
     expect(avatar).toBeTruthy()
     expect(tipTrigger(avatar as HTMLElement)).toBeTruthy()
+  })
+})
+
+describe('SidebarSessionRow padding and clip (#89112)', () => {
+  it('applies pr-2 trailing padding on the actions column in one-line row', () => {
+    const { container } = renderRow(makeSession({ title: 'Padding test' }))
+
+    const actions = container.querySelector('[data-row-actions]')
+    expect(actions).toBeTruthy()
+    expect(actions?.classList.contains('pr-2')).toBe(true)
+  })
+
+  it('applies pb-[0.15em] to the title label in one-line row for descender room', () => {
+    renderRow(makeSession({ title: 'Descender test gyp' }))
+
+    const label = screen.getByText('Descender test gyp').parentElement
+    expect(label).toBeTruthy()
+    expect(label?.classList.contains('pb-[0.15em]')).toBe(true)
+  })
+
+  it('applies pb-[0.15em] to the title label in card row for descender room', () => {
+    render(
+      <SidebarSessionRow
+        card
+        isPinned={false}
+        isSelected={false}
+        onArchive={noop}
+        onDelete={noop}
+        onPin={noop}
+        onResume={noop}
+        onToggleUnread={noop}
+        session={makeSession({ title: 'Card descender gyp' })}
+        unread={false}
+      />
+    )
+
+    const label = screen.getByText('Card descender gyp').parentElement
+    expect(label).toBeTruthy()
+    expect(label?.classList.contains('pb-[0.15em]')).toBe(true)
   })
 })

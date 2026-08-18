@@ -492,12 +492,12 @@ function SidebarSessionRowImpl({
                         deterministic metadata line; detailed adds the initial
                         request preview. Compact keeps today's one-line row. */}
                     {density !== 'compact' && details.metadata && (
-                      <span className="mt-0.5 block truncate text-[0.625rem] leading-none text-(--ui-text-tertiary)">
+                      <span className="mt-0.5 block truncate pb-[0.15em] text-[0.625rem] leading-none text-(--ui-text-tertiary)">
                         {details.metadata}
                       </span>
                     )}
                     {density === 'detailed' && details.preview && (
-                      <span className="mt-1 block truncate text-[0.625rem] leading-none text-(--ui-text-quaternary)">
+                      <span className="mt-1 block truncate pb-[0.15em] text-[0.625rem] leading-none text-(--ui-text-quaternary)">
                         {details.preview}
                       </span>
                     )}
@@ -515,7 +515,7 @@ function SidebarSessionRowImpl({
                     entire width — nothing truncates against the kebab. */}
                 <div className="flex min-w-0 items-center gap-1.5">
                   {leadNode}
-                  <span className="min-w-0 flex-1 truncate text-[0.6875rem] leading-none text-(--ui-text-tertiary)">
+                  <span className="min-w-0 flex-1 truncate pb-[0.15em] text-[0.6875rem] leading-none text-(--ui-text-tertiary)">
                     {context}
                   </span>
                   {handoffBadge}
@@ -534,7 +534,7 @@ function SidebarSessionRowImpl({
                     </SidebarRowLabel>
                   </OverflowTip>
                   {session.preview && rowMeta.includes('preview') ? (
-                    <span className="min-w-0 truncate text-[0.625rem] leading-none text-(--ui-text-quaternary)">
+                    <span className="min-w-0 truncate pb-[0.15em] text-[0.625rem] leading-none text-(--ui-text-quaternary)">
                       {session.preview}
                     </span>
                   ) : null}

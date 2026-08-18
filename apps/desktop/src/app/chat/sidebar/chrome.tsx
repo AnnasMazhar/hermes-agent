@@ -29,7 +29,7 @@ const rowPadX = 'pl-2 pr-1'
 const rowGap = 'gap-1.5'
 const rowLead = 'grid size-3.5 shrink-0 place-items-center'
 const rowInset = cn(rowPadX, rowGap, 'flex h-full min-w-0 items-center self-stretch py-0.5')
-const rowLabel = 'min-w-0 truncate text-[0.8125rem] leading-none text-(--ui-text-secondary)'
+const rowLabel = 'min-w-0 truncate pb-[0.15em] text-[0.8125rem] leading-none text-(--ui-text-secondary)'
 
 /** Inbox-style card (workspace + age, title + preview, model + size). */
 export const SIDEBAR_ROW_CARD_MIN_H = 'min-h-[3.375rem]' as const
@@ -85,7 +85,7 @@ export function SidebarRowShell({
     <div className={cn(rowMinH, 'grid grid-cols-[minmax(0,1fr)_auto] items-stretch rounded-md', className)} {...props}>
       {children}
       {actions ? (
-        <div className={cn('flex shrink-0 items-center self-center', actionsClassName)} data-row-actions>
+        <div className={cn('flex shrink-0 items-center self-center pr-2', actionsClassName)} data-row-actions>
           {actions}
         </div>
       ) : null}
